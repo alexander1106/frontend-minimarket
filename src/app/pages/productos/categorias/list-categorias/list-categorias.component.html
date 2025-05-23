@@ -1,0 +1,104 @@
+<div class="contenedor">
+  <div class="barra">
+    <app-barra-lateral></app-barra-lateral>
+  </div>
+
+  <div class="encabezado">
+    <app-header></app-header>
+    <hr class="border-secondary mb-4" />
+
+    <div class="container">
+      <div class="header">
+        <div>
+          <h2>Categorías</h2>
+          <span class="subtitle">{{ categorias.length }} Categorías registradas</span>
+        </div>
+        <div class="search-sort">
+          <input
+            type="text"
+            placeholder="Buscar categoría"
+            class="search-input"
+            [(ngModel)]="filtroBusqueda"
+            (ngModelChange)="buscarCategorias()"
+          />
+          <button (click)="navegarYMostrarModal()" class="btn-agregar">
+            <i class="fas fa-plus"></i> Categoría
+          </button>
+        </div>
+      </div>
+
+      <table class="customer-table">
+        <thead>
+          <tr>
+            <th>Id</th>
+            <th>Nombre</th>
+            <th>Imagen</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let categoria of categoriasFiltrados; let i = index">
+            <td>{{ (paginaActual - 1) * elementosPorPagina + i + 1 }}</td>
+            <td>{{ categoria.nombre }}</td>
+            <td>
+              <img
+                *ngIf="categoria.imagen"
+                [src]="'http://localhost:8080/uploads/categorias/' + categoria.imagen"
+                alt="Imagen"
+                width="60"
+                height="60"
+                style="object-fit:cover; border-radius: 8px;"
+              />
+            </td>
+            <td>
+              <button (click)="editarCategoria(categoria.idcategoria)" class="btn-editar">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button (click)="eliminarCategoria(categoria.idcategoria)" class="btn-eliminar">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div *ngIf="totalPaginas > 1" class="pagination">
+        <button (click)="cambiarPagina(paginaActual - 1)" [disabled]="paginaActual === 1">&lt;</button>
+        <span>Página {{ paginaActual }} de {{ totalPaginas }}</span>
+        <button (click)="cambiarPagina(paginaActual + 1)" [disabled]="paginaActual === totalPaginas">&gt;</button>
+      </div>
+
+      <!-- Modal -->
+      <div *ngIf="mostrarModal" class="modal">
+        <div class="modal-content">
+          <h2>Categoría</h2>
+          <form (ngSubmit)="formSubmit()" #formulario="ngForm">
+            <input
+              type="text"
+              [(ngModel)]="categoria.nombre"
+              name="nombre"
+              required
+              placeholder="Nombre de la categoría"
+            />
+
+            <!-- Input de imagen -->
+            <input type="file" (change)="onFileSelected($event)" accept="image/*" />
+
+            <!-- Vista previa de la imagen seleccionada -->
+            <img *ngIf="imagenPreview" [src]="imagenPreview" alt="Vista previa" width="100" style="margin:10px 0; border-radius:8px; object-fit:cover;" />
+
+            <!-- Si estás editando y no has seleccionado una nueva imagen, muestra la actual -->
+            <img *ngIf="!imagenPreview && categoria.imagen" 
+                 [src]="'http://localhost:8080/uploads/categorias/' + categoria.imagen"
+                 alt="Imagen actual"
+                 width="100"
+                 style="margin:10px 0; border-radius:8px; object-fit:cover;" />
+
+            <button type="submit" [disabled]="formulario.invalid">Guardar</button>
+            <button type="button" class="btn" (click)="cerrarModal()">Cerrar</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

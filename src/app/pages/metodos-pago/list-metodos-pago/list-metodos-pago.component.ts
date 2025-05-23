@@ -34,7 +34,7 @@ export class ListMetodosPagoComponent implements OnInit {
   private metodoPagoService: MetodoPagoService,
   private router: Router,
   private route: ActivatedRoute
-) {}
+) {} 
 
 ngOnInit(): void {
   this.listarMetodos();
