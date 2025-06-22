@@ -1,0 +1,200 @@
+/* Contenedor principal dividido en dos columnas */
+.login-container-kyte {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+}
+.slider-wrapper{
+  display: flex;
+}
+
+/* Lado info y lado form con 50% ancho y altura completa */
+.info-side, .form-side {
+  width: 50vw;
+  height: 100vh;
+  padding: 60px 40px;
+  box-sizing: border-box;
+}
+
+.info-side {
+  background-color: #e9f7ef;
+  color: #2d6a4f;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  padding-bottom: 80px; /* espacio para botones carrusel */
+}
+
+.form-side {
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.info-side img {
+  max-width: 200px;
+  margin-bottom: 20px;
+}
+
+/* Contenido del carrusel (texto) */
+.carousel-content {
+  min-height: 250px;
+  transition: opacity 0.3s ease-in-out;
+}
+
+/* Botones del carrusel abajo */
+.carousel-buttons {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 12px;
+}
+
+/* Estilo botones */
+.carousel-buttons button {
+  background-color: #a7f3d0;
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  font-weight: bold;
+  color: #2d6a4f;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.carousel-buttons button.active,
+.carousel-buttons button:hover {
+  background-color: #2d6a4f;
+  color: white;
+}
+
+/* Formulario ancho completo dentro de form-side */
+.form-side form {
+  width: 100%;
+  max-width: 400px;
+}
+
+/* Campos del formulario con ancho completo */
+.full-width {
+  width: 100%;
+}
+
+/* Texto y links del form */
+.form-side h3,
+.form-side p {
+  margin-bottom: 15px;
+}
+
+/* Estilos para el botón de submit */
+.container {
+  text-align: center;
+  margin-top: 20px;
+}
+
+/* Animación bolas */
+.animated-circles {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  background: #d1fae5;
+  border-radius: 50%;
+  top: -100px;
+  left: -100px;
+  animation: floatCircle 10s infinite alternate ease-in-out;
+  z-index: -1;
+}
+
+.animated-circles.circle2 {
+  width: 200px;
+  height: 200px;
+  bottom: -80px;
+  right: -80px;
+  top: auto;
+  left: auto;
+  background: #a7f3d0;
+  animation-delay: 2s;
+}
+
+@keyframes floatCircle {
+  0% {
+    transform: translateY(0) translateX(0);
+  }
+  100% {
+    transform: translateY(20px) translateX(20px);
+  }
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+  .login-container-kyte {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .info-side,
+  .form-side {
+    width: 100%;
+    height: auto;
+    padding: 30px 20px;
+  }
+
+  .info-side img {
+    max-width: 150px;
+  }
+
+  .carousel-buttons {
+    position: static;
+    transform: none;
+    justify-content: center;
+    margin-top: 15px;
+  }
+}
+
+
+
+hr {
+  margin: 20px 0;
+  border: none;
+  border-top: 1px solid #ccc;
+}
+
+.btn-google {
+  background-color: #dd4b39;
+  color: white;
+  border: none;
+    width: 400px;
+  margin: 8px 0;
+  padding: 10px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.btn-google:hover {
+  background-color: #c23321;
+}
+
+.btn-facebook {
+  background-color: #3b5998;
+  color: white;
+    width: 400px;
+  margin: 8px 0;
+  padding: 10px;
+  margin-bottom: 25px;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-facebook:hover {
+  background-color: #2d4373;
+}

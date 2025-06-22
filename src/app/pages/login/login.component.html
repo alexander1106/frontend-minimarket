@@ -1,0 +1,104 @@
+
+<!-- Contenedor principal con slider -->
+<div class="login-container-kyte">
+  <!-- Fondo con 2 bolas animadas -->
+<div class="animated-circles"></div>
+<div class="animated-circles circle2"></div>
+
+  <div #sliderWrapper class="slider-wrapper">
+    <!-- Lado izquierdo: información sobre la empresa -->
+ <div class="info-side">
+  <img src="assets/img/bf503f70-42e4-4501-a58d-5057ae4d5032.png" alt="Logo Gasbacorb" style="max-width: 200px; margin-bottom: 20px;" />
+
+  <div class="carousel-content">
+    <div *ngIf="currentInfoSlide === 0">
+      <h2>Gasbacorb</h2>
+      <p class="slogan">Una solución moderna para gestionar tu negocio</p>
+      <p class="description">
+        ¿Buscas llevar el control de tu empresa al siguiente nivel? Con <strong>Gasbacorb</strong>, accede fácilmente a herramientas de venta, inventario y reportes. Todo en un solo lugar.
+      </p>
+    </div>
+    <div *ngIf="currentInfoSlide === 1">
+      <h2>Ventas</h2>
+      <p class="slogan">Optimiza tus ventas</p>
+      <p class="description">
+        Gestiona todas tus ventas de forma rápida y sencilla, con reportes en tiempo real para tomar mejores decisiones.
+      </p>
+    </div>
+    <div *ngIf="currentInfoSlide === 2">
+      <h2>Inventario</h2>
+      <p class="slogan">Control total de inventario</p>
+      <p class="description">
+        Mantén actualizado el stock de tus productos y recibe alertas automáticas cuando un artículo esté por agotarse.
+      </p>
+    </div>
+    <div *ngIf="currentInfoSlide === 3">
+      <h2>Reportes</h2>
+      <p class="slogan">Reportes detallados</p>
+      <p class="description">
+        Analiza el desempeño de tu negocio con reportes gráficos y personalizados.
+      </p>
+    </div>
+  </div>
+
+  <div class="carousel-buttons">
+    <button [class.active]="currentInfoSlide === 0" (click)="setInfoSlide(0)">1</button>
+    <button [class.active]="currentInfoSlide === 1" (click)="setInfoSlide(1)">2</button>
+    <button [class.active]="currentInfoSlide === 2" (click)="setInfoSlide(2)">3</button>
+    <button [class.active]="currentInfoSlide === 3" (click)="setInfoSlide(3)">4</button>
+  </div>
+</div>
+    <!-- Lado derecho: formulario de acceso -->
+    <div class="form-side">
+      <h3 class="fw-bold text-success text-center">BIENVENIDO A GASBACORB</h3>
+      <p class="text-muted text-center">Inicia sesión para gestionar tu sistema</p>
+
+      <form (ngSubmit)="formSubmit()">
+        <!-- Botones para entrar con Google y Facebook -->
+  <button type="button" class="btn-google">Entrar con Google</button>
+  <button type="button" class="btn-facebook">Entrar con Facebook</button>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Usuario</mat-label>
+          <input
+            matInput
+            [(ngModel)]="loginData.username"
+            required
+            name="username"
+            placeholder="Digite su nombre de usuario"
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Contraseña</mat-label>
+          <input
+            matInput
+            [(ngModel)]="loginData.password"
+            required
+            name="password"
+            [type]="hide ? 'password' : 'text'"
+            placeholder="Digite su contraseña"
+          />
+          <button
+            type="button"
+            mat-icon-button
+            matSuffix
+            (click)="hide = !hide"
+          >
+            <mat-icon>{{ hide ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          <mat-hint><a routerLink="/enviar-correo">¿Olvidaste tu contraseña?</a></mat-hint>
+        </mat-form-field>
+
+        <div class="container">
+          <button mat-raised-button color="primary" type="submit">Iniciar sesión</button>
+        </div>
+      </form>
+
+      <div class="text-center mt-3">
+        <small class="text-muted">¿Olvidaste tu contraseña? Contacta al administrador</small>
+      </div>
+    </div>
+  </div>
+
+
+</div>

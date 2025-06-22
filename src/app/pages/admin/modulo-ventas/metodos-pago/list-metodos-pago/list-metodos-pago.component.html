@@ -1,0 +1,77 @@
+<div class="contenedor">
+   <div class="barra">
+    <app-barra-lateral></app-barra-lateral>
+
+  </div>
+
+  <div class="encabezado">
+    <app-header></app-header>
+              <hr class="border-secondary mb-4" />
+
+<div class="container">
+  <div class="header">
+    <div>
+      <h2>Métodos de pago</h2>
+      <span class="subtitle"> {{ metodos.length }} Métodos registrados</span>
+    </div>
+    <div class="search-sort">
+      <input type="text" placeholder="Buscar método"
+       class="search-input"
+       [(ngModel)]="filtroBusqueda"
+       (ngModelChange)="buscarMetodosPago()" />
+   <button (click)="navegarYMostrarModal()" class="btn-agregar">
+  <i class="fas fa-plus"></i> Método
+</button>
+
+    </div>
+  </div>
+
+  <table class="customer-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Nombre</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let metodo of metodosFiltrados; let i = index">
+        <td>{{ (paginaActual - 1) * elementosPorPagina + i + 1 }}</td>
+        <td>{{ metodo.nombre }}</td>
+        <td>
+    <button (click)="editarMetodo(metodo.idMetodoPago)" class="btn-editar">
+  <i class="fas fa-edit"></i>
+</button>
+          <button (click)="eliminarMetodo(metodo.idMetodoPago)" class="btn-eliminar">
+            <i class="fas fa-trash-alt"></i>
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div *ngIf="totalPaginas > 1" class="pagination">
+    <button (click)="cambiarPagina(paginaActual - 1)" [disabled]="paginaActual === 1">&lt;</button>
+    <span>Página {{ paginaActual }} de {{ totalPaginas }}</span>
+    <button (click)="cambiarPagina(paginaActual + 1)" [disabled]="paginaActual === totalPaginas">&gt;</button>
+  </div>
+
+  <!-- Modal -->
+  <div *ngIf="mostrarModal" class="modal">
+    <div class="modal-content">
+      <h2>Método de Pago</h2>
+      <form (ngSubmit)="formSubmit()" #formulario="ngForm">
+        <input type="text" [(ngModel)]="metodo.nombre" name="nombre" required placeholder="Nombre del método" />
+        <input type="text" [(ngModel)]="metodo.descripcion" name="descripcion" placeholder="Descripción" />
+        <button type="submit" [disabled]="formulario.invalid">Guardar</button>
+        <button type="submit" class="btn btn" (click)="cerrarModal()">Cerrar</button>
+
+      </form>
+    </div>
+  </div>
+</div>
+  </div>
+
+</div>
+
+

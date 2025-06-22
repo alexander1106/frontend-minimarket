@@ -16,20 +16,20 @@ export class MetodoPagoService {
   }
 
   public buscarMetodoPagoId(id:any){
-    return this.http.get(`${baseUrl}/metodo-pago/${id}`);
+    return this.http.get(`${baseUrl}/metodos-pago/${id}`);
   }
 
   public registrarMetodoPago(metodoPago: any) {
-    return this.http.post(`${baseUrl}/metodo-pago`, metodoPago );
+    return this.http.post(`${baseUrl}/metodos-pago`, metodoPago );
   }
 
 
  // Eliminar un permiso por ID
   public eliminarMetodoPago(id: number): Observable<any> {
-    return this.http.delete(`${baseUrl}/metodo-pago/${id}`,{ responseType: 'text' });
+    return this.http.delete(`${baseUrl}/metodos-pago/${id}`,{ responseType: 'text' });
   }
   // Editar un permiso existente
   public editarMetodoPago(metodoPago: any){
-    return this.http.put(`${baseUrl}/metodo-pago"/`, metodoPago);
+    return this.http.put(`${baseUrl}/metodos-pago"/`, metodoPago);
   }
 }

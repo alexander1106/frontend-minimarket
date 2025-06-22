@@ -1,0 +1,127 @@
+
+.contenedor {
+  display: flex;
+  background-color: rgba(255, 255, 255, 0.797);
+}
+
+.encabezado {
+  width:83% ;
+}
+.barra {
+width: 17%;
+  flex: 1; /* Ocupa el resto del espacio */
+  background-color: #ddd;
+}
+.border-secondary{
+  border: 1px solid #510e0e;
+  height: 1px !important;
+  margin: auto;
+  width: 98%;
+}
+
+.container {
+  padding: 32px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f9fafb;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  max-width: 97%;
+  margin: auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.header h2 {
+  margin: 0;
+  font-size: 24px;
+  color: #111827;
+}
+
+.subtitle {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.search-sort {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.search-input {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  outline: none;
+  transition: border 0.2s;
+}
+
+.search-input:focus {
+  border-color: #6366f1;
+}
+
+.btn-agregar {
+  background-color: #6366f1;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-agregar:hover {
+  background-color: #4f46e5;
+}
+
+
+
+.customer-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.customer-table th, .customer-table td {
+  padding: 16px 20px;
+  text-align: left;
+  font-size: 15px;
+}
+
+.customer-table thead {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.customer-table tbody tr {
+  border-bottom: 1px solid #e5e7eb;
+  transition: background 0.2s;
+}
+
+.customer-table tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+.btn-editar, .btn-eliminar {
+  border: none;
+  background: none;
+  font-size: 18px;
+  cursor: pointer;
+  margin-right: 8px;
+}
+
+.btn-editar {
+  color: #3b82f6;
+}
+
+.btn-eliminar {
+  color: #ef4444;
+}

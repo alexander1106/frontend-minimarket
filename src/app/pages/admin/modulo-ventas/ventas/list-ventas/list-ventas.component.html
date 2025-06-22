@@ -1,0 +1,71 @@
+<div class="contenedor">
+   <div class="barra">
+    <app-barra-lateral></app-barra-lateral>
+
+  </div>
+
+  <div class="encabezado">
+    <app-header></app-header>
+              <hr class="border-secondary mb-4" />
+
+<div class="container">
+  <div class="header">
+    <div>
+      <h2>Ventas </h2>
+      <span class="subtitle">  Ventas registrados</span>
+    </div>
+    <div class="search-sort">
+      <input type="text" placeholder="Buscar venta"
+       class="search-input"
+        />
+   <button class="btn-agregar" [routerLink]="['/admin/add-venta']">
+  <i class="fas fa-plus"></i> Venta
+</button>
+
+    </div>
+  </div>
+
+
+ <table class="customer-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Fecha</th>
+        <th>Tipo documento</th>
+        <th>Numero</th>
+        <th>Cliente</th>
+        <th>Empleado</th>
+        <th>Tipo pago</th>
+        <th>Total</th>
+                <th>Acciones</th>
+
+      </tr>
+    </thead>
+    <tbody>
+  <tr *ngFor="let venta of ventas; let i = index">
+    <td>{{ i + 1 }}</td> <!-- Número de fila -->
+    <td>{{ venta.fecha_venta }}</td>
+    <td>{{ venta.tipo_comprobante }}</td>
+    <td>{{ venta.nro_comrprobante }}</td>
+<td>{{ venta.cliente | json }}</td>
+    <td>{{ venta.empleado?.nombre || '---' }}</td> <!-- Empleado si existe -->
+    <td>{{ venta.tipo_pago || '---' }}</td> <!-- Tipo pago si existe -->
+    <td>{{ venta.total_venta }}</td>
+
+        <td>
+    <button class="btn-editar">
+  <i class="fas fa-edit"></i>
+</button>
+          <button  class="btn-eliminar">
+            <i class="fas fa-trash-alt"></i>
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+  </div>
+
+</div>
+
+

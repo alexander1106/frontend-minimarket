@@ -1,7 +1,6 @@
 .custom-sidebar {
   background-color: black;
   font-size: 0.95rem;
-  color: white;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   display: flex;
   flex-direction: column;
@@ -15,7 +14,12 @@
   gap: 0.75rem;
   margin-bottom: 2rem;
 }
-
+.contenedor-img{
+  background-color: #444 !important;
+  height: 100px;
+  width: 100px;
+  color: #0b5ed7 !important;
+}
 .custom-sidebar .logo i {
   font-size: 1.5rem;
   color: #007bff;

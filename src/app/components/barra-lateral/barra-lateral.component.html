@@ -31,7 +31,7 @@
     <!-- INVENTARIO -->
     <li class="nav-item">
       <a class="nav-link custom-link d-flex justify-content-between align-items-center"
-         (click)="toggleSubmenu('inventario')" href="#">
+         (click)="toggleSubmenu('inventario')">
         <span><i class="fas fa-boxes me-2"></i> Inventario</span>
         <i class="{{ activeMenu === 'inventario' ? 'fas fa-chevron-up' : 'fas fa-chevron-down' }}"></i>
       </a>
@@ -44,7 +44,7 @@
     <!-- ALMACENES -->
     <li class="nav-item">
       <a class="nav-link custom-link d-flex justify-content-between align-items-center"
-         (click)="toggleSubmenu('almacenes')" href="#">
+         (click)="toggleSubmenu('almacenes')">
         <span><i class="fas fa-warehouse me-2"></i> Almacenes</span>
         <i class="{{ activeMenu === 'almacenes' ? 'fas fa-chevron-up' : 'fas fa-chevron-down' }}"></i>
       </a>
@@ -72,7 +72,7 @@
     <!-- COMPRAS -->
     <li class="nav-item">
       <a class="nav-link custom-link d-flex justify-content-between align-items-center"
-         (click)="toggleSubmenu('compras')" href="#">
+         (click)="toggleSubmenu('compras')" >
         <span><i class="fas fa-shopping-cart me-2"></i> Compras</span>
         <i class="{{ activeMenu === 'compras' ? 'fas fa-chevron-up' : 'fas fa-chevron-down' }}"></i>
       </a>
@@ -81,19 +81,22 @@
         <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Detalles compras</a></li>
         <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Devoluciones</a></li>
         <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Proveedores</a></li>
+
       </ul>
     </li>
 
     <!-- VENTAS -->
     <li class="nav-item">
       <a class="nav-link custom-link d-flex justify-content-between align-items-center"
-         (click)="toggleSubmenu('ventas')" href="#">
+         (click)="toggleSubmenu('ventas')">
         <span><i class="fas fa-cash-register me-2"></i> Ventas</span>
         <i class="{{ activeMenu === 'ventas' ? 'fas fa-chevron-up' : 'fas fa-chevron-down' }}"></i>
       </a>
       <ul class="nav flex-column ms-4 mt-2" *ngIf="activeMenu === 'ventas'">
         <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/list-venta']">Ventas</a></li>
         <li class="nav-item"><a class="nav-link text-white-50 small" >Detalles ventas</a></li>
+                <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/list-clientes']" > Clientes</a></li>
+
         <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/metodos-pago']" > Métodos de pago</a></li>
       </ul>
     </li>
@@ -101,7 +104,7 @@
     <!-- DELIVERY -->
     <li class="nav-item">
       <a class="nav-link custom-link d-flex justify-content-between align-items-center"
-         (click)="toggleSubmenu('delivery')" href="#">
+         (click)="toggleSubmenu('delivery')" >
         <span><i class="fas fa-truck me-2"></i> Delivery</span>
         <i class="{{ activeMenu === 'delivery' ? 'fas fa-chevron-up' : 'fas fa-chevron-down' }}"></i>
       </a>
@@ -142,7 +145,7 @@
 
   <!-- Logout -->
   <div class="mt-auto pt-4">
-    <button class="btn btn-outline-light w-100 d-flex align-items-center justify-content-center gap-2 shadow-sm">
+    <button class="btn btn-outline-light w-100 d-flex align-items-center justify-content-center gap-2 shadow-sm" (click)="cerrarSesion()">
       <i class="fas fa-sign-out-alt"></i> Logout
     </button>
   </div>

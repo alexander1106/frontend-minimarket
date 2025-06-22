@@ -1,25 +1,32 @@
 import { Routes } from '@angular/router';
-import { DashboardComponent } from './pages/dashboard/dashboard.component';
-import { AuthGuard } from './guards/AuthGuard';
-import { ListMetodosPagoComponent } from './pages/metodos-pago/list-metodos-pago/list-metodos-pago.component';
-import { AddMetodoPagoComponent } from './pages/metodos-pago/add-metodo-pago/add-metodo-pago.component';
-import { AddVentasComponent } from './pages/ventas/add-ventas/add-ventas.component';
-import { ListVentasComponent } from './pages/ventas/list-ventas/list-ventas.component';
+
+import { LoginComponent } from './pages/login/login.component';
+import { DashboardComponent } from './pages/admin/dashboard/dashboard.component';
+import { ListMetodosPagoComponent } from './pages/admin/modulo-ventas/metodos-pago/list-metodos-pago/list-metodos-pago.component';
+import { ListVentasComponent } from './pages/admin/modulo-ventas/ventas/list-ventas/list-ventas.component';
+import { AddVentasComponent } from './pages/admin/modulo-ventas/ventas/add-ventas/add-ventas.component';
+import { ListClientesComponent } from './pages/admin/modulo-ventas/clientes/list-clientes/list-clientes.component';
+import { AccessGuard } from './guards/AccessGuard';
+
 
 export const routes: Routes = [
-   {
-  path:'',
-  component:DashboardComponent
-    },
+  { path: 'login', component: LoginComponent, canActivate: [AccessGuard] },
+
   {
-  path:'admin/metodos-pago',
-  component:ListMetodosPagoComponent
-    },
-  { path: 'admin/add-metodos-pago', component: ListMetodosPagoComponent },
-    {   path: 'admin/edit-metodos-pago/:id', component: ListMetodosPagoComponent },
-        {   path: 'admin/list-venta', component: ListVentasComponent },
+    path: 'admin',
+    canActivate: [AccessGuard],
+    children: [
+      { path: '', component: DashboardComponent },
+      { path: 'metodos-pago', component: ListMetodosPagoComponent },
+      { path: 'add-metodos-pago', component: ListMetodosPagoComponent },
+      { path: 'edit-metodos-pago/:id', component: ListMetodosPagoComponent },
+      { path: 'list-venta', component: ListVentasComponent },
+      { path: 'add-venta', component: AddVentasComponent },
+      { path: 'list-clientes', component: ListClientesComponent },
+      {path: 'add-clientes',component: ListClientesComponent }
+    ]
+  },
 
-    {   path: 'admin/add-venta', component: AddVentasComponent },
-
-
+  { path: '', redirectTo: 'admin', pathMatch: 'full' },
+  { path: '**', redirectTo: 'admin' } // Wildcard para rutas no encontradas
 ];
