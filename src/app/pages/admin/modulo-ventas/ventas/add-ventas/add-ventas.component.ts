@@ -75,7 +75,7 @@ export class AddVentasComponent implements OnInit {
 
   get totalCompra(): number {
     return this.productosAgregados.reduce((total, item) =>
-      total + item.cantidad * item.costo_venta * (1 - item.descuento / 100), 0
+      total + item.cantidad * item.costoVenta * (1 - item.descuento / 100), 0
     );
   }
 }

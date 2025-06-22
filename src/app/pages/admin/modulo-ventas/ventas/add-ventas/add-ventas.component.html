@@ -57,9 +57,9 @@
               <tr *ngFor="let item of productosAgregados">
                 <td>{{ item.nombre }}</td>
                 <td>{{ item.cantidad }}</td>
-                <td>${{ item.costo_venta }}</td>
+                <td>${{ item.costoVenta }}</td>
                 <td>{{ item.descuento }}%</td>
-                <td>${{ (item.costo_venta * item.cantidad * (1 - item.descuento / 100)).toFixed(2) }}</td>
+                <td>${{ (item.costoVenta * item.cantidad * (1 - item.descuento / 100)).toFixed(2) }}</td>
               </tr>
               <tr *ngIf="productosAgregados.length === 0">
                 <td colspan="6" class="no-records">Sin registros de productos agregados</td>
@@ -98,10 +98,17 @@
               <span>Valor: 100.00</span>
             </div>
             <div class="summary-row total-compra">
-              <span>Total Compra:</span>
+              <span>Total venta:</span>
               <span class="total-amount">${{ totalCompra.toFixed(2) }}</span>
             </div>
+              <!-- Botón de Comprar -->
+            <div class="summary-row" style="text-align: center; margin-top: 1rem;">
+              <button  class="btn btn-success" style="width: 100%; padding: 0.75rem; font-size: 1.1rem;">
+                <i class="fas fa-shopping-cart"></i> Vender
+              </button>
+            </div>
           </div>
+
         </div>
       </div>
     </div>
