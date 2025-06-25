@@ -20,20 +20,18 @@ export class ClientesService {
   }
 
   public registrarCliente(cliente: any) {
-    return this.http.post(`${baseUrl}/cliente`, cliente );
+    return this.http.post(`${baseUrl}/clientes`, cliente );
   }
 
  // Eliminar un permiso por ID
   public eliminarCliente(id: number): Observable<any> {
-    return this.http.delete(`${baseUrl}/cliente/${id}`,{ responseType: 'text' });
+    return this.http.delete(`${baseUrl}/clientes/${id}`,{ responseType: 'text' });
   }
   // Editar un permiso existente
   public editarCliente(cliente: any){
     return this.http.put(`${baseUrl}/clientes"/`, cliente);
   }
-
     public consultarReniec(dni:any){
     return this.http.get(`${baseUrl}/clientes/reniec/${dni}`);
   }
-
 }

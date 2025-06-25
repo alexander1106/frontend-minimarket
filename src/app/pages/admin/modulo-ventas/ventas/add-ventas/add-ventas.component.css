@@ -38,6 +38,7 @@ body {
 .header-left {
   display: flex;
   align-items: center;
+  background-color: white;
   border: 1px solid #ddd;
   border-radius: 5px;
   padding: 5px 10px;
@@ -45,6 +46,7 @@ body {
 
 .header-left .icon {
   width: 20px;
+  margin-top: 5px !important;
   height: 20px;
   margin-right: 10px;
 }
@@ -182,8 +184,8 @@ body {
 
 /* Right Panel - Order Summary */
 .right-panel {
-  flex: 1; /* Takes less space */
   background-color: #fff;
+  width: 38vw !important;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   padding: 20px;
@@ -248,7 +250,12 @@ body {
   font-size: 15px;
   color: #333;
 }
-
+.btn-success{
+  width: 13vw !important;
+}
+.btn-primary{
+  width: 9vw !important;
+}
 .summary-row input[type="checkbox"] {
   margin-right: 8px;
 }
@@ -327,4 +334,72 @@ body {
   width: 24px;
   height: 24px;
   object-fit: contain;
+}
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-dialog {
+  background: white;
+  width: 700px;
+  border-radius: 6px;
+  justify-content: center;
+  text-align: center;
+  overflow: hidden;
+  box-shadow: 0 0 15px rgba(0,0,0,0.3);
+}
+
+.modal-header {
+  display: flex;
+  padding: 15px 30px ;
+  justify-content: space-between;
+  align-items: center;
+  background: #000000;
+  color: white;
+  font-size: 1.25rem;
+  margin-bottom: 20px;
+}
+
+.close-btn {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.modal-body .row {
+    padding:0px 20px;
+
+  display: flex;
+  gap: 1rem;
+}
+
+.modal-footer {
+  margin: 20px;
+  text-align: right;
+}
+
+
+
+.btn-secondary {
+  background-color: #6c757d;
+  border: none;
+}
+.selector{
+  width:90vw !important;
+}
+#cliente{
+    width:33vw !important;
+    margin-right: -30px !important;
+
 }

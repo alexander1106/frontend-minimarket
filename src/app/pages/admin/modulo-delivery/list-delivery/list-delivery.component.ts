@@ -1,42 +1,43 @@
-import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
-import Swal from 'sweetalert2';
+import { Component } from '@angular/core';
+import { HeaderComponent } from '../../../../components/header/header.component';
+import { BarraLateralComponent } from '../../../../components/barra-lateral/barra-lateral.component';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
-import { HeaderComponent } from '../../../../../components/header/header.component';
-import { BarraLateralComponent } from '../../../../../components/barra-lateral/barra-lateral.component';
-import { ClientesService } from '../../../../../service/clientes.service';
+import { AddClienteComponent } from '../../modulo-ventas/clientes/add-cliente/add-cliente.component';
+import { ClientesService } from '../../../../service/clientes.service';
+import { Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
-import { AddClienteComponent } from '../add-cliente/add-cliente.component';
+import Swal from 'sweetalert2';
+import { DeliveryService } from '../../../../service/delivery.service';
 
 @Component({
-  selector: 'app-list-clientes',
-  standalone: true,
+  selector: 'app-list-delivery',
   imports: [HeaderComponent, BarraLateralComponent, FormsModule, CommonModule, HttpClientModule],
-  templateUrl: './list-clientes.component.html',
-  styleUrl: './list-clientes.component.css'
+  templateUrl: './list-delivery.component.html',
+  styleUrl: './list-delivery.component.css'
 })
-export class ListClientesComponent implements OnInit {
-  clientes: any[] = [];
+export class ListDeliveryComponent {
+deliverys: any[] = [];
   clientesFiltrados: any[] = [];
   filtroBusqueda: string = '';
   paginaActual: number = 1;
   elementosPorPagina: number = 5;
 
   constructor(
-    private clienteService: ClientesService,
+    private deliveryService: DeliveryService,
     private router: Router,
     private dialog: MatDialog
   ) {}
 
   ngOnInit() {
-    this.listarClientes();
+    this.listarDelivery();
 
     // Abrir modal si entramos directamente a /admin/add-clientes
     if (this.router.url.endsWith('/add-clientes')) {
       this.abrirModalNuevoCliente();
     }
+    console.log("sd" +this.listarDelivery)
   }
 
   abrirModalNuevoCliente() {
@@ -47,7 +48,7 @@ export class ListClientesComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(result => {
       if (result === 'guardado') {
-        this.listarClientes();
+        this.listarDelivery();
       }
 
       // Asegura que el modal se cierre completamente antes de redirigir
@@ -69,11 +70,11 @@ eliminarCliente(id: number) {
     cancelButtonText: 'Cancelar'
   }).then((result) => {
     if (result.isConfirmed) {
-      this.clienteService.eliminarCliente(id).subscribe({
+      this.deliveryService.eliminarDelivery(id).subscribe({
         next: () => {
           Swal.fire({
             title: 'Eliminado',
-            text: 'El cliente ha sido eliminado',
+            text: 'El delivery a sido eliminado ha sido eliminado',
             icon: 'success',
             timer: 1500,
             showConfirmButton: false
@@ -91,11 +92,11 @@ eliminarCliente(id: number) {
 }
 
 
-  listarClientes() {
-    this.clienteService.listarClientes().subscribe({
+  listarDelivery() {
+    this.deliveryService.listarDelivery().subscribe({
       next: (data: any) => {
-        this.clientes = data || [];
-        this.buscarCliente();
+        this.deliverys = data || [];
+        this.buscarDelivery();
       },
       error: (err) => {
         Swal.fire("Error", "No se pudieron cargar los clientes", "error");
@@ -104,13 +105,13 @@ eliminarCliente(id: number) {
     });
   }
 
-  buscarCliente() {
+  buscarDelivery() {
     const filtro = this.filtroBusqueda.trim().toLowerCase();
     this.paginaActual = 1;
 
-    let coincidencias = this.clientes;
+    let coincidencias = this.deliverys;
     if (filtro !== '') {
-      coincidencias = this.clientes.filter(m =>
+      coincidencias = this.deliverys.filter(m =>
         (m?.nombre?.toLowerCase()?.includes(filtro) || false) ||
         (m?.ruc?.toLowerCase()?.includes(filtro) || false) ||
         (m?.id_cliente?.toString()?.includes(filtro) || false)
@@ -137,9 +138,9 @@ eliminarCliente(id: number) {
   actualizarPaginaFiltrada() {
     const filtro = this.filtroBusqueda.trim().toLowerCase();
 
-    let coincidencias = this.clientes;
+    let coincidencias = this.deliverys;
     if (filtro !== '') {
-      coincidencias = this.clientes.filter(m =>
+      coincidencias = this.deliverys.filter(m =>
         (m?.nombre?.toLowerCase()?.includes(filtro) || false) ||
         (m?.descripcion?.toLowerCase()?.includes(filtro) || false) ||
         (m?.id_metodo?.toString()?.includes(filtro) || false)
@@ -155,9 +156,9 @@ eliminarCliente(id: number) {
   get totalPaginas(): number {
     const filtro = this.filtroBusqueda.trim().toLowerCase();
 
-    let coincidencias = this.clientes;
+    let coincidencias = this.deliverys;
     if (filtro !== '') {
-      coincidencias = this.clientes.filter(m =>
+      coincidencias = this.deliverys.filter(m =>
         (m?.nombre?.toLowerCase()?.includes(filtro) || false) ||
         (m?.descripcion?.toLowerCase()?.includes(filtro) || false) ||
         (m?.id_metodo?.toString()?.includes(filtro) || false)

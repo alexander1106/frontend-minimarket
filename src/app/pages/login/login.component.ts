@@ -26,6 +26,9 @@ import { LoginService } from '../../service/login.service';
   ],
 })
 export class LoginComponent implements OnInit {
+guardarCliente() {
+throw new Error('Method not implemented.');
+}
   loginData = {
     username: '',
     password: '',

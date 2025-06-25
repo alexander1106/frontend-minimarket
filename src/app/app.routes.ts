@@ -7,6 +7,7 @@ import { ListVentasComponent } from './pages/admin/modulo-ventas/ventas/list-ven
 import { AddVentasComponent } from './pages/admin/modulo-ventas/ventas/add-ventas/add-ventas.component';
 import { ListClientesComponent } from './pages/admin/modulo-ventas/clientes/list-clientes/list-clientes.component';
 import { AccessGuard } from './guards/AccessGuard';
+import { ListDeliveryComponent } from './pages/admin/modulo-delivery/list-delivery/list-delivery.component';
 
 
 export const routes: Routes = [
@@ -23,7 +24,12 @@ export const routes: Routes = [
       { path: 'list-venta', component: ListVentasComponent },
       { path: 'add-venta', component: AddVentasComponent },
       { path: 'list-clientes', component: ListClientesComponent },
-      {path: 'add-clientes',component: ListClientesComponent }
+      {path: 'add-clientes',component: ListClientesComponent },
+      {path: 'add-proveedores',component: ListClientesComponent },
+      {path: 'list-delivery',component: ListDeliveryComponent },
+
+
+
     ]
   },
 

@@ -95,6 +95,8 @@
       <ul class="nav flex-column ms-4 mt-2" *ngIf="activeMenu === 'ventas'">
         <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/list-venta']">Ventas</a></li>
         <li class="nav-item"><a class="nav-link text-white-50 small" >Detalles ventas</a></li>
+                <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/metodos-pago']" > Cotizaciones</a></li>
+
                 <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/list-clientes']" > Clientes</a></li>
 
         <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/metodos-pago']" > Métodos de pago</a></li>
@@ -109,7 +111,7 @@
         <i class="{{ activeMenu === 'delivery' ? 'fas fa-chevron-up' : 'fas fa-chevron-down' }}"></i>
       </a>
       <ul class="nav flex-column ms-4 mt-2" *ngIf="activeMenu === 'delivery'">
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Delivery</a></li>
+        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/list-delivery']">Delivery</a></li>
         <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Movimientos</a></li>
       </ul>
     </li>
