@@ -1,0 +1,75 @@
+<div class="form-proveedores">
+  <h2 class="mb-4">{{ isEditMode ? 'Editar' : 'Nuevo' }} Proveedor</h2>
+
+  <form (ngSubmit)="guardarProveedor()" #proveedorForm="ngForm" class="needs-validation" novalidate>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>Nombre o Razón Social</mat-label>
+          <input matInput name="nombre" [(ngModel)]="proveedor.nombre" required #nombre="ngModel" />
+          <mat-error *ngIf="nombre.invalid && nombre.touched">El nombre es requerido</mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="col-md-6">
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>RUC</mat-label>
+          <input 
+            matInput 
+            name="ruc" 
+            [(ngModel)]="proveedor.ruc" 
+            required 
+            #ruc="ngModel"
+            (input)="onRucChange($event)"
+            pattern="[0-9]{11}"
+            maxlength="11"
+            />
+          <mat-error *ngIf="ruc.invalid && ruc.touched">
+            {{ ruc.errors?.['required'] ? 'El RUC es requerido' : 'RUC debe tener 11 dígitos' }}
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="col-md-6">
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>Régimen</mat-label>
+          <mat-select name="regimen" [(ngModel)]="proveedor.regimen" required #regimen="ngModel">
+            <mat-option value="Régimen General">Régimen General</mat-option>
+            <mat-option value="Régimen Especial">Régimen Especial</mat-option>
+            <mat-option value="NRUS">NRUS</mat-option>
+          </mat-select>
+          <mat-error *ngIf="regimen.invalid && regimen.touched">Seleccione un régimen</mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="col-md-6">
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>Teléfono</mat-label>
+          <input matInput name="telefono" [(ngModel)]="proveedor.telefono" type="tel" />
+        </mat-form-field>
+      </div>
+
+      <div class="col-md-6">
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>Email</mat-label>
+          <input matInput name="gmail" [(ngModel)]="proveedor.gmail" type="email" #gmail="ngModel" />
+          <mat-error *ngIf="gmail.invalid && gmail.touched">Email inválido</mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="col-md-6">
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>Dirección</mat-label>
+          <input matInput name="direccion" [(ngModel)]="proveedor.direccion" />
+        </mat-form-field>
+      </div>
+    </div>
+
+    <div class="mt-4 d-flex justify-content-end gap-3">
+      <button mat-raised-button color="primary" type="submit" [disabled]="proveedorForm.invalid">
+        {{ isEditMode ? 'Actualizar' : 'Guardar' }}
+      </button>
+      <button mat-stroked-button color="warn" type="button" (click)="cancelar()">Cancelar</button>
+    </div>
+  </form>
+</div>

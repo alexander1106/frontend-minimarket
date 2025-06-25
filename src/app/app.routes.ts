@@ -8,6 +8,9 @@ import { AddVentasComponent } from './pages/admin/modulo-ventas/ventas/add-venta
 import { ListClientesComponent } from './pages/admin/modulo-ventas/clientes/list-clientes/list-clientes.component';
 import { AccessGuard } from './guards/AccessGuard';
 
+import { ListProveedoresComponent } from './pages/admin/modulo-compras/proveedores/list-proveedores/list-proveedores.component';
+import { AddProveedorComponent } from './pages/admin/modulo-compras/proveedores/add-proveedor/add-proveedor.component';
+
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent, canActivate: [AccessGuard] },
@@ -23,7 +26,10 @@ export const routes: Routes = [
       { path: 'list-venta', component: ListVentasComponent },
       { path: 'add-venta', component: AddVentasComponent },
       { path: 'list-clientes', component: ListClientesComponent },
-      {path: 'add-clientes',component: ListClientesComponent }
+      {path: 'add-clientes',component: ListClientesComponent },
+
+      { path: 'list-proveedores', component: ListProveedoresComponent },
+      { path: 'add-proveedores', component: ListProveedoresComponent }, 
     ]
   },
 
