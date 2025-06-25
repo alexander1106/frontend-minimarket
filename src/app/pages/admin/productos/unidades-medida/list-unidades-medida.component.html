@@ -1,0 +1,97 @@
+<div class="contenedor">
+  <div class="barra"><app-barra-lateral></app-barra-lateral></div>
+
+  <div class="encabezado">
+    <app-header></app-header>
+    <hr class="border-secondary mb-4" />
+
+    <div class="container">
+      <div class="header">
+        <div>
+          <h2>Unidades de Medida</h2>
+          <span class="subtitle">{{ unidades.length }} Registradas</span>
+        </div>
+        <div class="search-sort">
+          <input
+            type="text"
+            placeholder="Buscar unidad"
+            class="search-input"
+            [(ngModel)]="filtro"
+            (ngModelChange)="aplicarFiltro()"
+          />
+          <button (click)="navegarYMostrarModal()" class="btn-agregar">
+            <i class="fas fa-plus"></i> Unidad
+          </button>
+        </div>
+      </div>
+
+      <table class="customer-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nombre</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let u of unidadesFiltradas; let i = index">
+            <td>{{ (paginaActual - 1) * elementosPorPagina + i + 1 }}</td>
+            <td>{{ u.nombre }}</td>
+            <td>
+              <button (click)="cargarParaEditar(u.idunidadmedida)" class="btn-editar">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button (click)="eliminarUnidad(u.idunidadmedida)" class="btn-eliminar">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <nav aria-label="Paginación" class="mt-3">
+        <ul class="pagination justify-content-center">
+          <li
+            class="page-item"
+            [class.disabled]="paginaActual === 1"
+            (click)="cambiarPagina(paginaActual - 1)">
+            <a class="page-link" href="javascript:void(0)">Anterior</a>
+          </li>
+
+          <li
+            class="page-item"
+            *ngFor="let pagina of paginasArray"
+            [class.active]="pagina === paginaActual"
+            (click)="cambiarPagina(pagina)">
+            <a class="page-link" href="javascript:void(0)">{{ pagina }}</a>
+          </li>
+
+          <li
+            class="page-item"
+            [class.disabled]="paginaActual === totalPaginas"
+            (click)="cambiarPagina(paginaActual + 1)">
+            <a class="page-link" href="javascript:void(0)">Siguiente</a>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Modal -->
+      <div *ngIf="mostrarModal" class="modal">
+        <div class="modal-content">
+          <h2>Unidad de Medida</h2>
+          <form (ngSubmit)="formSubmit()" #formulario="ngForm">
+            <input
+              type="text"
+              [(ngModel)]="unidad.nombre"
+              name="nombre"
+              required
+              placeholder="Nombre de la unidad"
+            />
+            <button type="submit" [disabled]="formulario.invalid">Guardar</button>
+            <button type="button" (click)="cerrarModal()">Cerrar</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

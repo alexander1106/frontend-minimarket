@@ -160,9 +160,6 @@ paginasArray(): number[] {
   }
 
 
-
-
-
   eliminarMetodo(id: number) {
       if (!id) {
     Swal.fire("Error", "ID de método no válido", "error");

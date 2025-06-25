@@ -8,6 +8,7 @@ import { BarraLateralComponent } from '../../../../../components/barra-lateral/b
 import { HeaderComponent } from '../../../../../components/header/header.component';
 import { MetodoPagoService } from '../../../../../service/metodo-pago.service';
 
+
 @Component({
   selector: 'app-list-metodos-pago',
   standalone: true,

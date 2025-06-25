@@ -10,19 +10,19 @@
     <div class="container">
       <div class="header">
         <div>
-          <h2>Clientes</h2>
-          <span class="subtitle">{{ clientes.length }} Clientes registrados</span>
+          <h2>Tipo de Producto</h2>
+          <span class="subtitle">{{ tipos.length }} Registrados</span>
         </div>
         <div class="search-sort">
           <input
             type="text"
-            placeholder="Buscar cliente"
+            placeholder="Buscar tipo"
             class="search-input"
-            [(ngModel)]="filtroBusqueda"
-            (ngModelChange)="buscarCliente()"
+            [(ngModel)]="filtro"
+            (ngModelChange)="aplicarFiltro()"
           />
-          <button class="btn-agregar" (click)="navegarYMostrarModal()">
-            <i class="fas fa-plus"></i> Cliente
+          <button (click)="abrirModal()" class="btn-agregar">
+            <i class="fas fa-plus"></i> Tipo
           </button>
         </div>
       </div>
@@ -31,29 +31,19 @@
         <thead>
           <tr>
             <th>#</th>
-            <th>Nombres</th>
-            <th>Apellidos</th>
-            <th>Telefono</th>
-            <th>Email</th>
-            <th>Documento</th>
-            <th>Nro documento</th>
+            <th>Nombre</th>
             <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let cliente of clientesFiltrados; let i = index">
+          <tr *ngFor="let t of tiposFiltrados; let i = index">
             <td>{{ (paginaActual - 1) * elementosPorPagina + i + 1 }}</td>
-            <td>{{ cliente.nombre }}</td>
-            <td>{{ cliente.apellidos }}</td>
-            <td>{{ cliente.telefono }}</td>
-            <td>{{ cliente.email }}</td>
-            <td>{{ cliente.tipoDocumento }}</td>
-            <td>{{ cliente.documento }}</td>
+            <td>{{ t.nombre }}</td>
             <td>
-              <button class="btn-editar">
+              <button (click)="abrirModal(t)" class="btn-editar">
                 <i class="fas fa-edit"></i>
               </button>
-              <button (click)="eliminarMetodo(cliente.idCliente)" class="btn-eliminar">
+              <button (click)="eliminar(t.idtipoproducto)" class="btn-eliminar">
                 <i class="fas fa-trash-alt"></i>
               </button>
             </td>
@@ -61,7 +51,7 @@
         </tbody>
       </table>
 
-  <nav aria-label="Paginación" class="mt-3">
+      <nav aria-label="Paginación" class="mt-3">
   <ul class="pagination justify-content-center">
     <li
       class="page-item"
@@ -72,7 +62,7 @@
 
     <li
       class="page-item"
-      *ngFor="let pagina of paginasArray()"
+      *ngFor="let pagina of paginasArray"
       [class.active]="pagina === paginaActual"
       (click)="cambiarPagina(pagina)">
       <a class="page-link" href="javascript:void(0)">{{ pagina }}</a>
@@ -86,6 +76,24 @@
     </li>
   </ul>
 </nav>
+
+      <!-- Modal -->
+      <div *ngIf="mostrarModal" class="modal">
+        <div class="modal-content">
+          <h2>Tipo de Producto</h2>
+          <form (ngSubmit)="formSubmit()" #formulario="ngForm">
+            <input
+              type="text"
+              [(ngModel)]="tipo.nombre"
+              name="nombre"
+              required
+              placeholder="Nombre del tipo"
+            />
+            <button type="submit" [disabled]="formulario.invalid">Guardar</button>
+            <button type="button" (click)="cerrarModal()">Cerrar</button>
+          </form>
+        </div>
+      </div>
 
     </div>
   </div>
