@@ -7,6 +7,7 @@ import { ListVentasComponent } from './pages/admin/modulo-ventas/ventas/list-ven
 import { AddVentasComponent } from './pages/admin/modulo-ventas/ventas/add-ventas/add-ventas.component';
 import { ListClientesComponent } from './pages/admin/modulo-ventas/clientes/list-clientes/list-clientes.component';
 import { AccessGuard } from './guards/AccessGuard';
+import { ListDeliveryComponent } from './pages/admin/modulo-delivery/list-delivery/list-delivery.component';
 
 import { ListProveedoresComponent } from './pages/admin/modulo-compras/proveedores/list-proveedores/list-proveedores.component';
 import { AddProveedorComponent } from './pages/admin/modulo-compras/proveedores/add-proveedor/add-proveedor.component';
@@ -28,8 +29,15 @@ export const routes: Routes = [
       { path: 'list-clientes', component: ListClientesComponent },
       {path: 'add-clientes',component: ListClientesComponent },
 
+
       { path: 'list-proveedores', component: ListProveedoresComponent },
       { path: 'add-proveedores', component: ListProveedoresComponent }, 
+
+      {path: 'add-proveedores',component: ListClientesComponent },
+      {path: 'list-delivery',component: ListDeliveryComponent },
+
+
+
     ]
   },
 

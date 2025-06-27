@@ -9,6 +9,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatOptionModule } from '@angular/material/core';
 import { MatButtonModule } from '@angular/material/button';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-add-cliente',
@@ -39,24 +40,25 @@ export class AddClienteComponent {
   constructor(
     private dialogRef: MatDialogRef<AddClienteComponent>,
     private clienteService: ClientesService,
+    private router:Router,
     @Inject(MAT_DIALOG_DATA) public data: any
   ) {}
 
-  guardarCliente() {
-    this.clienteService.registrarCliente(this.cliente).subscribe({
-      next: () => {
-        Swal.fire('Éxito', 'Cliente creado correctamente', 'success');
-        this.dialogRef.close('guardado');
-      },
-      error: () => {
-        Swal.fire('Error', 'No se pudo crear el cliente', 'error');
-      }
-    });
-  }
+guardarCliente() {
+  this.clienteService.registrarCliente(this.cliente).subscribe({
+    next: () => {
+      Swal.fire('Éxito', 'Cliente creado correctamente', 'success');
+      this.dialogRef.close('guardado');
+    },
+    error: () => {
+      Swal.fire('Error', 'No se pudo crear el cliente', 'error');
+    }
+  });
+}
 
-  cancelar() {
-    this.dialogRef.close();
-  }
+cancelar() {
+  this.dialogRef.close('cancelado');
+}
 
 onDocumentoChange(valor: string) {
   const tipo = this.cliente.tipoDocumento;
