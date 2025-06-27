@@ -8,6 +8,7 @@ import baseUrl from '../components/link';
 })
 export class ClientesService {
 
+
   constructor(private http: HttpClient) { }
 
   // Obtener todos los permisos
@@ -16,7 +17,7 @@ export class ClientesService {
   }
 
   public buscarClienteId(id:any){
-    return this.http.get(`${baseUrl}/cliente/${id}`);
+    return this.http.get(`${baseUrl}/clientes/${id}`);
   }
 
   public registrarCliente(cliente: any) {
@@ -29,7 +30,7 @@ export class ClientesService {
   }
   // Editar un permiso existente
   public editarCliente(cliente: any){
-    return this.http.put(`${baseUrl}/clientes"/`, cliente);
+    return this.http.put(`${baseUrl}/clientes`, cliente);
   }
     public consultarReniec(dni:any){
     return this.http.get(`${baseUrl}/clientes/reniec/${dni}`);
