@@ -29,15 +29,87 @@ export class ListClientesComponent implements OnInit {
     private router: Router,
     private dialog: MatDialog
   ) {}
+ngOnInit() {
+  this.listarClientes();
 
-  ngOnInit() {
-    this.listarClientes();
+  const url = this.router.url;
 
-    // Abrir modal si entramos directamente a /admin/add-clientes
-    if (this.router.url.endsWith('/add-clientes')) {
-      this.abrirModalNuevoCliente();
-    }
+  // Modal de agregar
+  if (url.endsWith('/add-clientes')) {
+    this.abrirModalNuevoCliente();
   }
+
+  // Modal de editar
+  const matchEdit = url.match(/edit-clientes\/(\d+)/);
+  if (matchEdit) {
+    const idCliente = Number(matchEdit[1]);
+    this.abrirModalEditarClientePorId(idCliente);
+  }
+
+  // Modal de ver
+  const matchView = url.match(/view-clientes\/(\d+)/);
+  if (matchView) {
+    const idCliente = Number(matchView[1]);
+    this.abrirModalVerClientePorId(idCliente);
+  }
+}
+navegarYVerCliente(idCliente: number) {
+  this.router.navigate(['/admin/view-clientes', idCliente]);
+}
+
+abrirModalVerClientePorId(id: number) {
+  this.clienteService.buscarClienteId(id).subscribe({
+    next: (cliente) => {
+      const dialogRef = this.dialog.open(AddClienteComponent, {
+        width: '1200px',
+        disableClose: true,
+        data: { cliente, modo: 'ver' }
+      });
+
+      dialogRef.afterClosed().subscribe(() => {
+        // Al cerrar, volver a la lista
+        setTimeout(() => {
+          this.router.navigate(['/admin/list-clientes']);
+        }, 0);
+      });
+    },
+    error: () => {
+      Swal.fire('Error', 'No se pudo cargar el cliente', 'error');
+      this.router.navigate(['/admin/list-clientes']);
+    }
+  });
+}
+abrirModalEditarClientePorId(id: number) {
+  this.clienteService.buscarClienteId(id).subscribe({
+    next: (cliente) => {
+      const dialogRef = this.dialog.open(AddClienteComponent, {
+        width: '1200px',
+        disableClose: true,
+        data: {
+          cliente,
+          modo: 'editar'   // 🔴 Aquí le indicas que es modo edición
+        }
+      });
+
+      dialogRef.afterClosed().subscribe(result => {
+        if (result === 'guardado') {
+          this.listarClientes();
+        }
+
+        setTimeout(() => {
+          this.router.navigate(['/admin/list-clientes']);
+        }, 0);
+      });
+    },
+    error: () => {
+      Swal.fire('Error', 'No se pudo cargar el cliente', 'error');
+      this.router.navigate(['/admin/list-clientes']);
+    }
+  });
+}
+navegarYEditarCliente(idCliente: number) {
+  this.router.navigate(['/admin/edit-clientes', idCliente]);
+}
 
   abrirModalNuevoCliente() {
     const dialogRef = this.dialog.open(AddClienteComponent, {
@@ -167,7 +239,19 @@ eliminarCliente(id: number) {
     return Math.ceil(coincidencias.length / this.elementosPorPagina);
   }
 
+abrirModalEditarCliente(cliente: any) {
+  const dialogRef = this.dialog.open(AddClienteComponent, {
+    width: '1200px',
+    disableClose: true,
+    data: { cliente }
+  });
 
+  dialogRef.afterClosed().subscribe(result => {
+    if (result === 'guardado') {
+      this.listarClientes();
+    }
+  });
+}
 
   navegarYMostrarModal() {
     this.router.navigate(['admin/add-clientes']);

@@ -27,7 +27,8 @@ export const routes: Routes = [
       {path: 'add-clientes',component: ListClientesComponent },
       {path: 'add-proveedores',component: ListClientesComponent },
       {path: 'list-delivery',component: ListDeliveryComponent },
-
+      { path: 'edit-clientes/:id', component: ListClientesComponent },
+      { path: 'view-clientes/:id', component: ListClientesComponent },
 
 
     ]

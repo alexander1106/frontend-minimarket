@@ -10,7 +10,9 @@
 
 h2 {
   font-size: 1.5rem;
-  margin-bottom: 20px;
+  margin-bottom: 30px;
+
+  text-align: center;
   color: #333;
 }
 

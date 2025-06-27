@@ -1,57 +1,85 @@
 <div class="form-clientes">
-  <h2 class="mb-4">Nuevo Cliente</h2>
+<h2 class="mb-4">
+  {{ modo === 'crear' ? 'Nuevo Cliente' : (modo === 'editar' ? 'Editar Cliente' : 'Detalle del Cliente') }}
+</h2>
+
 
   <form (ngSubmit)="guardarCliente()" #clienteForm="ngForm" class="needs-validation" novalidate>
     <div class="row g-3">
 
       <div class="col-md-6">
         <label for="nombre" class="form-label">Nombres</label>
-        <input type="text" id="nombre" name="nombre" [(ngModel)]="cliente.nombre" class="form-control" required />
+        <input type="text" id="nombre" [readonly]="soloLectura" name="nombre" [(ngModel)]="cliente.nombre" class="form-control" required />
         <div class="invalid-feedback">El nombre es requerido</div>
       </div>
 
       <div class="col-md-6">
         <label for="apellidos" class="form-label">Apellidos</label>
-        <input type="text" id="apellidos" name="apellidos" [(ngModel)]="cliente.apellidos" class="form-control" required />
+        <input type="text" id="apellidos"   [readonly]="soloLectura"  name="apellidos" [(ngModel)]="cliente.apellidos" class="form-control" required />
         <div class="invalid-feedback">Los apellidos son requeridos</div>
       </div>
 
       <div class="col-md-6">
         <label for="telefono" class="form-label">Teléfono</label>
-        <input type="tel" id="telefono" name="telefono" [(ngModel)]="cliente.telefono" class="form-control" />
+        <input type="tel" id="telefono" name="telefono"  [readonly]="soloLectura" [(ngModel)]="cliente.telefono" class="form-control" />
       </div>
 
       <div class="col-md-6">
         <label for="email" class="form-label">Email</label>
-        <input type="email" id="email" name="email" [(ngModel)]="cliente.email" class="form-control" required />
+        <input type="email" id="email" [readonly]="soloLectura"  name="email" [(ngModel)]="cliente.email" class="form-control" required />
         <div class="invalid-feedback">Email inválido</div>
       </div>
 
       <div class="col-md-6">
         <label for="tipoDocumento" class="form-label">Tipo Documento</label>
-        <select id="tipoDocumento" name="tipoDocumento" [(ngModel)]="cliente.tipoDocumento" class="form-control" required>
+        <select    [disabled]="soloLectura"
+ id="tipoDocumento" name="tipoDocumento" [(ngModel)]="cliente.tipoDocumento" class="form-control" required>
           <option value="DNI">DNI</option>
           <option value="RUC">RUC</option>
         </select>
         <div class="invalid-feedback">Seleccione un tipo de documento</div>
       </div>
 
-      <div class="col-md-6">
-        <label for="documento" class="form-label">Nro Documento</label>
-        <input type="text" id="documento" name="documento" [(ngModel)]="cliente.documento" class="form-control" required />
-        <div class="invalid-feedback">El número de documento es requerido</div>
-      </div>
+   <div class="col-md-6">
+  <label for="documento" class="form-label">Nro Documento</label>
+  <input
+    type="text"
+    id="documento"
+    name="documento"
+    [(ngModel)]="cliente.documento"
+    class="form-control"
+    required
+    [attr.maxlength]="cliente.tipoDocumento === 'DNI' ? 8 : (cliente.tipoDocumento === 'RUC' ? 11 : null)"
+    pattern="^[0-9]*$"
+    (input)="limitarDigitos($event)"
+    (blur)="onDocumentoBlur()"
+  />
+  <div class="invalid-feedback">
+    El número de documento es requerido y debe tener la longitud correcta
+  </div>
+</div>
+
 
       <div class="col-md-12">
         <label for="direccion" class="form-label">Dirección</label>
-        <input type="text" id="direccion" name="direccion" [(ngModel)]="cliente.direccion" class="form-control" />
+        <input type="text"   [readonly]="soloLectura"
+  id="direccion" name="direccion" [(ngModel)]="cliente.direccion" class="form-control" />
       </div>
 
     </div>
 
-    <div class="mt-4 d-flex justify-content-end gap-3">
-      <button type="submit" class="btn btn-primary" [disabled]="clienteForm.invalid">Guardar</button>
-      <button type="button" class="btn btn-warning" (click)="cancelar()">Cancelar</button>
-    </div>
+ <div
+  class="mt-4 d-flex justify-content-end gap-3"
+  *ngIf="!soloLectura">
+  <button type="submit" class="btn btn-primary" [disabled]="clienteForm.invalid">Guardar</button>
+  <button type="button" class="btn btn-warning" (click)="cancelar()">Cancelar</button>
+</div>
+
+<div
+  class="mt-4 d-flex justify-content-end gap-3"
+  *ngIf="soloLectura">
+  <button type="button" class="btn btn-secondary" (click)="cancelar()">Cerrar</button>
+</div>
+
   </form>
 </div>
