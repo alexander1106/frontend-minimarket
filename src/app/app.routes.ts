@@ -15,6 +15,17 @@ import { ListAperturaComponent } from './pages/admin/modulo-caja/apertura/list-a
 import { ListTransaccionesComponent } from './pages/admin/modulo-caja/transacciones/list-transacciones/list-transacciones.component';
 import { ListEmpresasComponent } from './pages/admin/administrable/empresas/list-empresas.component';
 import { ListSucursalesComponent } from './pages/admin/administrable/sucursales/list-sucursales.component';
+import { ListUnidadesMedidaComponent } from './pages/admin/productos/unidades-medida/list-unidades-medida.component';
+import { ListTipoProductoComponent } from './pages/admin/productos/tipoproducto/list-tipo-producto.component';
+import { ListCategoriasComponent } from './pages/admin/productos/categorias/list-categorias.component';
+import { ListProductosComponent } from './pages/admin/productos/productos/list-productos.component';
+import { ListAlmacenesComponent } from './pages/admin/almacenes/almacenes/list-almacenes.component';
+import { ListInventarioComponent } from './pages/admin/inventario/inventario/list-inventario.component';
+import { ListInventarioProductoComponent } from './pages/admin/inventario/inventarioproducto/list-inventarioproducto.component';
+import { ListAjusteInventarioComponent } from './pages/admin/inventario/ajusteinventario/list-ajuste-inventario.component';
+import { ListTrasladoInventarioProductoComponent } from './pages/admin/inventario/trasladoinventarioproducto/list-traslado-inventarioproducto.component';
+import { ListRolesComponent } from './pages/admin/seguridad/roles/list-roles.component';
+import { ListUsuariosComponent } from './pages/admin/seguridad/usuarios/list-usuarios.component';
 
 
 export const routes: Routes = [
@@ -44,6 +55,58 @@ export const routes: Routes = [
       { path: 'add-caja', component: ListCajaComponent },
       { path: 'list-apertura', component: ListAperturaComponent },
       { path: 'list-transacciones/:idAperturaCaja', component: ListTransaccionesComponent },
+
+      { path: 'empresas', component: ListEmpresasComponent },
+      { path: 'add-empresas', component: ListEmpresasComponent },
+      { path: 'edit-empresas/:id', component: ListEmpresasComponent },
+
+      { path: 'sucursales', component: ListSucursalesComponent },
+      { path: 'add-sucursales', component: ListSucursalesComponent },
+      { path: 'edit-sucursales/:id', component: ListSucursalesComponent },
+
+      { path: 'unidades-medida', component: ListUnidadesMedidaComponent },
+      { path: 'add-unidad-medida', component: ListUnidadesMedidaComponent },
+      { path: 'edit-unidad-medida/:id', component: ListUnidadesMedidaComponent },
+
+      { path: 'tipoproducto', component: ListTipoProductoComponent },
+      { path: 'add-tipoproducto', component: ListTipoProductoComponent },
+      { path: 'edit-tipoproducto/:id', component: ListTipoProductoComponent },
+
+      { path: 'categorias', component: ListCategoriasComponent },
+      { path: 'add-categorias', component: ListCategoriasComponent },
+      { path: 'edit-categorias/:id', component: ListCategoriasComponent },
+
+      { path: 'productos', component: ListProductosComponent },
+      { path: 'add-productos', component: ListProductosComponent },
+      { path: 'edit-productos/:id', component: ListProductosComponent },
+
+      { path: 'almacenes', component: ListAlmacenesComponent },
+      { path: 'add-almacenes', component: ListAlmacenesComponent },
+      { path: 'edit-almacenes/:id', component: ListAlmacenesComponent },
+
+      { path: 'inventario', component: ListInventarioComponent },
+      { path: 'add-inventario', component: ListInventarioComponent },
+      { path: 'edit-inventario/:id', component: ListInventarioComponent },
+
+      { path: 'inventarioproducto', component: ListInventarioProductoComponent },
+      { path: 'add-inventarioproducto', component: ListInventarioProductoComponent },
+      { path: 'edit-inventarioproducto/:id', component: ListInventarioProductoComponent },
+
+      { path: 'ajuste-inventario', component: ListAjusteInventarioComponent },
+      { path: 'add-ajuste-inventario', component: ListAjusteInventarioComponent },
+      { path: 'edit-ajuste-inventario/:id', component: ListAjusteInventarioComponent },
+
+      { path: 'traslado-inventario-producto', component: ListTrasladoInventarioProductoComponent },
+      { path: 'add-traslado-inventario-producto', component: ListTrasladoInventarioProductoComponent },
+      { path: 'edit-traslado-inventario-producto/:id', component: ListTrasladoInventarioProductoComponent },
+
+      { path: 'roles', component: ListRolesComponent },
+      { path: 'add-roles', component: ListRolesComponent },
+      { path: 'edit-roles/:id', component: ListRolesComponent },
+
+      { path: 'usuarios', component: ListUsuariosComponent },
+      { path: 'add-usuarios', component: ListUsuariosComponent },
+      { path: 'edit-roles/:id', component: ListUsuariosComponent },
 
       { path: 'empresas', component: ListEmpresasComponent },
       { path: 'add-empresas', component: ListEmpresasComponent },

@@ -1,0 +1,284 @@
+<div class="contenedor">
+  <div class="barra">
+    <app-barra-lateral></app-barra-lateral>
+  </div>
+
+  <div class="encabezado">
+    <app-header></app-header>
+    <hr class="border-secondary mb-4" />
+
+    <div class="container">
+      <div class="header d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h2>Productos</h2>
+          <span class="subtitle">{{ productos.length }} Registrados</span>
+        </div>
+        <div class="search-sort d-flex align-items-center">
+          <input
+            type="text"
+            placeholder="Buscar producto"
+            class="search-input me-2"
+            [(ngModel)]="filtro"
+            (ngModelChange)="aplicarFiltro()"
+          />
+          <button (click)="abrirModal()" class="btn-agregar">
+            <i class="fas fa-plus"></i> Producto
+          </button>
+        </div>
+      </div>
+
+      <table class="customer-table w-100">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nombre</th>
+            <th>Descripción</th>
+            <th>Categoría</th>
+            <th>U. Medida</th>
+            <th>Tipo</th>
+            <th>Precio</th>
+            <th>Imagen</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of filtrados; let i = index">
+            <td>{{ (paginaActual - 1) * elementosPorPagina + i + 1 }}</td>
+            <td>{{ p.nombre }}</td>
+            <td>{{ p.descripcion }}</td>
+            <td>{{ p.categoria.nombre }}</td>
+            <td>{{ p.unidadMedida.nombre }}</td>
+            <td>{{ p.tipoProducto.nombre }}</td>
+            <td>
+              {{ 
+                p.costoVenta 
+                | currency:'S/.':'symbol':'1.2-2' 
+              }}
+            </td>
+            <td>
+              <img
+                *ngIf="p.imagen"
+                [src]="p.imagen"
+                alt="{{ p.nombre }}"
+                width="40"
+                height="40"
+                style="object-fit: cover; border-radius: 4px;"
+              />
+            </td>
+            <td>
+              <button (click)="abrirModal(p)" class="btn-editar me-2">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button (click)="borrar(p.idproducto)" class="btn-eliminar">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Paginación -->
+      <nav *ngIf="totalPaginas > 1" aria-label="Paginación" class="mt-3">
+        <ul class="pagination justify-content-center mb-0">
+          <li
+            class="page-item"
+            [class.disabled]="paginaActual === 1"
+            (click)="cambiarPagina(paginaActual - 1)"
+          >
+            <a class="page-link" href="javascript:void(0)">Anterior</a>
+          </li>
+          <li
+            class="page-item"
+            *ngFor="let pg of paginasArray"
+            [class.active]="pg === paginaActual"
+            (click)="cambiarPagina(pg)"
+          >
+            <a class="page-link" href="javascript:void(0)">{{ pg }}</a>
+          </li>
+          <li
+            class="page-item"
+            [class.disabled]="paginaActual === totalPaginas"
+            (click)="cambiarPagina(paginaActual + 1)"
+          >
+            <a class="page-link" href="javascript:void(0)">Siguiente</a>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Modal para Nuevo/Editar Producto -->
+      <div *ngIf="mostrarModal" class="modal">
+        <div class="modal-content p-4">
+          <h2 class="mb-3">
+            {{ producto.idproducto ? 'Editar' : 'Nuevo' }} Producto
+          </h2>
+          <form (ngSubmit)="formSubmit()" #f="ngForm">
+            <!-- Nombre -->
+            <div class="mb-3">
+              <input
+                name="nombre"
+                required
+                [(ngModel)]="producto.nombre"
+                placeholder="Nombre"
+                class="form-control"
+              />
+            </div>
+
+            <!-- Descripción -->
+            <div class="mb-3">
+              <textarea
+                name="descripcion"
+                [(ngModel)]="producto.descripcion"
+                placeholder="Descripción"
+                class="form-control"
+              ></textarea>
+            </div>
+
+            <!-- Fecha e Impuesto -->
+            <div class="row g-2 mb-3">
+              <label class="form-label">FechaVencimiento</label>
+              <div class="col">
+                <input
+                  type="date"
+                  name="fechaVencimiento"
+                  [(ngModel)]="producto.fechaVencimiento"
+                  class="form-control"
+                />
+              </div>
+              <div class="col">
+                <input
+                  name="tipoImpuesto"
+                  [(ngModel)]="producto.tipoImpuesto"
+                  placeholder="Impuesto"
+                  class="form-control"
+                />
+              </div>
+            </div>
+
+            <!-- Costos -->
+            <div class="row g-2 mb-3">
+              <label class="form-label">Costo compra</label>
+              <div class="col">
+                <input
+                  type="number"
+                  name="costoCompra"
+                  [(ngModel)]="producto.costoCompra"
+                  placeholder="Costo compra"
+                  class="form-control"
+                />
+              </div>
+              
+              <div class="col">
+                <label class="form-label">Costo venta</label>
+                <input
+                  type="number"
+                  name="costoVenta"
+                  [(ngModel)]="producto.costoVenta"
+                  placeholder="Costo venta"
+                  class="form-control"
+                />
+              </div>
+              <div class="col">
+                <label class="form-label">Costo mayor</label>
+                <input
+                  type="number"
+                  name="costoMayor"
+                  [(ngModel)]="producto.costoMayor"
+                  placeholder="Costo mayor"
+                  class="form-control"
+                />
+              </div>
+            </div>
+
+            <!-- Selects relacionales -->
+            <div class="row g-2 mb-3">
+              <div class="col">
+                <select
+                  name="idcategoria"
+                  [(ngModel)]="producto.categoria.idcategoria"
+                  class="form-select"
+                  required
+                >
+                  <option [ngValue]="0" disabled>Seleccione categoría</option>
+                  <option *ngFor="let c of categorias" [ngValue]="c.idcategoria">
+                    {{ c.nombre }}
+                  </option>
+                </select>
+              </div>
+              <div class="col">
+                <select
+                  name="idunidadmedida"
+                  [(ngModel)]="producto.unidadMedida.idunidadmedida"
+                  class="form-select"
+                  required
+                >
+                  <option [ngValue]="0" disabled>Seleccione unidad</option>
+                  <option
+                    *ngFor="let u of unidades"
+                    [ngValue]="u.idunidadmedida"
+                  >
+                    {{ u.nombre }}
+                  </option>
+                </select>
+              </div>
+              <div class="col">
+                <select
+                  name="idtipoproducto"
+                  [(ngModel)]="producto.tipoProducto.idtipoproducto"
+                  class="form-select"
+                  required
+                >
+                  <option [ngValue]="0" disabled>Seleccione tipo</option>
+                  <option
+                    *ngFor="let t of tipos"
+                    [ngValue]="t.idtipoproducto"
+                  >
+                    {{ t.nombre }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Imagen -->
+            <div class="mb-3">
+              <label for="fileInput" class="form-label">Imagen</label>
+              <input
+                type="file"
+                id="fileInput"
+                accept="image/*"
+                (change)="onFileSelected($event)"
+                class="form-control"
+              />
+            </div>
+            <div *ngIf="producto.imagen" class="mb-3 text-center">
+              <img
+                [src]="producto.imagen"
+                alt="Vista previa"
+                class="img-thumbnail"
+                style="max-height: 120px;"
+              />
+            </div>
+
+            <!-- Botones -->
+            <div class="d-flex justify-content-end">
+              <button
+                type="button"
+                class="btn btn-secondary me-2"
+                (click)="cerrarModal()"
+              >
+                Cerrar
+              </button>
+              <button
+                type="submit"
+                class="btn btn-primary"
+                [disabled]="f.invalid"
+              >
+                Guardar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

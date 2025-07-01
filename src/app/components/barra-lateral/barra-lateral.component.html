@@ -37,8 +37,10 @@
         <i class="{{ activeMenu === 'inventario' ? 'fas fa-chevron-up' : 'fas fa-chevron-down' }}"></i>
       </a>
       <ul class="nav flex-column ms-4 mt-2" *ngIf="activeMenu === 'inventario'">
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Inventario</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Ajustes de inventario</a></li>
+        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/inventario']">Inventario</a></li>
+        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/inventarioproducto']">Inventario por Producto</a></li>
+        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/ajuste-inventario']">Movimientos de Inventario</a></li>
+        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/traslado-inventario-producto']">Traslado de inventario</a></li>
       </ul>
     </li>
 
@@ -50,7 +52,7 @@
         <i class="{{ activeMenu === 'almacenes' ? 'fas fa-chevron-up' : 'fas fa-chevron-down' }}"></i>
       </a>
       <ul class="nav flex-column ms-4 mt-2" *ngIf="activeMenu === 'almacenes'">
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Inventario</a></li>
+        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/almacenes']">Almacenes</a></li>
         <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Ajustes de inventario</a></li>
       </ul>
     </li>
@@ -63,10 +65,10 @@
         <i class="{{ activeMenu === 'productos' ? 'fas fa-chevron-up' : 'fas fa-chevron-down' }}"></i>
       </a>
       <ul class="nav flex-column ms-4 mt-2" *ngIf="activeMenu === 'productos'">
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Productos</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Categorías</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Unidad de medida</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Tipo de productos</a></li>
+        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/unidades-medida']" > Unidad de Medida</a></li>
+        <li class="nav-item"><a class="nav-link text-white-50 small"[routerLink]="['/admin/tipoproducto']">Tipo de producto</a></li>
+        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/categorias']">Categorías</a></li>
+        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/productos']">Productos</a></li>
       </ul>
     </li>
 

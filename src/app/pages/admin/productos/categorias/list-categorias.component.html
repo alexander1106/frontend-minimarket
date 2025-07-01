@@ -1,0 +1,151 @@
+<div class="contenedor">
+  <div class="barra">
+    <app-barra-lateral></app-barra-lateral>
+  </div>
+
+  <div class="encabezado">
+    <app-header></app-header>
+    <hr class="border-secondary mb-4" />
+
+    <div class="container">
+      <div class="header d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h2>Categorías</h2>
+          <span class="subtitle">{{ categorias.length }} Registrados</span>
+        </div>
+        <div class="search-sort d-flex align-items-center">
+          <input
+            type="text"
+            placeholder="Buscar tipo"
+            class="search-input me-2"
+            [(ngModel)]="filtro"
+            (ngModelChange)="aplicarFiltro()"
+          />
+          <button (click)="abrirModal()" class="btn-agregar">
+            <i class="fas fa-plus"></i> Categoria
+          </button>
+        </div>
+      </div>
+
+      <table class="customer-table w-100">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nombre</th>
+            <th>Imagen</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let c of filtradas; let i = index">
+            <td>{{ (paginaActual - 1) * elementosPorPagina + i + 1 }}</td>
+            <td>{{ c.nombre }}</td>
+            <td>
+              <img
+                *ngIf="c.imagen"
+                [src]="c.imagen"
+                alt="{{ c.nombre }}"
+                width="40"
+                height="40"
+                style="object-fit: cover; border-radius: 4px;"
+              />
+            </td>
+            <td>
+              <button (click)="abrirModal(c)" class="btn-editar me-2">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button (click)="eliminar(c.idcategoria)" class="btn-eliminar">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <nav aria-label="Paginación" class="mt-4">
+        <ul class="pagination justify-content-center mb-0">
+          <li
+            class="page-item"
+            [class.disabled]="paginaActual === 1"
+            (click)="cambiarPagina(paginaActual - 1)"
+          >
+            <a class="page-link" href="javascript:void(0)">Anterior</a>
+          </li>
+
+          <li
+            class="page-item"
+            *ngFor="let pagina of paginasArray"
+            [class.active]="pagina === paginaActual"
+            (click)="cambiarPagina(pagina)"
+          >
+            <a class="page-link" href="javascript:void(0)">{{ pagina }}</a>
+          </li>
+
+          <li
+            class="page-item"
+            [class.disabled]="paginaActual === totalPaginas"
+            (click)="cambiarPagina(paginaActual + 1)"
+          >
+            <a class="page-link" href="javascript:void(0)">Siguiente</a>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Modal -->
+      <div *ngIf="mostrarModal" class="modal">
+        <div class="modal-content p-4">
+          <h2 class="mb-3">Categoría</h2>
+          <form (ngSubmit)="formSubmit()" #f="ngForm">
+            <div class="mb-3">
+              <input
+                name="nombre"
+                required
+                [(ngModel)]="cat.nombre"
+                placeholder="Nombre"
+                class="form-control"
+              />
+            </div>
+
+            <div class="mb-3">
+                <label for="fileInput" class="form-label">Imagen</label>
+                <input
+                  type="file"
+                  id="fileInput"
+                  accept="image/*"
+                  (change)="onFileSelected($event)"
+                  class="form-control"
+                />
+              </div>
+
+            <div *ngIf="cat.imagen" class="mb-3 text-center">
+          <img
+            [src]="cat.imagen"
+            alt="Preview"
+            class="img-thumbnail"
+            style="max-height: 120px;"
+          />
+        </div>
+
+            <div class="d-flex justify-content-end">
+              <button
+                type="button"
+                class="btn btn-secondary me-2"
+                (click)="cerrarModal()"
+              >
+                Cerrar
+              </button>
+              <button
+                type="submit"
+                class="btn btn-primary"
+                [disabled]="f.invalid"
+              >
+                Guardar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
