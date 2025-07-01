@@ -1,22 +1,36 @@
-import { HttpClient } from '@angular/common/http';
+// productos.service.ts
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import baseUrl from '../components/link';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class ProductosService {
+  private apiPath = `${baseUrl}/productos`;
 
- constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {}
 
-  // Obtener todos los permisos
-  public listarProductos(): Observable<any> {
-    return this.http.get(`${baseUrl}/productos`);
+  listarProductos(): Observable<any> {
+    return this.http.get(`${this.apiPath}`);
   }
 
-listarProductosPorCategoria(idCategoria: any) {
-  return this.http.get(`${baseUrl}/productos/${idCategoria}/categoria`);
-}
+  listarProductosPorCategoria(id: number): Observable<any> {
+    return this.http.get(`${this.apiPath}/${id}/categoria`);
+  }
 
+  buscar(id: number): Observable<any> {
+    return this.http.get(`${this.apiPath}/${id}`);
+  }
+
+  registrar(prod: any): Observable<any> {
+    return this.http.post(`${this.apiPath}`, prod);
+  }
+
+  editar(prod: any): Observable<any> {
+    return this.http.put(`${this.apiPath}`, prod);
+  }
+
+  eliminar(id: number): Observable<any> {
+    return this.http.delete(`${this.apiPath}/${id}`, { responseType: 'text' });
+  }
 }

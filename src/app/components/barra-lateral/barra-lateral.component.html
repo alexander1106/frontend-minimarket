@@ -18,13 +18,13 @@
     <!-- SEGURIDAD -->
     <li class="nav-item">
       <a class="nav-link custom-link d-flex justify-content-between align-items-center"
-         (click)="toggleSubmenu('seguridad')" href="#">
+         (click)="toggleSubmenu('seguridad')">
         <span><i class="fas fa-shield-alt me-2"></i> Seguridad</span>
         <i class="{{ activeMenu === 'seguridad' ? 'fas fa-chevron-up' : 'fas fa-chevron-down' }}"></i>
       </a>
       <ul class="nav flex-column ms-4 mt-2" *ngIf="activeMenu === 'seguridad'">
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Usuarios</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Roles</a></li>
+        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/usuarios']">Usuarios</a></li>
+        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/roles']">Roles</a></li>
       </ul>
     </li>
 
@@ -36,10 +36,10 @@
         <i class="{{ activeMenu === 'inventario' ? 'fas fa-chevron-up' : 'fas fa-chevron-down' }}"></i>
       </a>
       <ul class="nav flex-column ms-4 mt-2" *ngIf="activeMenu === 'inventario'">
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Inventario</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Inventario por Producto</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Movimientos de Inventario</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Traslado de inventario</a></li>
+        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/inventario']">Inventario</a></li>
+        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/inventarioproducto']">Inventario por Producto</a></li>
+        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/ajuste-inventario']">Movimientos de Inventario</a></li>
+        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/traslado-inventario-producto']">Traslado de inventario</a></li>
       </ul>
     </li>
 
@@ -51,8 +51,7 @@
         <i class="{{ activeMenu === 'almacenes' ? 'fas fa-chevron-up' : 'fas fa-chevron-down' }}"></i>
       </a>
       <ul class="nav flex-column ms-4 mt-2" *ngIf="activeMenu === 'almacenes'">
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Almacenes</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Promociones</a></li>
+        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/almacenes']">Almacenes</a></li>
       </ul>
     </li>
 
@@ -67,79 +66,21 @@
         <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/unidades-medida']" > Unidad de Medida</a></li>
         <li class="nav-item"><a class="nav-link text-white-50 small"[routerLink]="['/admin/tipoproducto']">Tipo de producto</a></li>
         <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/categorias']">Categorías</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Productos</a></li>
+        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/productos']">Productos</a></li>
       </ul>
     </li>
 
-    <!-- COMPRAS -->
-    <li class="nav-item">
-      <a class="nav-link custom-link d-flex justify-content-between align-items-center"
-         (click)="toggleSubmenu('compras')" >
-        <span><i class="fas fa-shopping-cart me-2"></i> Compras</span>
-        <i class="{{ activeMenu === 'compras' ? 'fas fa-chevron-up' : 'fas fa-chevron-down' }}"></i>
-      </a>
-      <ul class="nav flex-column ms-4 mt-2" *ngIf="activeMenu === 'compras'">
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Compras</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Detalles compras</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Devoluciones</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Proveedores</a></li>
-
-      </ul>
-    </li>
-
-    <!-- VENTAS -->
-    <li class="nav-item">
-      <a class="nav-link custom-link d-flex justify-content-between align-items-center"
-         (click)="toggleSubmenu('ventas')">
-        <span><i class="fas fa-cash-register me-2"></i> Ventas</span>
-        <i class="{{ activeMenu === 'ventas' ? 'fas fa-chevron-up' : 'fas fa-chevron-down' }}"></i>
-      </a>
-      <ul class="nav flex-column ms-4 mt-2" *ngIf="activeMenu === 'ventas'">
-        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/list-venta']">Ventas</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" >Detalles ventas</a></li>
-                <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/list-clientes']" > Clientes</a></li>
-
-        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/metodos-pago']" > Métodos de pago</a></li>
-      </ul>
-    </li>
-
-    <!-- DELIVERY -->
-    <li class="nav-item">
-      <a class="nav-link custom-link d-flex justify-content-between align-items-center"
-         (click)="toggleSubmenu('delivery')" >
-        <span><i class="fas fa-truck me-2"></i> Delivery</span>
-        <i class="{{ activeMenu === 'delivery' ? 'fas fa-chevron-up' : 'fas fa-chevron-down' }}"></i>
-      </a>
-      <ul class="nav flex-column ms-4 mt-2" *ngIf="activeMenu === 'delivery'">
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Delivery</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Movimientos</a></li>
-      </ul>
-    </li>
-
-    <!-- CAJA -->
-    <li class="nav-item">
-      <a class="nav-link custom-link d-flex justify-content-between align-items-center"
-         (click)="toggleSubmenu('caja')" href="#">
-        <span><i class="fas fa-cash-register me-2"></i> Caja</span>
-        <i class="{{ activeMenu === 'caja' ? 'fas fa-chevron-up' : 'fas fa-chevron-down' }}"></i>
-      </a>
-      <ul class="nav flex-column ms-4 mt-2" *ngIf="activeMenu === 'caja'">
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Apertura</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Historial</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Detalles de caja</a></li>
-      </ul>
-    </li>
 
     <!-- ADMINISTRABLE -->
     <li class="nav-item">
       <a class="nav-link custom-link d-flex justify-content-between align-items-center"
-         (click)="toggleSubmenu('admin')" href="#">
+         (click)="toggleSubmenu('admin')">
         <span><i class="fas fa-cogs me-2"></i> Administrable</span>
         <i class="{{ activeMenu === 'admin' ? 'fas fa-chevron-up' : 'fas fa-chevron-down' }}"></i>
       </a>
       <ul class="nav flex-column ms-4 mt-2" *ngIf="activeMenu === 'admin'">
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Empresas</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Sucursales</a></li>
+        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/empresas']">Empresas</a></li>
+        <li class="nav-item"><a class="nav-link text-white-50 small"[routerLink]="['/admin/sucursales']">Sucursales</a></li>
       </ul>
     </li>
 

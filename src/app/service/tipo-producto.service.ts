@@ -23,7 +23,7 @@ export class TipoProductoService {
   }
 
   editar(tipo: any): Observable<any> {
-    return this.http.put(`${baseUrl}/tipoproducto"/`, tipo);
+    return this.http.put(`${baseUrl}/tipoproducto/`, tipo);
   }
 
   eliminar(id: number): Observable<string> {

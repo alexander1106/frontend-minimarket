@@ -1,0 +1,172 @@
+<div class="contenedor">
+  <div class="barra"><app-barra-lateral></app-barra-lateral></div>
+  <div class="encabezado">
+    <app-header></app-header>
+    <hr class="border-secondary mb-4" />
+    <div class="container">
+      <div class="header d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h2>Usuarios</h2>
+          <span class="subtitle">{{ usuarios.length }} Registrados</span>
+        </div>
+        <div class="search-sort d-flex align-items-center">
+          <input
+            type="text"
+            placeholder="Buscar usuario"
+            class="search-input me-2"
+            [(ngModel)]="filtro"
+            (ngModelChange)="aplicarFiltro()"
+          />
+          <button (click)="abrirModal()" class="btn-agregar">
+            <i class="fas fa-plus"></i> Usuario
+          </button>
+        </div>
+      </div>
+
+      <table class="customer-table w-100">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nombre</th>
+            <th>Username</th>
+            <th>Empresa</th>
+            <th>Rol</th>
+            <th>DNI</th>
+            <th>Email</th>
+            <th>Turno</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let u of filtrados; let i = index">
+            <td>{{ (paginaActual - 1) * elementosPorPagina + i + 1 }}</td>
+            <td>{{ u.nombre }} {{ u.apellidos }}</td>
+            <td>{{ u.username }}</td>
+            <td>{{ u.empresaNombre || '—' }}</td>
+            <td>{{ u.rolNombre || '—' }}</td>
+            <td>{{ u.dni || '—' }}</td>
+            <td>{{ u.email || '—' }}</td>
+            <td>{{ u.turno || '—' }}</td>
+            <td>
+              <button (click)="abrirModal(u)" class="btn-editar me-2">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button (click)="eliminar(u.idUsuario)" class="btn-eliminar">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <nav *ngIf="totalPaginas > 1" aria-label="Paginación" class="mt-3">
+        <ul class="pagination justify-content-center mb-0">
+          <li class="page-item" [class.disabled]="paginaActual === 1" (click)="cambiarPagina(paginaActual - 1)">
+            <a class="page-link" href="javascript:void(0)">Anterior</a>
+          </li>
+          <li
+            class="page-item"
+            *ngFor="let pg of paginasArray"
+            [class.active]="pg === paginaActual"
+            (click)="cambiarPagina(pg)"
+          >
+            <a class="page-link" href="javascript:void(0)">{{ pg }}</a>
+          </li>
+          <li class="page-item" [class.disabled]="paginaActual === totalPaginas" (click)="cambiarPagina(paginaActual + 1)">
+            <a class="page-link" href="javascript:void(0)">Siguiente</a>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Modal -->
+      <div *ngIf="mostrarModal" class="modal">
+        <div class="modal-content p-4">
+          <h2 class="mb-3">{{ usuario.idUsuario ? 'Editar' : 'Nuevo' }} Usuario</h2>
+          <form #f="ngForm" (ngSubmit)="formSubmit()">
+
+            <div class="mb-3">
+              <label>Empresa:</label>
+              <select
+                name="idEmpresa"
+                [(ngModel)]="usuario.idEmpresa"
+                (ngModelChange)="onEmpresaChange($event)"
+                class="form-select"
+                required
+              >
+                <option value="" disabled>-- Seleccione empresa --</option>
+                <option *ngFor="let e of empresas" [value]="e.idempresa">
+                  {{ e.razonsocial }}
+                </option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label>Sucursal:</label>
+              <select
+                name="idSucursal"
+                [(ngModel)]="usuario.idSucursal"
+                class="form-select"
+                required
+              >
+                <option value="" disabled>-- Seleccione sucursal --</option>
+                <option *ngFor="let s of sucursalesFiltradas" [value]="s.id_sucursal">
+                  {{ s.nombreSucursal }}
+                </option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label>Rol:</label>
+              <select
+                name="rolId"
+                [(ngModel)]="usuario.rolId"
+                class="form-select"
+                required
+              >
+                <option value="" disabled>-- Seleccione rol --</option>
+                <option *ngFor="let r of roles" [value]="r.id">
+                  {{ r.nombre }}
+                </option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label>Nombre:</label>
+              <input name="nombre" [(ngModel)]="usuario.nombre" required class="form-control" />
+            </div>
+            <div class="mb-3">
+              <label>Apellidos:</label>
+              <input name="apellidos" [(ngModel)]="usuario.apellidos" class="form-control" />
+            </div>
+            <div class="mb-3">
+              <label>Username:</label>
+              <input name="username" [(ngModel)]="usuario.username" required class="form-control" />
+            </div>
+            <div *ngIf="!usuario.idUsuario" class="mb-3">
+              <label>Password:</label>
+              <input name="password" [(ngModel)]="usuario.password" type="password" required class="form-control" />
+            </div>
+            <div class="mb-3">
+              <label>Email:</label>
+              <input name="email" [(ngModel)]="usuario.email" type="email" class="form-control" />
+            </div>
+            <div class="mb-3">
+              <label>DNI:</label>
+              <input name="dni" [(ngModel)]="usuario.dni" class="form-control" />
+            </div>
+            <div class="mb-3">
+              <label>Turno:</label>
+              <input name="turno" [(ngModel)]="usuario.turno" class="form-control" />
+            </div>
+
+            <div class="text-end mt-3">
+              <button type="button" class="btn btn-secondary me-2" (click)="cerrarModal()">Cerrar</button>
+              <button type="submit" class="btn btn-primary" [disabled]="f.invalid">Guardar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

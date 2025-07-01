@@ -1,0 +1,238 @@
+<div class="contenedor">
+  <!-- Barra lateral fija -->
+  <div class="barra">
+    <app-barra-lateral></app-barra-lateral>
+  </div>
+
+  <div class="encabezado">
+    <!-- Header superior -->
+    <app-header></app-header>
+    <hr class="border-secondary mb-4" />
+
+    <div class="container">
+      <!-- Título, buscador y botón de agregar -->
+      <div class="header d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h2>Empresas</h2>
+          <span class="subtitle">{{ empresas.length }} Registradas</span>
+        </div>
+        <div class="search-sort d-flex align-items-center">
+          <input
+            type="text"
+            placeholder="Buscar empresa"
+            class="search-input me-2"
+            [(ngModel)]="filtro"
+            (ngModelChange)="aplicarFiltro()"
+          />
+          <button (click)="abrirModal()" class="btn-agregar">
+            <i class="fas fa-plus"></i> Empresa
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabla de empresas -->
+      <div class="table-responsive">
+  <table class="customer-table w-100">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Logo</th>                               
+        <th>Razón Social</th>
+        <th>Ciudad</th>
+        <th class="direccion">Dirección</th>
+        <th>RUC</th>
+        <th>Correo</th>
+        
+        <th class="fecha-reg">Fecha Reg.</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let e of filtrados; let i = index">
+        <td>{{ (paginaActual - 1) * elementosPorPagina + i + 1 }}</td>
+        <td>
+          <img 
+            *ngIf="e.logoBase64" 
+            [src]="e.logoBase64" 
+            alt="logo" 
+            class="logo-img"
+          />
+          <span *ngIf="!e.logoBase64">—</span>
+        </td>
+        <td>{{ e.razonsocial }}</td>
+        <td>{{ e.ciudad }}</td>
+        <td class="direccion">{{ e.direccion }}</td>
+        <td>{{ e.ruc }}</td>
+        <td>{{ e.correo }}</td>
+        <td class="fecha-reg">
+          {{ e.fechaRegistro
+             ? (e.fechaRegistro | date:'shortDate')
+             : '—' }}
+        </td>
+        <td>
+          <button (click)="abrirModal(e)" class="btn-editar me-2">
+            <i class="fas fa-edit"></i>
+          </button>
+          <button (click)="eliminar(e.idempresa)" class="btn-eliminar">
+            <i class="fas fa-trash-alt"></i>
+          </button>
+        </td>
+      </tr>
+      <tr *ngIf="filtrados.length === 0">
+        <td colspan="13" class="text-center">No hay registros</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+
+      <nav *ngIf="totalPaginas > 1" aria-label="Paginación" class="mt-3">
+        <ul class="pagination justify-content-center mb-0">
+          <li
+            class="page-item"
+            [class.disabled]="paginaActual === 1"
+            (click)="cambiarPagina(paginaActual - 1)"
+          >
+            <a class="page-link" href="javascript:void(0)">Anterior</a>
+          </li>
+          <li
+            class="page-item"
+            *ngFor="let pg of paginasArray"
+            [class.active]="pg === paginaActual"
+            (click)="cambiarPagina(pg)"
+          >
+            <a class="page-link" href="javascript:void(0)">{{ pg }}</a>
+          </li>
+          <li
+            class="page-item"
+            [class.disabled]="paginaActual === totalPaginas"
+            (click)="cambiarPagina(paginaActual + 1)"
+          >
+            <a class="page-link" href="javascript:void(0)">Siguiente</a>
+          </li>
+        </ul>
+      </nav>
+
+      <div *ngIf="mostrarModal" class="modal">
+  <div class="modal-content p-4">
+    <h2 class="mb-3">
+      {{ empresa.idempresa ? 'Editar' : 'Nueva' }} Empresa
+    </h2>
+    <form (ngSubmit)="formSubmit()" #f="ngForm">
+      <div class="mb-3">
+        <label class="form-label">Razón Social</label>
+        <input
+          name="razonsocial"
+          required
+          [(ngModel)]="empresa.razonsocial"
+          placeholder="Razón Social"
+          class="form-control"
+        />
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Ciudad</label>
+        <input
+          name="ciudad"
+          required
+          [(ngModel)]="empresa.ciudad"
+          class="form-control"
+        />
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Dirección</label>
+        <input
+          name="direccion"
+          required
+          [(ngModel)]="empresa.direccion"
+          class="form-control"
+        />
+      </div>
+
+        <div class="mb-3">
+        <label class="form-label">RUC</label>
+        <input
+            name="ruc"
+            required
+            minlength="11"
+            maxlength="11"
+            pattern="\d{11}"
+            #rucCtrl="ngModel"
+            [(ngModel)]="empresa.ruc"
+            class="form-control"
+            placeholder="Solo 11 dígitos"
+        />
+        <div *ngIf="rucCtrl.invalid && (rucCtrl.dirty || rucCtrl.touched)" class="text-danger small">
+            <div *ngIf="rucCtrl.errors?.['required']">
+            El RUC es obligatorio.
+            </div>
+            <div *ngIf="rucCtrl.errors?.['minlength'] || rucCtrl.errors?.['maxlength']">
+            Debe tener exactamente 11 dígitos.
+            </div>
+            <div *ngIf="rucCtrl.errors?.['pattern']">
+            Solo números permitidos (11 dígitos).
+            </div>
+        </div>
+        </div>
+
+
+      <div class="mb-3">
+        <label class="form-label">Correo</label>
+        <input
+          name="correo"
+          required
+          type="email"
+          [(ngModel)]="empresa.correo"
+          class="form-control"
+        />
+      </div>
+
+      
+      <div class="mb-3">
+  <label class="form-label">Fecha Registro</label>
+  <input
+    name="fechaRegistro"
+    type="date"
+    required
+    [(ngModel)]="empresa.fechaRegistro"
+    class="form-control"
+  />
+</div>
+
+      <div class="mb-3">
+        <label class="form-label">Estado</label>
+        <select
+          name="estado"
+          [(ngModel)]="empresa.estado"
+          class="form-select"
+        >
+          <option [ngValue]="1">Activo</option>
+          <option [ngValue]="0">Inactivo</option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Logo</label>
+        <input
+          type="file"
+          accept="image/*"
+          (change)="onFileSelected($event)"
+          class="form-control"
+        />
+      </div>
+
+      <div class="text-end mt-3">
+        <button
+          type="button"
+          class="btn btn-secondary me-2"
+          (click)="cerrarModal()"
+        >
+          Cerrar
+        </button>
+        <button type="submit" class="btn btn-primary">
+          Guardar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

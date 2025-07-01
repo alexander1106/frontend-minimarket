@@ -7,6 +7,7 @@ import { CommonModule } from '@angular/common';
 import { BarraLateralComponent } from '../../../../components/barra-lateral/barra-lateral.component';
 import { HeaderComponent } from '../../../../components/header/header.component';
 import { CategoriasService } from '../../../../service/categorias.service';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-list-categorias',
@@ -78,44 +79,98 @@ export class ListCategoriasComponent implements OnInit {
     this.mostrarModal = false;
   }
 
-  formSubmit(): void {
-    const payload = { nombre: this.cat.nombre.trim(), imagen: this.cat.imagen.trim() };
-    if (!payload.nombre) {
-      Swal.fire('Atención', 'El nombre no puede estar vacío', 'warning');
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.length) {
       return;
     }
-    const pet$ = this.cat.idcategoria
-      ? this.svc.editar({ idcategoria: this.cat.idcategoria, ...payload })
-      : this.svc.registrar(payload);
+    const file = input.files[0];
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.cat.imagen = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  }
 
-    pet$.subscribe({
+  formSubmit(): void {
+  const payload = {
+    nombre: this.cat.nombre.trim(),
+    imagen: this.cat.imagen
+  };
+
+  if (!payload.nombre) {
+    Swal.fire('Atención', 'El nombre no puede estar vacío', 'warning');
+    return;
+  }
+
+  const pet$: Observable<any> = this.cat.idcategoria
+    ? this.svc.editar({ idcategoria: this.cat.idcategoria, ...payload })
+    : this.svc.registrar(payload);
+
+  pet$.subscribe({
+    next: () => {
+      Swal.fire(
+        'Éxito',
+        this.cat.idcategoria ? 'Categoría actualizada' : 'Categoría registrada',
+        'success'
+      );
+      this.cerrarModal();
+      this.cargar();
+    },
+    error: (err: any) => {
+      console.error('Error en formSubmit Categorías:', err);
+
+      let title = 'Error';
+      let text = 'Error inesperado';
+      let icon: 'warning' | 'error' = 'error';
+
+      if (err.status === 409) {
+        title = 'Atención';
+        text = err.error?.message || 'Ya existe una categoría con ese nombre';
+        icon = 'warning';
+      }
+      else if (err.status === 400) {
+        title = 'No permitido';
+        text = err.error?.message || 'No se puede editar: la categoría está en uso por productos';
+        icon = 'warning';
+      }
+
+      Swal.fire({ icon, title, text, confirmButtonText: 'OK' });
+    }
+  });
+}
+
+
+eliminar(id: number): void {
+  Swal.fire({
+    title: '¿Eliminar?',
+    text: 'No podrás deshacer esto',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, eliminar'
+  }).then(result => {
+    if (!result.isConfirmed) return;
+
+    this.svc.eliminar(id).subscribe({
       next: () => {
-        Swal.fire('Éxito', this.cat.idcategoria ? 'Categoría actualizada' : 'Categoría registrada', 'success');
-        this.cerrarModal();
+        Swal.fire('Eliminado', 'Categoría eliminada', 'success');
         this.cargar();
       },
-      error: err => {
-        const body = err.error && typeof err.error === 'object' ? err.error : {};
-        const msg = body.message || body.error || 'Error inesperado';
-        const icon: 'warning' | 'error' = err.status === 409 ? 'warning' : 'error';
-        Swal.fire(err.status === 409 ? 'Atención' : 'Error', msg, icon);
+      error: (err: any) => {
+        console.error('Error eliminación Categorías:', err);
+
+        // 400 = categoría en uso por productos
+        const mensaje = err.error?.message ?? 'No se puede eliminar, ya está asociado a productos';
+        const isBadRequest = err.status === 400;
+
+        Swal.fire({
+          icon: isBadRequest ? 'warning' : 'error',
+          title: isBadRequest ? 'Atención' : 'Error',
+          text: mensaje,
+          confirmButtonText: 'OK'
+        });
       }
     });
-  }
-
-  eliminar(id: number): void {
-    Swal.fire({
-      title: '¿Eliminar?',
-      text: 'No podrás deshacer esto',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Sí'
-    }).then(r => {
-      if (!r.isConfirmed) return;
-      this.svc.eliminar(id).subscribe({
-        next: () => { Swal.fire('Eliminado', 'Categoría eliminada', 'success'); this.cargar(); },
-        error: err => Swal.fire('Error', err.error?.message || 'Error al eliminar', 'error')
-      });
-    });
-  }
+  });
+}
 }

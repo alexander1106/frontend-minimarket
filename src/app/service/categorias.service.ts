@@ -22,10 +22,11 @@ export class CategoriasService {
   }
 
   editar(cat: any): Observable<any> {
-    return this.http.put(`${baseUrl}/categorias"/`, cat);
-  }
+  return this.http.put(`${baseUrl}/categorias`, cat);
+}
 
   eliminar(id: number): Observable<string> {
     return this.http.delete(`${baseUrl}/categorias/${id}`,{ responseType: 'text' });
   }
+  
 }
