@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
 import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
+
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
 import { HeaderComponent } from '../../../../../components/header/header.component';
@@ -13,7 +15,7 @@ import { AddClienteComponent } from '../add-cliente/add-cliente.component';
 @Component({
   selector: 'app-list-clientes',
   standalone: true,
-  imports: [HeaderComponent, BarraLateralComponent, FormsModule, CommonModule, HttpClientModule],
+  imports: [HeaderComponent, RouterModule,BarraLateralComponent, FormsModule, CommonModule, HttpClientModule],
   templateUrl: './list-clientes.component.html',
   styleUrl: './list-clientes.component.css'
 })

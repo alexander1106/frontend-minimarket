@@ -256,3 +256,18 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 .btn-ver:hover {
   color: white;
 }
+.btn-transacciones {
+  border: none;
+  color: rgb(48, 42, 42);
+  font-size: 18px;
+  background-color: transparent !important;
+  cursor: pointer;
+}
+
+.btn-transacciones i {
+  color: rgb(20, 112, 152);
+  margin-left: 2px;
+  margin-right: 10px;
+  pointer-events: none; /* Para que solo el botón capture el click */
+}
+

@@ -53,18 +53,50 @@
                 <th>SubTotal</th>
               </tr>
             </thead>
-            <tbody>
-              <tr *ngFor="let item of productosAgregados">
-                <td>{{ item.nombre }}</td>
-                <td>{{ item.cantidad }}</td>
-                <td>${{ item.costoVenta }}</td>
-                <td>{{ item.descuento }}%</td>
-                <td>${{ (item.costoVenta * item.cantidad * (1 - item.descuento / 100)).toFixed(2) }}</td>
-              </tr>
-              <tr *ngIf="productosAgregados.length === 0">
-                <td colspan="6" class="no-records">Sin registros de productos agregados</td>
-              </tr>
-            </tbody>
+   <tbody>
+  <tr *ngFor="let item of productosAgregados">
+    <td>{{ item.producto?.nombre }}</td>
+    <td>
+      <input
+        type="number"
+        [(ngModel)]="item.cantidad"
+        min="1"
+        class="input-celda"
+      />
+    </td>
+    <td>
+   <input
+  type="number"
+  [(ngModel)]="item.producto.costoVenta"
+  min="0"
+  step="0.01"
+  class="input-celda"
+/>
+    </td>
+    <td>
+      <div class="input-contenedor">
+        <input
+          type="number"
+          [(ngModel)]="item.descuento"
+          min="0"
+          max="100"
+          class="input-celda"
+        />
+        <span class="input-sufijo">%</span>
+      </div>
+    </td>
+    <td>
+      ${{ (item.costoVenta * item.cantidad * (1 - item.descuento / 100)).toFixed(2) }}
+    </td>
+  </tr>
+  <tr *ngIf="productosAgregados.length === 0">
+    <td colspan="6" class="no-records">
+      Sin registros de productos agregados
+    </td>
+  </tr>
+</tbody>
+
+
           </table>
 
           <div class="summary-details">
@@ -80,23 +112,7 @@
               <span>Impuestos:</span>
               <span>-$0.00</span>
             </div>
-            <div class="summary-row">
-              <input type="checkbox" id="retenciones" />
-              <label for="retenciones">Retenciones</label>
-              <span>-$0.00</span>
-            </div>
-            <div class="summary-row bags-input">
-              <span>Imp. Bolsas ( 0 ):</span>
-              <div class="quantity-control">
-                <button>-</button>
-                <input type="number" value="0" readonly />
-                <button>+</button>
-              </div>
-              <span>$0.00</span>
-            </div>
-            <div class="summary-row total-value">
-              <span>Valor: 100.00</span>
-            </div>
+
             <div class="summary-row total-compra">
               <span>Total venta:</span>
               <span class="total-amount">${{ totalCompra.toFixed(2) }}</span>
@@ -131,25 +147,24 @@
   <div class="modal-dialog">
     <div class="modal-header">
       <h3>Información de cotización</h3>
-      <button class="close-btn" (click)="cerrarModales()">&times;</button>
     </div>
 
     <div class="modal-body">
-      <div class="row ">
+      <div class="unir">
         <!-- Selector de cliente -->
-        <div class="col selector">
-          <select id="cliente" [(ngModel)]="clienteSeleccionado" class="form-control">
-            <option [ngValue]="null" disabled selected>Seleccione cliente</option>
-            <option *ngFor="let cliente of clientes" [ngValue]="cliente.idCliente">
-              {{ cliente.nombre }}
-            </option>
-          </select>
-        </div>
+      <div class="selector">
+<select id="cliente" [(ngModel)]="clienteSeleccionado" class="form-control">
+  <option [ngValue]="null" disabled>Seleccione cliente</option>
+  <option *ngFor="let cliente of clientes" [ngValue]="cliente.idCliente">
+    {{ cliente.nombre }}
+  </option>
+</select>
 
 
+</div>
         <!-- Botón crear cliente -->
-        <div class="col d-flex align-items-end">
-          <button class="btn btn-primary w-100 add-cliente">Crear Cliente</button>
+        <div>
+<button class="btn btn-primary w-100 add-cliente" (click)="abrirFormularioCliente()"> + </button>
         </div>
       </div>
 
@@ -157,7 +172,15 @@
         <!-- Fecha de vencimiento -->
         <div class="col">
           <label for="fecha" class="form-label"><strong>Fecha Vencimiento</strong></label>
-          <input id="fecha" type="date" [(ngModel)]="fechaVencimiento" class="form-control" />
+<input
+  id="fecha"
+  type="date"
+  [(ngModel)]="fechaVencimiento"
+  [min]="minFechaManana()"
+  class="form-control"
+/>
+
+
         </div>
 
         <!-- Total a pagar -->
@@ -169,20 +192,122 @@
     </div>
 
     <div class="modal-footer d-flex justify-content-end mt-3">
-      <button class="btn btn-primary" (click)="generarCotizacion()">Procesar</button>
+      <button class="btn btn-primary" (click)="generarCotizacion()" [routerLink]="['/admin/list-cotizaciones']" routerLinkActive="router-link-active" >Procesar</button>
+      <button class="btn btn-secondary" (click)="cerrarModales()">
+        Cancelar
+      </button>
     </div>
   </div>
 </div>
 
-
-<!-- Modal Pago -->
+<!-- Modal Pago Mejorado -->
 <div class="modal-overlay" *ngIf="mostrarModalPago">
-  <div class="modal-content">
-    <h3>Confirmar Pago</h3>
-    <p>¿Desea realizar el pago por ${{ totalCompra.toFixed(2) }}?</p>
-    <div class="modal-buttons">
-      <button class="btn btn-success" (click)="confirmarPago()">Sí, pagar</button>
-      <button class="btn btn-secondary" (click)="cerrarModales()">Cancelar</button>
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <h3>Procesar Pago</h3>
+      <button class="close-btn" (click)="cerrarModales()">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Cliente -->
+
+      <div class="mb-3">
+        <label class="form-label"><strong>Cliente</strong></label>
+        <select class="form-control" [(ngModel)]="clienteSeleccionado">
+          <option [ngValue]="null" disabled>Seleccione cliente</option>
+          <option *ngFor="let cliente of clientes" [ngValue]="cliente.idCliente">
+            {{ cliente.nombre }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Monto -->
+      <div class="mb-3">
+        <label class="form-label"><strong>Monto a pagar</strong></label>
+        <input
+          type="number"
+          [(ngModel)]="montoPago"
+          class="form-control"
+          [min]="0"
+          [max]="totalCompra"
+        />
+      </div>
+<!-- Comprobante de Pago -->
+<div class="mb-3">
+  <label class="form-label"><strong>Comprobante de Pago</strong></label>
+  <select class="form-control" [(ngModel)]="comprobantePago">
+    <option [ngValue]="null" disabled>Seleccione comprobante</option>
+    <option value="BOLETA">Boleta</option>
+    <option value="FACTURA">Factura</option>
+    <option value="TICKET">Ticket</option>
+    <option value="RECIBO">Recibo</option>
+  </select>
+</div>
+
+      <!-- Método de pago -->
+      <div class="mb-3">
+        <label class="form-label"><strong>Método de Pago</strong></label>
+        <select class="form-control" [(ngModel)]="metodoPago">
+          <option [ngValue]="null" disabled>Seleccione método</option>
+          <option value="EFECTIVO">Efectivo</option>
+          <option value="TARJETA">Tarjeta</option>
+          <option value="TRANSFERENCIA">Transferencia</option>
+        </select>
+      </div>
+
+      <!-- Delivery -->
+      <div class="form-check">
+        <input
+          class="form-check-input"
+          type="checkbox"
+          id="deliveryCheck"
+          [(ngModel)]="requiereDelivery"
+        />
+        <label class="form-check-label" for="deliveryCheck">
+          Requiere Delivery
+        </label>
+      </div>
+    </div>
+<div *ngIf="requiereDelivery" class="mt-3 border rounded p-3 bg-light">
+  <div class="mb-3">
+    <label class="form-label"><strong>Dirección de Entrega</strong></label>
+    <input
+      type="text"
+      [(ngModel)]="direccionEntrega"
+      class="form-control"
+      placeholder="Ingrese dirección completa"
+    />
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label"><strong>Costo de Entrega</strong></label>
+    <input
+      type="number"
+      [(ngModel)]="costoEntrega"
+      min="0"
+      class="form-control"
+      placeholder="0.00"
+    />
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label"><strong>Fecha de Entrega</strong></label>
+    <input
+      type="date"
+      [(ngModel)]="fechaEntrega"
+      class="form-control"
+      [min]="minFechaManana()"
+    />
+  </div>
+</div>
+
+    <div class="modal-footer d-flex justify-content-end mt-3">
+      <button class="btn btn-success" (click)="confirmarPago()">
+        <i class="fas fa-check-circle"></i> Confirmar Pago
+      </button>
+      <button class="btn btn-secondary" (click)="cerrarModales()">
+        Cancelar
+      </button>
     </div>
   </div>
 </div>

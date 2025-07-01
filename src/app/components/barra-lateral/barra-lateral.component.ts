@@ -11,14 +11,27 @@ import { LoginService } from '../../service/login.service';
   styleUrl: './barra-lateral.component.css'
 })
 export class BarraLateralComponent {
-  constructor(private loginService:LoginService, private router:Router) { }
+  constructor(private loginService: LoginService, private router: Router) {}
+
   activeMenu: string | null = null;
 
-  cerrarSesion(){
-    this.loginService.logout(),
-    this.router.navigate(['/login'])
-  }
   toggleSubmenu(menu: string) {
     this.activeMenu = this.activeMenu === menu ? null : menu;
   }
+
+  cerrarSesion() {
+    this.loginService.logout();
+    this.router.navigate(['/login']);
+  }
+
+  tieneRol(role: string): boolean {
+    return this.loginService.hasRole(role);
+  }
+
+
+tieneRolesPermitidos(roles: string[]): boolean {
+  return this.loginService.hasAnyRole(roles);
+}
+
+
 }

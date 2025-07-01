@@ -1,7 +1,7 @@
 .custom-sidebar {
   background-color: black;
   font-size: 0.95rem;
-  height: 100%;
+  height: 100vh !important;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   display: flex;
   flex-direction: column;

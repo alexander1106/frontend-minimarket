@@ -1,0 +1,158 @@
+<div class="contenedor">
+  <div class="barra">
+    <app-barra-lateral></app-barra-lateral>
+  </div>
+
+  <div class="encabezado">
+    <app-header></app-header>
+    <hr class="border-secondary mb-4" />
+
+    <div class="container">
+      <div class="header">
+        <div>
+          <h2>Lista de Aperturas</h2>
+
+          <div class="selects">
+   <select
+  name="idSucursal"
+  [(ngModel)]="sucursalSeleccionada"
+  (ngModelChange)="onSucursalChange()"
+  [disabled]="loginService.getUserRole() !== 'ADMIN'"
+>
+  <option [ngValue]="undefined">Todas las sucursales</option>
+  <option
+    *ngFor="let sucursal of sucursales"
+    [ngValue]="sucursal.idSucursal"
+  >
+    {{ sucursal.nombreSucursal }}
+  </option>
+</select>
+            <select
+              [(ngModel)]="cajaSeleccionadaFiltro"
+              (ngModelChange)="actualizarFiltradoAperturas()"
+              [disabled]="cajasDeSucursalSeleccionada.length === 0"
+            >
+              <option [ngValue]="undefined">Todas las cajas</option>
+              <option
+                *ngFor="let caja of cajasDeSucursalSeleccionada"
+                [ngValue]="caja.idCaja"
+              >
+                {{ caja.nombreCaja }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div class="search-sort">
+          <input
+            type="text"
+            placeholder="Buscar apertura"
+            class="search-input"
+            [(ngModel)]="filtroBusqueda"
+            (ngModelChange)="actualizarFiltradoAperturas()"
+          />
+     <button
+  class="btn-agregar"
+  (click)="abrirModalApertura()"
+>
+  <i class="fas fa-plus"></i> Aperturar
+</button>
+
+
+
+        </div>
+      </div>
+
+      <table class="customer-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Caja</th>
+            <th>Encargado</th>
+            <th>Fecha Apertura</th>
+            <th>Fecha Cierre</th>
+            <th>Saldo Inicial</th>
+            <th>Saldo final</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let apertura of aperturasFiltradas; let i = index">
+            <td>{{ (paginaActual - 1) * elementosPorPagina + i + 1 }}</td>
+            <td>{{ apertura.caja?.nombreCaja || 'N/A' }}</td>
+            <td>{{ apertura.usuarios?.username || 'N/A' }}</td>
+            <td>{{ apertura.fechaApertura | date: 'short' }}</td>
+            <td>{{ apertura.fechaCierre | date: 'short' }}</td>
+            <td>{{ apertura.saldoInicial }}</td>
+            <td>{{ apertura.saldoFinal }}</td>
+            <td>{{ apertura.estadoCaja }}</td>
+            <td>
+              <button class="btn-ver" (click)="verApertura(apertura.idAperturaCaja)">
+                <i class="fas fa-eye"></i>
+              </button>
+
+
+<button
+  class="btn-transacciones"
+  (click)="irATransacciones(apertura.idAperturaCaja)"
+  [disabled]="apertura.estadoCaja === 'CERRADO'"
+  [ngClass]="{ 'disabled-button': apertura.estadoCaja === 'CERRADO' }"
+  title="Ver transacciones"
+>
+  <i class="fas fa-credit-card"></i>
+</button>
+         <button class="btn-eliminar" (click)="eliminarApertura(apertura.idAperturaCaja)">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="aperturasFiltradas.length === 0">
+            <td colspan="9" class="text-center">
+              No hay aperturas que mostrar.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <nav aria-label="Paginación" class="mt-3">
+        <ul class="pagination justify-content-center">
+          <li
+            class="page-item"
+            [class.disabled]="paginaActual === 1"
+            (click)="cambiarPagina(paginaActual - 1)"
+          >
+            <a class="page-link" href="javascript:void(0)">Anterior</a>
+          </li>
+          <li
+            class="page-item"
+            *ngFor="let pagina of paginasArray()"
+            [class.active]="pagina === paginaActual"
+            (click)="cambiarPagina(pagina)"
+          >
+            <a class="page-link" href="javascript:void(0)">{{ pagina }}</a>
+          </li>
+          <li
+            class="page-item"
+            [class.disabled]="paginaActual === totalPaginas"
+            (click)="cambiarPagina(paginaActual + 1)"
+          >
+            <a class="page-link" href="javascript:void(0)">Siguiente</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="mostrarModal">
+  <div class="modal-content">
+    <app-add-apertura
+      *ngIf="mostrarModal"
+      [cajasDisponibles]="cajasDeSucursalSeleccionada"
+      [cajaPreseleccionada]="cajaSeleccionadaFiltro"
+      (cerrar)="cerrarModal()"
+      (guardado)="onAperturaGuardada($event)">
+    </app-add-apertura>
+  </div>
+</div>

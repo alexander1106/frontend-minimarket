@@ -42,7 +42,8 @@ throw new Error('Method not implemented.');
   constructor(
     private snack: MatSnackBar,
     private loginService: LoginService,
-    private router: Router
+    private router: Router,
+
   ) {}
 
   ngOnInit(): void {}
@@ -51,79 +52,48 @@ throw new Error('Method not implemented.');
     this.currentInfoSlide = index;
   }
 
-  formSubmit() {
-    if (this.loginData.username.trim() === '' || this.loginData.username.trim() == null) {
-      this.snack.open('El nombre de usuario es requerido', 'Aceptar', {
-        duration: 3000,
-      });
-      return;
-    }
-
-    if (this.loginData.password.trim() === '' || this.loginData.password.trim() == null) {
-      this.snack.open('La contraseña es requerida', 'Aceptar', {
-        duration: 3000,
-      });
-      return;
-    }
-
-    this.loginService.generarToken(this.loginData).subscribe(
-      (data: any) => {
-        this.loginService.loginUser(data.token);
-        console.log(data.token);
-
-        this.loginService.getCurrentUser().subscribe(
-          (user: any) => {
-            this.loginService.setUser(user);
-            if (!user.enabled) {
-              Swal.fire({
-                icon: 'error',
-                title: 'Usuario deshabilitado',
-                text: 'Su cuenta está deshabilitada. Contacte al administrador.',
-                confirmButtonText: 'Aceptar',
-              });
-              localStorage.clear();
-              return;
-            }
-            if (!user.rol.estado) {
-              Swal.fire({
-                icon: 'error',
-                title: 'Rol deshabilitado',
-                text: 'El rol asignado a su cuenta está deshabilitado. Contacte al administrador.',
-                confirmButtonText: 'Aceptar',
-              });
-              localStorage.clear();
-              return;
-            }
-            this.router.navigate(['admin']);
-          },
-          (error) => {
-            console.log(error);
-            Swal.fire({
-              icon: 'error',
-              title: 'Error al obtener datos del usuario',
-              text: 'No se pudo obtener la información del usuario.',
-              confirmButtonText: 'Aceptar',
-            });
-          }
-        );
-      },
-      (error) => {
-        if (error.error.error === 'USUARIO DESHABILITADO') {
-          Swal.fire({
-            icon: 'error',
-            title: 'Usuario deshabilitado',
-            text: 'Su cuenta ha sido deshabilitada. Por favor, contacte con el administrador.',
-            confirmButtonText: 'Aceptar',
-          });
-        } else {
-          Swal.fire({
-            icon: 'error',
-            title: 'Credenciales inválidas',
-            text: 'Por favor, verifique su usuario y contraseña.',
-            confirmButtonText: 'Aceptar',
-          });
-        }
-      }
-    );
+formSubmit() {
+  if (this.loginData.username.trim() === '' || this.loginData.username.trim() == null) {
+    this.snack.open('El nombre de usuario es requerido', 'Aceptar', { duration: 3000 });
+    return;
   }
+
+  if (this.loginData.password.trim() === '' || this.loginData.password.trim() == null) {
+    this.snack.open('La contraseña es requerida', 'Aceptar', { duration: 3000 });
+    return;
+  }
+
+this.loginService.generarToken(this.loginData).subscribe(
+  (data: any) => {
+    this.loginService.loginUser(data.token);
+    this.loginService.setRol(data.rol);
+
+    // Guarda todo el usuario en localStorage
+    this.loginService.setUser(data.usuario);
+
+    console.log('Sucursal ID:', data.usuario.sucursal.idSucursal);
+
+    this.snack.open('Inicio de sesión exitoso', 'Aceptar', { duration: 3000 });
+    this.router.navigate(['admin']);
+  },
+    (error) => {
+      if (error.error.error === 'USUARIO DESHABILITADO') {
+        Swal.fire({
+          icon: 'error',
+          title: 'Usuario deshabilitado',
+          text: 'Su cuenta ha sido deshabilitada. Por favor, contacte con el administrador.',
+          confirmButtonText: 'Aceptar',
+        });
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Credenciales inválidas',
+          text: 'Por favor, verifique su usuario y contraseña.',
+          confirmButtonText: 'Aceptar',
+        });
+      }
+    }
+  );
+}
+
 }

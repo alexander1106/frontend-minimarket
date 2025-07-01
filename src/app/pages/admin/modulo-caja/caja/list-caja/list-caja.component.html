@@ -8,53 +8,85 @@
     <hr class="border-secondary mb-4" />
 
     <div class="container">
+      <!-- Encabezado -->
       <div class="header">
         <div>
-          <h2>Métodos de pago</h2>
-          <span class="subtitle">{{ metodos.length }} Métodos registrados</span>
+          <h2>Lista de Cajas</h2>
+          <div class="custom-select-wrapper">
+         <select
+  name="idSucursal"
+  [(ngModel)]="sucursalSeleccionada"
+  (ngModelChange)="actualizarFiltradoYPagina()"
+  [disabled]="rolUsuario !== 'ADMIN'"
+>
+  <option *ngIf="rolUsuario === 'ADMIN'" [ngValue]="undefined">
+    Todas las sucursales
+  </option>
+  <option
+    *ngFor="let sucursal of sucursales"
+    [ngValue]="sucursal.idSucursal"
+  >
+    {{ sucursal.nombreSucursal }}
+  </option>
+</select>
+
+          </div>
         </div>
+
         <div class="search-sort">
           <input
             type="text"
-            placeholder="Buscar método"
+            placeholder="Buscar caja"
             class="search-input"
             [(ngModel)]="filtroBusqueda"
             (ngModelChange)="actualizarFiltradoYPagina()"
           />
-          <button (click)="navegarYMostrarModal()" class="btn-agregar">
-            <i class="fas fa-plus"></i> Método
+          <button class="btn-agregar" (click)="crearCaja()">
+            <i class="fas fa-plus"></i> Caja
           </button>
         </div>
       </div>
 
+      <!-- Tabla -->
       <table class="customer-table">
         <thead>
           <tr>
             <th>#</th>
             <th>Nombre</th>
-
+            <th>Sucursal</th>
+            <th>Saldo</th>
+            <th>Estado</th>
             <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let metodo of metodosFiltrados; let i = index">
+          <tr *ngFor="let caja of cajasFiltradas; let i = index">
             <td>{{ (paginaActual - 1) * elementosPorPagina + i + 1 }}</td>
-            <td>{{ metodo.nombre }}</td>
+            <td>{{ caja.nombreCaja || 'N/A' }}</td>
+            <td>{{ caja.sucursales?.nombreSucursal || 'N/A' }}</td>
+            <td>{{ caja.saldoActual || 'N/A' }}</td>
+            <td>{{ caja.estadoCaja || 'N/A' }}</td>
             <td>
-              <button (click)="verMetodo(metodo.idMetodoPago)" class="btn-ver">
+              <button (click)="verCaja(caja.idCaja)" class="btn-ver">
                 <i class="fas fa-eye"></i>
               </button>
-              <button (click)="editarMetodo(metodo.idMetodoPago)" class="btn-editar">
+              <button (click)="editarCaja(caja.idCaja)" class="btn-editar">
                 <i class="fas fa-edit"></i>
               </button>
-              <button (click)="eliminarMetodo(metodo.idMetodoPago)" class="btn-eliminar">
+              <button (click)="eliminarCaja(caja.idCaja)" class="btn-eliminar">
                 <i class="fas fa-trash-alt"></i>
               </button>
+            </td>
+          </tr>
+          <tr *ngIf="cajasFiltradas.length === 0">
+            <td colspan="6" class="text-center">
+              No hay cajas que mostrar.
             </td>
           </tr>
         </tbody>
       </table>
 
+      <!-- Paginación -->
       <nav aria-label="Paginación" class="mt-3">
         <ul class="pagination justify-content-center">
           <li
@@ -84,36 +116,15 @@
     </div>
   </div>
 </div>
-<div *ngIf="mostrarModal" class="modal">
+
+<div class="modal-overlay" *ngIf="modalAbierto">
   <div class="modal-content">
-    <span class="close" (click)="cerrarModal()">&times;</span>
-    <h2>
-      {{
-        modoModal === 'agregar'
-          ? 'Nuevo Método de Pago'
-          : modoModal === 'editar'
-          ? 'Editar Método de Pago'
-          : 'Detalle del Método de Pago'
-      }}
-    </h2>
+   <app-add-caja
+  [cajaInput]="cajaSeleccionada"
+  [cajas]="cajas"
+  (cerrar)="cerrarModal()"
+  (guardado)="onCajaGuardada()"
+></app-add-caja>
 
-    <form *ngIf="modoModal !== 'ver'" (ngSubmit)="formSubmit()">
-      <input
-        type="text"
-        placeholder="Nombre"
-        [(ngModel)]="metodo.nombre"
-        name="nombre"
-        required
-      />
-
-      <button type="submit">
-        {{ metodo.id_metodo ? 'Actualizar' : 'Guardar' }}
-      </button>
-    </form>
-
-    <div *ngIf="modoModal === 'ver'">
-      <p><strong>ID:</strong> {{ metodo.id_metodo }}</p>
-      <p><strong>Nombre:</strong> {{ metodo.nombre }}</p>
-    </div>
   </div>
 </div>
