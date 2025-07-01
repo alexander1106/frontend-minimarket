@@ -58,9 +58,9 @@
               <tr *ngFor="let item of productosAgregados">
                 <td>{{ item.nombre }}</td>
                 <td>{{ item.cantidad }}</td>
-                <td>${{ item.costo_venta }}</td>
+                <td>${{ item.costoVenta }}</td>
                 <td>{{ item.descuento }}%</td>
-                <td>${{ (item.costo_venta * item.cantidad * (1 - item.descuento / 100)).toFixed(2) }}</td>
+                <td>${{ (item.costoVenta * item.cantidad * (1 - item.descuento / 100)).toFixed(2) }}</td>
               </tr>
               <tr *ngIf="productosAgregados.length === 0">
                 <td colspan="6" class="no-records">Sin registros de productos agregados</td>
@@ -99,12 +99,91 @@
               <span>Valor: 100.00</span>
             </div>
             <div class="summary-row total-compra">
-              <span>Total Compra:</span>
+              <span>Total venta:</span>
               <span class="total-amount">${{ totalCompra.toFixed(2) }}</span>
             </div>
+              <!-- Botón de Comprar -->
+        <div class="summary-row d-flex">
+  <button class="btn btn-success" (click)="abrirModalPago()">
+    <i class="fas fa-money-bill-wave"></i> Pagar
+  </button>
+
+  <button class="btn btn-primary" (click)="abrirModalCotizacion()">
+    <i class="fas fa-file-invoice-dollar"></i> Cotizar
+  </button>
+
+  <button class="btn btn-danger">
+    <i class="fas fa-times-circle"></i> Cancelar
+  </button>
+</div>
+
+
           </div>
+
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Modal Cotización -->
+<div class="modal-overlay" *ngIf="mostrarModalCotizacion">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <h3>Información de cotización</h3>
+      <button class="close-btn" (click)="cerrarModales()">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="row ">
+        <!-- Selector de cliente -->
+        <div class="col selector">
+          <select id="cliente" [(ngModel)]="clienteSeleccionado" class="form-control">
+            <option [ngValue]="null" disabled selected>Seleccione cliente</option>
+            <option *ngFor="let cliente of clientes" [ngValue]="cliente.idCliente">
+              {{ cliente.nombre }}
+            </option>
+          </select>
+        </div>
+
+
+        <!-- Botón crear cliente -->
+        <div class="col d-flex align-items-end">
+          <button class="btn btn-primary w-100 add-cliente">Crear Cliente</button>
+        </div>
+      </div>
+
+      <div class="row mt-3">
+        <!-- Fecha de vencimiento -->
+        <div class="col">
+          <label for="fecha" class="form-label"><strong>Fecha Vencimiento</strong></label>
+          <input id="fecha" type="date" [(ngModel)]="fechaVencimiento" class="form-control" />
+        </div>
+
+        <!-- Total a pagar -->
+        <div class="col">
+          <label class="form-label"><strong>Total a Pagar</strong></label>
+          <input type="text" class="form-control text-end" [value]="'$ ' + totalPagar.toLocaleString()" readonly />
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer d-flex justify-content-end mt-3">
+      <button class="btn btn-primary" (click)="generarCotizacion()">Procesar</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Modal Pago -->
+<div class="modal-overlay" *ngIf="mostrarModalPago">
+  <div class="modal-content">
+    <h3>Confirmar Pago</h3>
+    <p>¿Desea realizar el pago por ${{ totalCompra.toFixed(2) }}?</p>
+    <div class="modal-buttons">
+      <button class="btn btn-success" (click)="confirmarPago()">Sí, pagar</button>
+      <button class="btn btn-secondary" (click)="cerrarModales()">Cancelar</button>
     </div>
   </div>
 </div>

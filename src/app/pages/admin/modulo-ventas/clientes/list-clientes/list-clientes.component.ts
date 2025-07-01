@@ -1,5 +1,6 @@
+
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -9,62 +10,107 @@ import { BarraLateralComponent } from '../../../../../components/barra-lateral/b
 import { ClientesService } from '../../../../../service/clientes.service';
 import { MatDialog } from '@angular/material/dialog';
 import { AddClienteComponent } from '../add-cliente/add-cliente.component';
-import { filter } from 'rxjs';
 
 @Component({
   selector: 'app-list-clientes',
-  imports: [HeaderComponent, BarraLateralComponent,FormsModule, CommonModule,HttpClientModule],
+  standalone: true,
+  imports: [HeaderComponent, BarraLateralComponent, FormsModule, CommonModule, HttpClientModule],
   templateUrl: './list-clientes.component.html',
   styleUrl: './list-clientes.component.css'
 })
-export class ListClientesComponent  implements OnInit {
+export class ListClientesComponent implements OnInit {
   clientes: any[] = [];
   clientesFiltrados: any[] = [];
   filtroBusqueda: string = '';
-  mostrarModal: boolean = false;
-
-  cliente = {
-    id_cliente: '',
-    direccion: '',
-    dni: '',
-    email:'',
-    estado:'',
-    fecha_registro:'',
-    nombre:'',
-    ruc:'',
-    telefono:'',
-  };
-
   paginaActual: number = 1;
   elementosPorPagina: number = 5;
 
   constructor(
-  private clienteService: ClientesService,
-  private router: Router,
-  private route: ActivatedRoute,
-  private dialog: MatDialog  // <-- inyecta MatDialog
+    private clienteService: ClientesService,
+    private router: Router,
+    private dialog: MatDialog
+  ) {}
+ngOnInit() {
+  this.listarClientes();
 
-) {}
+  const url = this.router.url;
 
+  // Modal de agregar
+  if (url.endsWith('/add-clientes')) {
+    this.abrirModalNuevoCliente();
+  }
 
-  ngOnInit() {
-    this.listarClientes();
+  // Modal de editar
+  const matchEdit = url.match(/edit-clientes\/(\d+)/);
+  if (matchEdit) {
+    const idCliente = Number(matchEdit[1]);
+    this.abrirModalEditarClientePorId(idCliente);
+  }
 
-    // Detectar cambios de ruta para abrir modal si estamos en /clientes/add
-    this.router.events
-      .pipe(filter(event => event instanceof NavigationEnd))
-      .subscribe(() => {
-        const url = this.router.url;
-        if (url.endsWith('/add-clientes')) {
-          this.abrirModalNuevoCliente();
+  // Modal de ver
+  const matchView = url.match(/view-clientes\/(\d+)/);
+  if (matchView) {
+    const idCliente = Number(matchView[1]);
+    this.abrirModalVerClientePorId(idCliente);
+  }
+}
+navegarYVerCliente(idCliente: number) {
+  this.router.navigate(['/admin/view-clientes', idCliente]);
+}
+
+abrirModalVerClientePorId(id: number) {
+  this.clienteService.buscarClienteId(id).subscribe({
+    next: (cliente) => {
+      const dialogRef = this.dialog.open(AddClienteComponent, {
+        width: '1200px',
+        disableClose: true,
+        data: { cliente, modo: 'ver' }
+      });
+
+      dialogRef.afterClosed().subscribe(() => {
+        // Al cerrar, volver a la lista
+        setTimeout(() => {
+          this.router.navigate(['/admin/list-clientes']);
+        }, 0);
+      });
+    },
+    error: () => {
+      Swal.fire('Error', 'No se pudo cargar el cliente', 'error');
+      this.router.navigate(['/admin/list-clientes']);
+    }
+  });
+}
+abrirModalEditarClientePorId(id: number) {
+  this.clienteService.buscarClienteId(id).subscribe({
+    next: (cliente) => {
+      const dialogRef = this.dialog.open(AddClienteComponent, {
+        width: '1200px',
+        disableClose: true,
+        data: {
+          cliente,
+          modo: 'editar'   // 🔴 Aquí le indicas que es modo edición
         }
       });
 
-    // También al iniciar (por si ya estamos en /clientes/add)
-    if (this.router.url.endsWith('/add-clientes')) {
-      this.abrirModalNuevoCliente();
+      dialogRef.afterClosed().subscribe(result => {
+        if (result === 'guardado') {
+          this.listarClientes();
+        }
+
+        setTimeout(() => {
+          this.router.navigate(['/admin/list-clientes']);
+        }, 0);
+      });
+    },
+    error: () => {
+      Swal.fire('Error', 'No se pudo cargar el cliente', 'error');
+      this.router.navigate(['/admin/list-clientes']);
     }
-  }
+  });
+}
+navegarYEditarCliente(idCliente: number) {
+  this.router.navigate(['/admin/edit-clientes', idCliente]);
+}
 
   abrirModalNuevoCliente() {
     const dialogRef = this.dialog.open(AddClienteComponent, {
@@ -73,19 +119,54 @@ export class ListClientesComponent  implements OnInit {
     });
 
     dialogRef.afterClosed().subscribe(result => {
-      // Volver a la lista sin /add al cerrar modal
-      this.router.navigate(['/clientes']);
       if (result === 'guardado') {
         this.listarClientes();
       }
+
+      // Asegura que el modal se cierre completamente antes de redirigir
+      setTimeout(() => {
+        this.router.navigate(['/admin/list-clientes']);
+      }, 0);
     });
   }
+
+eliminarCliente(id: number) {
+  Swal.fire({
+    title: '¿Estás seguro?',
+    text: 'Esta acción eliminará al cliente permanentemente',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: 'Sí, eliminar',
+    cancelButtonText: 'Cancelar'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      this.clienteService.eliminarCliente(id).subscribe({
+        next: () => {
+          Swal.fire({
+            title: 'Eliminado',
+            text: 'El cliente ha sido eliminado',
+            icon: 'success',
+            timer: 1500,
+            showConfirmButton: false
+          }).then(() => {
+            window.location.reload(); // ✅ recarga la página completamente
+          });
+        },
+        error: (err) => {
+          Swal.fire('Error', 'No se pudo eliminar el cliente', 'error');
+          console.error(err);
+        }
+      });
+    }
+  });
+}
 
 
   listarClientes() {
     this.clienteService.listarClientes().subscribe({
       next: (data: any) => {
-        console.log('Clientes cargados:', data);
         this.clientes = data || [];
         this.buscarCliente();
       },
@@ -95,7 +176,6 @@ export class ListClientesComponent  implements OnInit {
       }
     });
   }
-
 
   buscarCliente() {
     const filtro = this.filtroBusqueda.trim().toLowerCase();
@@ -116,16 +196,17 @@ export class ListClientesComponent  implements OnInit {
     );
   }
 
- cambiarPagina(pagina: number) {
-  if (pagina >= 1 && pagina <= this.totalPaginas) {
-    this.paginaActual = pagina;
-    this.actualizarPaginaFiltrada();
+  cambiarPagina(pagina: number) {
+    if (pagina >= 1 && pagina <= this.totalPaginas) {
+      this.paginaActual = pagina;
+      this.actualizarPaginaFiltrada();
+    }
   }
-}
 
-paginasArray(): number[] {
-  return Array(this.totalPaginas).fill(0).map((x, i) => i + 1);
-}
+  paginasArray(): number[] {
+    return Array(this.totalPaginas).fill(0).map((x, i) => i + 1);
+  }
+
   actualizarPaginaFiltrada() {
     const filtro = this.filtroBusqueda.trim().toLowerCase();
 
@@ -159,37 +240,21 @@ paginasArray(): number[] {
     return Math.ceil(coincidencias.length / this.elementosPorPagina);
   }
 
+abrirModalEditarCliente(cliente: any) {
+  const dialogRef = this.dialog.open(AddClienteComponent, {
+    width: '1200px',
+    disableClose: true,
+    data: { cliente }
+  });
 
-  eliminarMetodo(id: number) {
-      if (!id) {
-    Swal.fire("Error", "ID de método no válido", "error");
-    return;
-  }
-    Swal.fire({
-      title: "¿Eliminar?",
-      text: "No podrás deshacer esto.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Sí, eliminar",
-      cancelButtonText: "Cancelar"
-    }).then(result => {
-      if (result.isConfirmed) {
-        this.clienteService.eliminarCliente(id).subscribe({
-          next: () => {
-            Swal.fire("Eliminado", "El método fue eliminado", "success");
-            this.listarClientes();
-          },
-          error: (err) => {
-            Swal.fire("Error", "No se pudo eliminar", "error");
-            console.log(err);
-          }
-        });
-      }
-    });
-  }
+  dialogRef.afterClosed().subscribe(result => {
+    if (result === 'guardado') {
+      this.listarClientes();
+    }
+  });
+}
 
- navegarYMostrarModal() {
+  navegarYMostrarModal() {
     this.router.navigate(['admin/add-clientes']);
   }
-
 }

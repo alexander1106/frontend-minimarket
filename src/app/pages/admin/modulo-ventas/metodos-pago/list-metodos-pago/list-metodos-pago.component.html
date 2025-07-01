@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <div class="contenedor">
    <div class="barra">
     <app-barra-lateral></app-barra-lateral>
@@ -75,3 +76,126 @@
 </div>
 
 
+=======
+<div class="contenedor">
+  <div class="barra">
+    <app-barra-lateral></app-barra-lateral>
+  </div>
+
+  <div class="encabezado">
+    <app-header></app-header>
+    <hr class="border-secondary mb-4" />
+
+    <div class="container">
+      <div class="header">
+        <div>
+          <h2>Métodos de pago</h2>
+          <span class="subtitle">{{ metodos.length }} Métodos registrados</span>
+        </div>
+        <div class="search-sort">
+          <input
+            type="text"
+            placeholder="Buscar método"
+            class="search-input"
+            [(ngModel)]="filtroBusqueda"
+            (ngModelChange)="actualizarFiltradoYPagina()"
+          />
+          <button (click)="navegarYMostrarModal()" class="btn-agregar">
+            <i class="fas fa-plus"></i> Método
+          </button>
+        </div>
+      </div>
+
+      <table class="customer-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nombre</th>
+            <th>Descripcion</th>
+
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let metodo of metodosFiltrados; let i = index">
+            <td>{{ (paginaActual - 1) * elementosPorPagina + i + 1 }}</td>
+            <td>{{ metodo.nombre }}</td>
+
+            <td>
+              <button (click)="verMetodo(metodo.idMetodoPago)" class="btn-ver">
+                <i class="fas fa-eye"></i>
+              </button>
+              <button (click)="editarMetodo(metodo.idMetodoPago)" class="btn-editar">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button (click)="eliminarMetodo(metodo.idMetodoPago)" class="btn-eliminar">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <nav aria-label="Paginación" class="mt-3">
+        <ul class="pagination justify-content-center">
+          <li
+            class="page-item"
+            [class.disabled]="paginaActual === 1"
+            (click)="cambiarPagina(paginaActual - 1)"
+          >
+            <a class="page-link" href="javascript:void(0)">Anterior</a>
+          </li>
+          <li
+            class="page-item"
+            *ngFor="let pagina of paginasArray()"
+            [class.active]="pagina === paginaActual"
+            (click)="cambiarPagina(pagina)"
+          >
+            <a class="page-link" href="javascript:void(0)">{{ pagina }}</a>
+          </li>
+          <li
+            class="page-item"
+            [class.disabled]="paginaActual === totalPaginas"
+            (click)="cambiarPagina(paginaActual + 1)"
+          >
+            <a class="page-link" href="javascript:void(0)">Siguiente</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+</div>
+<div *ngIf="mostrarModal" class="modal">
+  <div class="modal-content">
+    <span class="close" (click)="cerrarModal()">&times;</span>
+    <h2>
+      {{
+        modoModal === 'agregar'
+          ? 'Nuevo Método de Pago'
+          : modoModal === 'editar'
+          ? 'Editar Método de Pago'
+          : 'Detalle del Método de Pago'
+      }}
+    </h2>
+
+    <form *ngIf="modoModal !== 'ver'" (ngSubmit)="formSubmit()">
+      <input
+        type="text"
+        placeholder="Nombre"
+        [(ngModel)]="metodo.nombre"
+        name="nombre"
+        required
+      />
+
+      <button type="submit">
+        {{ metodo.id_metodo ? 'Actualizar' : 'Guardar' }}
+      </button>
+    </form>
+
+    <div *ngIf="modoModal === 'ver'">
+      <p><strong>ID:</strong> {{ metodo.id_metodo }}</p>
+      <p><strong>Nombre:</strong> {{ metodo.nombre }}</p>
+    </div>
+  </div>
+</div>
+>>>>>>> c9344cccc07f00d5cfac9bc27d228d1e08befd73

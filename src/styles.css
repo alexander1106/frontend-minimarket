@@ -1,3 +1,4 @@
+
 /* You can add global styles to this file, and also import other style files */
 *{
   padding: 0px;
@@ -229,6 +230,30 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
   color: #3b82f6;
 }
 
+.btn-editar:hover{
+  color: rgb(183, 134, 11);
+}
 .btn-eliminar {
   color: #ef4444;
+}
+
+
+.btn-ver {
+  display: inline-flex;
+  align-items: center;
+  background: transparent;
+  font-size: 0.8rem;
+
+  border: 0px solid ;
+  margin-right: 10px;
+  transition: all 0.2s ease;
+}
+
+.btn-ver i {
+  color: #0c4c91;
+  font-size: 1.1rem;
+}
+
+.btn-ver:hover {
+  color: white;
 }
