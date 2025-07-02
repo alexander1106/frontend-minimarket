@@ -25,12 +25,13 @@ export class ProveedoresService {
   }
 
   // Actualizar proveedor
-  public actualizar(proveedor: any): Observable<any> {
-    return this.http.put(`${baseUrl}/proveedores/${proveedor.idProveedor}`, proveedor);
+  public modificar(proveedor: any) {
+    return this.http.put(`${baseUrl}/proveedores`, proveedor);
   }
 
   // Eliminar un proveedor por ID
-  public eliminar(id: any): Observable<any> {
-    return this.http.delete(`${baseUrl}/proveedores/${id}`);
+  public eliminar(id: number): Observable<any> {
+    return this.http.delete(`${baseUrl}/proveedores/${id}`,{ responseType: 'text' });
   }
+
 }

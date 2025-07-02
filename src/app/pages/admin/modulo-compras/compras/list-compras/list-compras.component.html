@@ -10,19 +10,19 @@
     <div class="container">
       <div class="header">
         <div>
-          <h2>Proveedores</h2>
-          <span class="subtitle">{{ proveedores.length }} Proveedores registrados</span>
+          <h2>Compras</h2>
+          <span class="subtitle">{{ compras.length }} Compras registradas</span>
         </div>
         <div class="search-sort">
           <input
             type="text"
-            placeholder="Buscar proveedor"
+            placeholder="Buscar compra"
             class="search-input"
             [(ngModel)]="filtroBusqueda"
-            (ngModelChange)="buscarProveedor()"
+            (ngModelChange)="buscarCompra()"
           />
-          <button class="btn-agregar" (click)="abrirModalNuevoProveedor()">
-            <i class="fas fa-plus"></i> Proveedor
+          <button class="btn-agregar" (click)="navegarYMostrarModal()">
+            <i class="fas fa-plus"></i> Nueva Compra
           </button>
         </div>
       </div>
@@ -31,38 +31,37 @@
         <thead>
           <tr>
             <th>#</th>
-            <th>Nombre/Razón Social</th>
-            <th>RUC</th>
-            <th>Régimen</th>
-            <th>Teléfono</th>
-            <th>Email</th>
-            <th>Dirección</th>
-            <th>Fecha Registro</th>
+            <th>Proveedor</th>
+            <th>Total</th>
+            <th>Descripción</th>
+            <th>Fecha de Compra</th>
             <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let proveedor of proveedoresFiltrados; let i = index">
+          <tr *ngFor="let compra of comprasFiltradas; let i = index">
             <td>{{ (paginaActual - 1) * elementosPorPagina + i + 1 }}</td>
-            <td>{{ proveedor.nombre }}</td>
-            <td>{{ proveedor.ruc }}</td>
-            <td>{{ proveedor.regimen }}</td>
-            <td>{{ proveedor.telefono }}</td>
-            <td>{{ proveedor.gmail }}</td>
-            <td>{{ proveedor.direccion }}</td>
-            <td>{{ proveedor.fecha_registro | date:'dd/MM/yyyy' }}</td>
+            <td>{{ compra.proveedor.nombre }}</td> <!-- Asumiendo que Proveedores tiene un campo nombre -->
+            <td>{{ compra.total | currency }}</td>
+            <td>{{ compra.descripcion }}</td>
+            <td>{{ compra.fechaCompra | date:'dd/MM/yyyy' }}</td>
             <td>
               <button
                 class="btn-editar"
-                (click)="abrirModalEditarProveedor(proveedor)"
-                title="Editar proveedor">
+                (click)="navegarYEditarCompra(compra.idCompra)"
+                title="Editar compra">
                 <i class="fas fa-edit"></i>
               </button>
-              
+              <button
+                class="btn-ver"
+                (click)="navegarYVerCompra(compra.idCompra)"
+                title="Ver compra">
+                <i class="fas fa-eye"></i>
+              </button>
               <button 
-                (click)="eliminarProveedor(proveedor.idProveedor)" 
+                (click)="eliminarCompra(compra.idCompra)" 
                 class="btn-eliminar" 
-                title="Eliminar proveedor">
+                title="Eliminar compra">
                 <i class="fas fa-trash-alt"></i>
               </button>
             </td>

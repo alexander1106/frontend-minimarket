@@ -31,140 +31,10 @@ export class ListProveedoresComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.listarProveedores();
-
-    const url = this.router.url;
-
-    // Modal de agregar
-    if (url.endsWith('/add-proveedores')) {
-      this.abrirModalNuevoProveedor();
-    }
-
-    // Modal de editar
-    const matchEdit = url.match(/edit-proveedores\/(\d+)/);
-    if (matchEdit) {
-      const idProveedor = Number(matchEdit[1]);
-      this.abrirModalEditarProveedorPorId(idProveedor);
-    }
-
-    // Modal de ver
-    const matchView = url.match(/view-proveedores\/(\d+)/);
-    if (matchView) {
-      const idProveedor = Number(matchView[1]);
-      this.abrirModalVerProveedorPorId(idProveedor);
-    }
+    this.cargarProveedores();
   }
 
-  navegarYVerProveedor(idProveedor: number) {
-    this.router.navigate(['/admin/view-proveedores', idProveedor]);
-  }
-
-  abrirModalVerProveedorPorId(id: number) {
-    this.proveedorService.buscarId(id).subscribe({
-      next: (proveedor) => {
-        const dialogRef = this.dialog.open(AddProveedorComponent, {
-          width: '1200px',
-          disableClose: true,
-          data: { proveedor, modo: 'ver' }
-        });
-
-        dialogRef.afterClosed().subscribe(() => {
-          setTimeout(() => {
-            this.router.navigate(['/admin/list-proveedores']);
-          }, 0);
-        });
-      },
-      error: () => {
-        Swal.fire('Error', 'No se pudo cargar el proveedor', 'error');
-        this.router.navigate(['/admin/list-proveedores']);
-      }
-    });
-  }
-
-  abrirModalEditarProveedorPorId(id: number) {
-    this.proveedorService.buscarId(id).subscribe({
-      next: (proveedor) => {
-        const dialogRef = this.dialog.open(AddProveedorComponent, {
-          width: '1200px',
-          disableClose: true,
-          data: {
-            proveedor,
-            modo: 'editar'
-          }
-        });
-
-        dialogRef.afterClosed().subscribe(result => {
-          if (result === 'guardado') {
-            this.listarProveedores();
-          }
-
-          setTimeout(() => {
-            this.router.navigate(['/admin/list-proveedores']);
-          }, 0);
-        });
-      },
-      error: () => {
-        Swal.fire('Error', 'No se pudo cargar el proveedor', 'error');
-        this.router.navigate(['/admin/list-proveedores']);
-      }
-    });
-  }
-
-  navegarYEditarProveedor(idProveedor: number) {
-    this.router.navigate(['/admin/edit-proveedores', idProveedor]);
-  }
-
-  abrirModalNuevoProveedor() {
-    const dialogRef = this.dialog.open(AddProveedorComponent, {
-      width: '1200px',
-      disableClose: true
-    });
-
-    dialogRef.afterClosed().subscribe(result => {
-      if (result === 'guardado') {
-        this.listarProveedores();
-      }
-
-      setTimeout(() => {
-        this.router.navigate(['/admin/list-proveedores']);
-      }, 0);
-    });
-  }
-
-  eliminarProveedor(id: number) {
-    Swal.fire({
-      title: '¿Estás seguro?',
-      text: 'Esta acción eliminará al proveedor permanentemente',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        this.proveedorService.eliminar(id).subscribe({
-          next: () => {
-            Swal.fire({
-              title: 'Eliminado',
-              text: 'El proveedor ha sido eliminado',
-              icon: 'success',
-              timer: 1500,
-              showConfirmButton: false
-            }).then(() => {
-              window.location.reload();
-            });
-          },
-          error: (err) => {
-            Swal.fire('Error', 'No se pudo eliminar el proveedor', 'error');
-            console.error(err);
-          }
-        });
-      }
-    });
-  }
-
-  listarProveedores() {
+  cargarProveedores() {
     this.proveedorService.buscarTodos().subscribe({
       next: (data: any) => {
         this.proveedores = data || [];
@@ -184,12 +54,9 @@ export class ListProveedoresComponent implements OnInit {
     let coincidencias = this.proveedores;
     if (filtro !== '') {
       coincidencias = this.proveedores.filter(p =>
-        (p?.nombre?.toLowerCase()?.includes(filtro) || false)||
+        (p?.nombre?.toLowerCase()?.includes(filtro) || false) ||
         (p?.ruc?.toLowerCase()?.includes(filtro) || false) ||
-        (p?.id_proveedor?.toString()?.includes(filtro) || false) ||
-        (p?.telefono?.toString()?.includes(filtro) || false) ||
-        (p?.gmail?.toLowerCase()?.includes(filtro) || false) ||
-        (p?.direccion?.toLowerCase()?.includes(filtro) || false)
+        (p?.idProveedor?.toString()?.includes(filtro) || false)
       );
     }
 
@@ -198,6 +65,82 @@ export class ListProveedoresComponent implements OnInit {
       this.paginaActual * this.elementosPorPagina
     );
   }
+
+  abrirModalNuevoProveedor() {
+    const dialogRef = this.dialog.open(AddProveedorComponent, {
+      width: '1200px',
+      disableClose: true
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result === 'guardado') {
+        this.cargarProveedores();
+      }
+    });
+  }
+
+  abrirModalEditarProveedor(proveedor: any) {
+    const dialogRef = this.dialog.open(AddProveedorComponent, {
+      width: '1200px',
+      disableClose: true,
+      data: {
+        proveedor,
+        modo: 'editar'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result === 'guardado') {
+        this.cargarProveedores();
+      }
+    });
+  }
+
+  eliminarProveedor(id: number) {
+  // Verificación más robusta del ID
+  if (id === undefined || id === null || isNaN(id)) {
+    console.error('ID de proveedor no válido:', id);
+    Swal.fire('Error', 'ID de proveedor no válido', 'error');
+    return;
+  }
+
+  Swal.fire({
+    title: '¿Estás seguro?',
+    text: 'Esta acción marcará al proveedor como inactivo',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: 'Sí, desactivar',
+    cancelButtonText: 'Cancelar'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      console.log('Eliminando/desactivando proveedor con ID:', id);
+      this.proveedorService.eliminar(id).subscribe({
+        next: (response) => {
+          console.log('Respuesta del servidor:', response);
+          Swal.fire({
+            title: 'Desactivado',
+            text: 'El proveedor ha sido marcado como inactivo',
+            icon: 'success',
+            timer: 1500,
+            showConfirmButton: false
+          }).then(() => {
+            this.cargarProveedores();
+          });
+        },
+        error: (err) => {
+          console.error('Error al eliminar proveedor:', err);
+          Swal.fire(
+            'Error', 
+            err.error?.message || 'No se pudo desactivar el proveedor', 
+            'error'
+          );
+        }
+      });
+    }
+  });
+}
 
   cambiarPagina(pagina: number) {
     if (pagina >= 1 && pagina <= this.totalPaginas) {
@@ -217,11 +160,8 @@ export class ListProveedoresComponent implements OnInit {
     if (filtro !== '') {
       coincidencias = this.proveedores.filter(p =>
         (p?.nombre?.toLowerCase()?.includes(filtro) || false) ||
-        (p?.ruc?.toString()?.includes(filtro) || false) ||
-        (p?.id_proveedor?.toString()?.includes(filtro) || false) ||
-        (p?.telefono?.toString()?.includes(filtro) || false) ||
-        (p?.gmail?.toLowerCase()?.includes(filtro) || false) ||
-        (p?.direccion?.toLowerCase()?.includes(filtro) || false)
+        (p?.ruc?.toLowerCase()?.includes(filtro) || false) ||
+        (p?.Id_Proveedor?.toString()?.includes(filtro) || false) 
       );
     }
 
@@ -237,33 +177,12 @@ export class ListProveedoresComponent implements OnInit {
     let coincidencias = this.proveedores;
     if (filtro !== '') {
       coincidencias = this.proveedores.filter(p =>
-        (p?.nombre?.toLowerCase()?.includes(filtro) || false) ||
-        (p?.ruc?.toString()?.includes(filtro) || false) ||
-        (p?.id_proveedor?.toString()?.includes(filtro) || false) ||
-        (p?.telefono?.toString()?.includes(filtro) || false) ||
-        (p?.gmail?.toLowerCase()?.includes(filtro) || false) ||
-        (p?.direccion?.toLowerCase()?.includes(filtro) || false)
+        (p?.nombre?.toLowerCase()?.includes(filtro) || false) || 
+        (p?.ruc?.toLowerCase()?.includes(filtro) || false) || 
+        (p?.Id_Proveedor?.toString()?.includes(filtro) || false) 
       );
     }
 
     return Math.ceil(coincidencias.length / this.elementosPorPagina);
-  }
-
-  abrirModalEditarProveedor(proveedor: any) {
-    const dialogRef = this.dialog.open(AddProveedorComponent, {
-      width: '1200px',
-      disableClose: true,
-      data: { proveedor }
-    });
-
-    dialogRef.afterClosed().subscribe(result => {
-      if (result === 'guardado') {
-        this.listarProveedores();
-      }
-    });
-  }
-
-  navegarYMostrarModal() {
-    this.router.navigate(['admin/add-proveedores']);
   }
 }

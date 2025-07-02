@@ -10,7 +10,8 @@ import { AccessGuard } from './guards/AccessGuard';
 import { ListDeliveryComponent } from './pages/admin/modulo-delivery/list-delivery/list-delivery.component';
 
 import { ListProveedoresComponent } from './pages/admin/modulo-compras/proveedores/list-proveedores/list-proveedores.component';
-import { AddProveedorComponent } from './pages/admin/modulo-compras/proveedores/add-proveedor/add-proveedor.component';
+import { ListComprasComponent } from './pages/admin/modulo-compras/compras/list-compras/list-compras.component';
+
 
 
 export const routes: Routes = [
@@ -29,14 +30,20 @@ export const routes: Routes = [
       { path: 'list-clientes', component: ListClientesComponent },
       {path: 'add-clientes',component: ListClientesComponent },
 
-
       { path: 'list-proveedores', component: ListProveedoresComponent },
       { path: 'add-proveedores', component: ListProveedoresComponent }, 
 
-      {path: 'add-proveedores',component: ListClientesComponent },
+      { path: 'list-compras', component: ListComprasComponent },
+      { path: 'add-compras', component: ListComprasComponent }, 
+
+
+
+      { path: 'edit-proveedores/:id',
+      component: ListProveedoresComponent // Mismo componente para manejar el modal
+      },
+
       {path: 'list-delivery',component: ListDeliveryComponent },
-      { path: 'edit-clientes/:id', component: ListClientesComponent },
-      { path: 'view-clientes/:id', component: ListClientesComponent },
+
 
 
     ]

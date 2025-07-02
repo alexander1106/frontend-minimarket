@@ -1,12 +1,18 @@
 <div class="form-proveedores">
-  <h2 class="mb-4">{{ isEditMode ? 'Editar' : 'Nuevo' }} Proveedor</h2>
+  <h2 class="mb-4">{{ isEditMode ? 'Editar' : (isViewMode ? 'Detalle' : 'Nuevo') }} Proveedor</h2>
 
   <form (ngSubmit)="guardarProveedor()" #proveedorForm="ngForm" class="needs-validation" novalidate>
     <div class="row g-3">
       <div class="col-md-6">
         <mat-form-field appearance="outline" class="w-100">
           <mat-label>Nombre o Razón Social</mat-label>
-          <input matInput name="nombre" [(ngModel)]="proveedor.nombre" required #nombre="ngModel" />
+          <input 
+            matInput 
+            name="nombre" 
+            [(ngModel)]="proveedor.nombre" 
+            required 
+            #nombre="ngModel"
+            [readonly]="isViewMode" />
           <mat-error *ngIf="nombre.invalid && nombre.touched">El nombre es requerido</mat-error>
         </mat-form-field>
       </div>
@@ -23,7 +29,7 @@
             (input)="onRucChange($event)"
             pattern="[0-9]{11}"
             maxlength="11"
-            />
+            [readonly]="isViewMode" />
           <mat-error *ngIf="ruc.invalid && ruc.touched">
             {{ ruc.errors?.['required'] ? 'El RUC es requerido' : 'RUC debe tener 11 dígitos' }}
           </mat-error>
@@ -33,7 +39,12 @@
       <div class="col-md-6">
         <mat-form-field appearance="outline" class="w-100">
           <mat-label>Régimen</mat-label>
-          <mat-select name="regimen" [(ngModel)]="proveedor.regimen" required #regimen="ngModel">
+          <mat-select 
+            name="regimen" 
+            [(ngModel)]="proveedor.regimen" 
+            required 
+            #regimen="ngModel"
+            [disabled]="isViewMode">
             <mat-option value="Régimen General">Régimen General</mat-option>
             <mat-option value="Régimen Especial">Régimen Especial</mat-option>
             <mat-option value="NRUS">NRUS</mat-option>
@@ -45,14 +56,25 @@
       <div class="col-md-6">
         <mat-form-field appearance="outline" class="w-100">
           <mat-label>Teléfono</mat-label>
-          <input matInput name="telefono" [(ngModel)]="proveedor.telefono" type="tel" />
+          <input 
+            matInput 
+            name="telefono" 
+            [(ngModel)]="proveedor.telefono" 
+            type="tel" 
+            [readonly]="isViewMode" />
         </mat-form-field>
       </div>
 
       <div class="col-md-6">
         <mat-form-field appearance="outline" class="w-100">
           <mat-label>Email</mat-label>
-          <input matInput name="gmail" [(ngModel)]="proveedor.gmail" type="email" #gmail="ngModel" />
+          <input 
+            matInput 
+            name="gmail" 
+            [(ngModel)]="proveedor.gmail" 
+            type="email" 
+            #gmail="ngModel" 
+            [readonly]="isViewMode" />
           <mat-error *ngIf="gmail.invalid && gmail.touched">Email inválido</mat-error>
         </mat-form-field>
       </div>
@@ -60,16 +82,34 @@
       <div class="col-md-6">
         <mat-form-field appearance="outline" class="w-100">
           <mat-label>Dirección</mat-label>
-          <input matInput name="direccion" [(ngModel)]="proveedor.direccion" />
+          <input 
+            matInput 
+            name="direccion" 
+            [(ngModel)]="proveedor.direccion" 
+            [readonly]="isViewMode" />
+        </mat-form-field>
+      </div>
+
+      <div class="col-md-6" *ngIf="isViewMode">
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>Fecha de Registro</mat-label>
+          <input 
+            matInput 
+            [value]="proveedor.fecha_registro | date:'dd/MM/yyyy'" 
+            readonly />
         </mat-form-field>
       </div>
     </div>
 
-    <div class="mt-4 d-flex justify-content-end gap-3">
+    <div class="mt-4 d-flex justify-content-end gap-3" *ngIf="!isViewMode">
       <button mat-raised-button color="primary" type="submit" [disabled]="proveedorForm.invalid">
         {{ isEditMode ? 'Actualizar' : 'Guardar' }}
       </button>
       <button mat-stroked-button color="warn" type="button" (click)="cancelar()">Cancelar</button>
+    </div>
+
+    <div class="mt-4 d-flex justify-content-end gap-3" *ngIf="isViewMode">
+      <button mat-stroked-button color="primary" type="button" (click)="cancelar()">Cerrar</button>
     </div>
   </form>
 </div>
