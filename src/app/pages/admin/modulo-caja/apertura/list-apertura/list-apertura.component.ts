@@ -35,6 +35,7 @@ export class ListAperturaComponent implements OnInit {
 
   aperturas: any[] = [];
   aperturasFiltradas: any[] = [];
+aperturasGlobales: any[] = [];
 
   paginaActual: number = 1;
   elementosPorPagina: number = 5;
@@ -48,15 +49,27 @@ export class ListAperturaComponent implements OnInit {
     private sucursalesService: SucursalesService,
     private cajasService: CajasService,
     private aperturaCajaService: AperturaCajaService,
-    public loginService:LoginService
-
+    public loginService: LoginService
   ) {}
 
-  ngOnInit(): void {
-    this.listarSucursales();
-    this.listarCajas();
-    this.listarAperturas();
+ ngOnInit(): void {
+  // 🚀 1. Leer la caja activa al iniciar
+  const cajaActivaRaw = localStorage.getItem('cajaActiva');
+  if (cajaActivaRaw) {
+    try {
+      const cajaActiva = JSON.parse(cajaActivaRaw);
+      if (cajaActiva?.idCaja) {
+        this.cajaSeleccionadaFiltro = Number(cajaActiva.idCaja);
+      }
+    } catch (e) {
+      console.error('Error parseando cajaActiva en localStorage:', e);
+    }
   }
+
+  // 🚀 2. Listar sucursales y cajas
+  this.listarSucursales();
+  this.listarCajas();
+}
 
   listarSucursales() {
     this.sucursalesService.listarSucursales().subscribe({
@@ -80,30 +93,45 @@ export class ListAperturaComponent implements OnInit {
       },
     });
   }
+tieneAperturaAbiertaPorUsuario(): boolean {
+  const usuarioActual = this.loginService.getUser();
+
+  if (!usuarioActual || !usuarioActual.idUsuario) {
+    return false;
+  }
+
+  return this.aperturasGlobales.some(
+    (a) =>
+      Number(a.usuarios?.idUsuario) === Number(usuarioActual.idUsuario) &&
+      (a.estadoCaja || '').toLowerCase() === 'abierta'
+  );
+}
 
 listarCajas() {
   this.cajasService.listarCaja().subscribe({
     next: (data) => {
       this.cajas = data || [];
 
-      // Obtener rol y usuario
       const rolUsuario = this.loginService.getUserRole();
       const usuario = this.loginService.getUser();
 
       if (rolUsuario !== 'ADMIN' && usuario && usuario.sucursal && usuario.sucursal.idSucursal) {
-        // Preseleccionar sucursal
         this.sucursalSeleccionada = usuario.sucursal.idSucursal;
 
-        // Filtrar cajas de esa sucursal
         this.cajasDeSucursalSeleccionada = this.cajas.filter(
           (c) => Number(c.sucursales?.idSucursal) === Number(this.sucursalSeleccionada)
         );
+
+        // ✅ Solo aquí llamar listarAperturas
+        this.listarAperturas();
       } else {
-        // Si es admin o no hay sucursal, mostrar todas
         this.cajasDeSucursalSeleccionada = this.cajas;
+
+        // Si es ADMIN y no hay sucursal seleccionada, puedes decidir qué hacer.
+        // Por ejemplo, listar todas o NO listar aperturas:
+        this.listarAperturas();
       }
 
-      // Al cargar, actualizar aperturas filtradas
       this.actualizarFiltradoAperturas(true);
     },
     error: (err) => {
@@ -111,31 +139,47 @@ listarCajas() {
     },
   });
 }
+listarAperturas() {
+  this.aperturaCajaService.listarAperturas().subscribe({
+    next: (data) => {
+      this.aperturasGlobales = data || [];
 
-
-  listarAperturas() {
-    this.aperturaCajaService.listarAperturas().subscribe({
-      next: (data) => {
-        this.aperturas = data || [];
-        this.actualizarFiltradoAperturas(true);
-      },
-      error: (err) => {
-        console.error('Error al listar aperturas:', err);
-      },
-    });
-  }
-
-  onSucursalChange() {
-    this.cajaSeleccionadaFiltro = undefined;
-    if (this.sucursalSeleccionada != null) {
-      this.cajasDeSucursalSeleccionada = this.cajas.filter(
-        (c) => Number(c.sucursales?.idSucursal) === Number(this.sucursalSeleccionada)
+      // Solo mostramos las aperturas de la sucursal seleccionada en la tabla
+      this.aperturas = this.aperturasGlobales.filter(
+        (a) => Number(a.caja?.sucursales?.idSucursal) === Number(this.sucursalSeleccionada)
       );
-    } else {
-      this.cajasDeSucursalSeleccionada = this.cajas;
-    }
-    this.actualizarFiltradoAperturas(true);
+
+      console.log('🌐 Todas las aperturas:', this.aperturasGlobales);
+      console.log('📋 Aperturas de la sucursal seleccionada:', this.aperturas);
+
+      this.actualizarFiltradoAperturas(true);
+    },
+    error: (err) => {
+      console.error('Error al listar aperturas:', err);
+    },
+  });
+}
+
+onSucursalChange() {
+  this.cajaSeleccionadaFiltro = undefined;
+
+  if (this.sucursalSeleccionada != null) {
+    this.cajasDeSucursalSeleccionada = this.cajas.filter(
+      (c) => Number(c.sucursales?.idSucursal) === Number(this.sucursalSeleccionada)
+    );
+  } else {
+    this.cajasDeSucursalSeleccionada = this.cajas;
   }
+
+  // Ahora solo filtramos aperturas ya cargadas, no recargamos desde el backend
+  this.aperturas = this.aperturasGlobales.filter(
+    (a) => Number(a.caja?.sucursales?.idSucursal) === Number(this.sucursalSeleccionada)
+  );
+
+  this.actualizarFiltradoAperturas(true);
+}
+
+
 
   actualizarFiltradoAperturas(resetPagina: boolean = true) {
     if (resetPagina) {
@@ -177,21 +221,31 @@ listarCajas() {
     return Array.from({ length: this.totalPaginas }, (_, i) => i + 1);
   }
 
-abrirModalApertura() {
+  abrirModalApertura() {
   if (this.cajaSeleccionadaFiltro == null) {
     alert('Por favor seleccione una caja antes de aperturar.');
     return;
   }
 
-if (this.hayCajaAbierta()) {
-  Swal.fire({
-    icon: 'warning',
-    title: 'Caja Abierta',
-    text: 'No se puede aperturar otra caja. La caja seleccionada ya tiene una apertura activa. Cierre la apertura actual antes de abrir una nueva.',
-    confirmButtonText: 'Entendido'
-  });
-  return;
-}
+  if (this.hayCajaAbierta()) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Caja Abierta',
+      text: 'No se puede aperturar otra caja. La caja seleccionada ya tiene una apertura activa. Cierre la apertura actual antes de abrir una nueva.',
+      confirmButtonText: 'Entendido'
+    });
+    return;
+  }
+
+  if (this.tieneAperturaAbiertaPorUsuario()) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Apertura Activa',
+      text: 'Ya tienes una apertura activa en esta sucursal. Debes cerrar tu apertura actual antes de abrir una nueva.',
+      confirmButtonText: 'Entendido'
+    });
+    return;
+  }
 
   this.mostrarModal = true;
 }
@@ -232,4 +286,22 @@ if (this.hayCajaAbierta()) {
         (a.estadoCaja || '').toLowerCase() === 'abierta'
     );
   }
+puedeVerTransacciones(apertura: any): boolean {
+  const usuario = this.loginService.getUser();
+  const rol = this.loginService.getUserRole();
+
+  // Si eres ADMIN, puedes entrar a cualquier apertura
+  if (rol === 'ADMIN') {
+    return true;
+  }
+
+  // Si no eres ADMIN, solo puedes ver tus propias aperturas abiertas
+  return (
+    usuario &&
+    Number(apertura.usuarios?.idUsuario) === Number(usuario.idUsuario) &&
+    (apertura.estadoCaja || '').toLowerCase() === 'abierta'
+  );
+}
+
+
 }

@@ -67,7 +67,7 @@ setRoles(roles: string[]) {
     return localStorage.getItem('token');
 
   }
-  public getEmpresa() {
+public getEmpresa() {
   const empresaStr = localStorage.getItem('empresa');
   if (empresaStr != null) {
     return JSON.parse(empresaStr);
@@ -91,9 +91,9 @@ setRoles(roles: string[]) {
   public getUserRole(): string | null {
     const user = this.getUser();
     console.log("Usuario cargado:", user);
-    if (user && user.rol && user.rol.nombreRol) {
-      console.log("Rol detectado:", user.rol.nombreRol);
-      return user.rol.nombreRol;
+    if (user && user.rol && user.rol.nombre) {
+      console.log("Rol detectado:", user.rol.nombre);
+      return user.rol.nombre;
     }
     console.warn("No se encontró un rol válido");
     return null;

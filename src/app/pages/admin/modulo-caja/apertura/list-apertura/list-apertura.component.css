@@ -40,3 +40,8 @@ select:focus {
   cursor: not-allowed;
   pointer-events: none;
 }
+.btn-agregar:disabled {
+  opacity: 0.5;           /* Hacerlo más transparente */
+  cursor: not-allowed;    /* Cambiar el cursor */
+  pointer-events: none;   /* (Opcional) Asegura que no haga nada */
+}

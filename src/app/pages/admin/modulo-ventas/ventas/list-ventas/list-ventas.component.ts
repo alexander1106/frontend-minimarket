@@ -6,6 +6,8 @@ import Swal from 'sweetalert2';
 import { BarraLateralComponent } from '../../../../../components/barra-lateral/barra-lateral.component';
 import { HeaderComponent } from '../../../../../components/header/header.component';
 import { VentasService } from '../../../../../service/ventas.service';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 @Component({
   selector: 'app-list-ventas',
@@ -46,4 +48,36 @@ listarVentas() {
         }
       });
     }
+
+    generarPdfVenta(venta: any) {
+  const doc = new jsPDF();
+
+  // Título
+  doc.setFontSize(18);
+  doc.text('Comprobante de Venta', 14, 20);
+
+  // Datos generales
+  doc.setFontSize(12);
+  doc.text(`Fecha: ${venta.fecha_venta}`, 14, 30);
+  doc.text(`Cliente: ${venta.cliente?.nombre || '---'}`, 14, 36);
+  doc.text(`Total Venta: $${venta.total_venta.toFixed(2)}`, 14, 42);
+
+  // Tabla de productos
+  const productos = venta.detalles?.map((d: any) => [
+    d.producto?.nombre || '---',
+    d.cantidad,
+    `$${d.precioUnitario}`,
+    `$${d.subTotal}`
+  ]) || [];
+
+  autoTable(doc, {
+    startY: 50,
+    head: [['Producto', 'Cantidad', 'Precio Unitario', 'Subtotal']],
+    body: productos
+  });
+
+  // Descargar PDF
+  doc.save(`venta_${venta.nro_comrprobante || 'comprobante'}.pdf`);
+}
+
 }

@@ -1,0 +1,54 @@
+<div class="contenedor">
+  <div class="barra">
+    <app-barra-lateral></app-barra-lateral>
+  </div>
+
+  <div class="encabezado">
+    <app-header></app-header>
+    <hr class="border-secondary mb-4" />
+
+    <div class="container">
+      <div class="header">
+        <div>
+          <h2>Pagos</h2>
+          <span class="subtitle">Pagos registrados</span>
+        </div>
+        <div class="search-sort">
+          <input
+            type="text"
+            placeholder="Buscar por observaciones o referencia"
+            class="search-input"
+
+          />
+          <button class="btn-agregar" [routerLink]="['/admin/add-pago']">
+            <i class="fas fa-plus"></i> Pago
+          </button>
+        </div>
+      </div>
+
+      <table class="customer-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Observaciones</th>
+            <th>Fecha</th>
+            <th>Monto</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let pago of pagos ; let i = index"
+          >
+            <td>{{ i + 1 }}</td>
+            <td>{{ pago.observaciones || '---' }}</td>
+            <td>{{ pago.fechaPago | date: 'short' }}</td>
+            <td>{{ pago.montoPagado | currency }}</td>
+            <td>{{ pago.estadoPago }}</td>
+
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

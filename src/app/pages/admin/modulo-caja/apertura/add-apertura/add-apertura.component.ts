@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AperturaCajaService } from '../../../../../service/apertura-caja.service'; // Ajusta la ruta si es necesario
 import Swal from 'sweetalert2';
 import { Router } from '@angular/router';
+import { LoginService } from '../../../../../service/login.service';
 
 @Component({
   selector: 'app-add-apertura',
@@ -24,7 +25,9 @@ export class AddAperturaComponent implements OnInit, OnChanges {
 
 constructor(
   private aperturaService: AperturaCajaService,
-  private router: Router
+  private router: Router,
+    private loginService: LoginService
+
 ) {}
 
   ngOnInit() {
@@ -42,11 +45,23 @@ constructor(
       }
     }
   }
-
 guardar() {
+  const usuario = this.loginService.getUser();
+
+  if (!usuario || !usuario.idUsuario) {
+    console.error('No se pudo obtener el usuario logueado.');
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: 'No se pudo identificar al usuario logueado.',
+      confirmButtonText: 'Aceptar'
+    });
+    return;
+  }
+
   const nuevaApertura = {
     id_caja: this.idCaja,
-    id_empleado: 1, // Cambia por el id real del empleado
+    id_empleado: usuario.idUsuario,
     fechaApertura: this.fechaApertura,
     saldoInicial: this.monto,
     fechaCierre: null,
@@ -57,13 +72,22 @@ guardar() {
   console.log('Enviando apertura al backend:', nuevaApertura);
 
   this.aperturaService.registrarApertura(nuevaApertura).subscribe(
-    (resp) => {
+    (resp:any) => {
       console.log('Apertura guardada con éxito:', resp);
 
-      // GUARDA LA CAJA ACTUAL EN LOCALSTORAGE
+      // ⚠️ Asegúrate que tu backend retorne el ID de la apertura.
+const idApertura = resp.idAperturaCaja;
+
+      if (!idApertura) {
+        console.warn('El backend no retornó el ID de la apertura.');
+      }
+
+      // Guarda también el ID de la apertura en localStorage
       localStorage.setItem('cajaActiva', JSON.stringify({
         idCaja: this.idCaja,
-        nombreCaja: this.cajasDisponibles.find(c => c.idCaja === this.idCaja)?.nombreCaja || ''
+        nombreCaja: this.cajasDisponibles.find(c => c.idCaja === this.idCaja)?.nombreCaja || '',
+        idUsuario: usuario.idUsuario,
+        idApertura: idApertura // 👈 añade el idApertura
       }));
 
       console.log('Caja activa guardada en localStorage:', localStorage.getItem('cajaActiva'));

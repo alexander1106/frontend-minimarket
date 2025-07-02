@@ -75,6 +75,7 @@ ngOnInit() {
 
         const idCaja = this.detalleCaja?.idCaja || this.detalleCaja?.caja?.idCaja;
 
+
         if (idCaja) {
           console.log('ID de la Caja de esta apertura:', idCaja);
 
@@ -299,7 +300,8 @@ resetearFormularioTransferencia() {
       }
 
       this.aperturaService.cerrarCaja(this.detalleCaja.idAperturaCaja).subscribe(
-        () => {
+        () => {localStorage.removeItem('cajaActiva');
+
           Swal.fire({
             icon: 'success',
             title: 'Caja cerrada',

@@ -23,9 +23,16 @@ export class AperturaCajaService {
     return this.http.get(`${baseUrl}/aperturas-cajas/${id}`);
   }
 
+
+ public listarAperturasPorSucursal(id: any) {
+  return this.http.get<any[]>(`${baseUrl}/aperturas-cajas/sucursal/${id}`);
+}
   public registrarApertura(apertura: any) {
     return this.http.post(`${baseUrl}/aperturas-cajas`, apertura );
   }
+
+
+
 
 
 public cerrarCaja(id: any) {

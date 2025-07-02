@@ -19,6 +19,10 @@ export class SucursalesService {
   public listarSucursalesPorEmpresas(id:any){
     return this.http.get(`${baseUrl}/empresas/${id}/sucursales`);
   }
+
+  public listarCajasPorSucursal(id:any){
+    return this.http.get<any[]>(`${baseUrl}/sucursales/${id}/cajas`);
+  }
 public listarProductosPorSucursal(idSucursal: number): Observable<any> {
   return this.http.get(`${baseUrl}/sucursales/${idSucursal}/productos`);
 }

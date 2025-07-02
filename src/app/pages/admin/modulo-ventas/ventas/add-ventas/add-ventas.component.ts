@@ -1,4 +1,3 @@
-// ... tus imports
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
@@ -14,6 +13,9 @@ import { MatDialog } from '@angular/material/dialog';
 import { AddClienteComponent } from '../../clientes/add-cliente/add-cliente.component';
 import { LoginService } from '../../../../../service/login.service';
 import { PagosService } from '../../../../../service/pagos.service';
+import { MetodoPagoService } from '../../../../../service/metodo-pago.service';
+import { VentasService } from '../../../../../service/ventas.service';
+import { TransaccionesCajaService } from '../../../../../service/transacciones-caja.service';
 
 export interface CotizacionesDTO {
   id_cliente: number;
@@ -42,6 +44,8 @@ export class AddVentasComponent implements OnInit {
   productos: any[] = [];
   productosAgregados: any[] = [];
   clientes: any[] = [];
+  metodosDePago: any[] = [];
+
   montoPago: number = 0;
   metodoPago: string | null = null;
   requiereDelivery: boolean = false;
@@ -52,11 +56,14 @@ export class AddVentasComponent implements OnInit {
   mostrarModalPago = false;
   clienteSeleccionado: any = null;
   fechaCotizacion: string = '';
-  totalPagar: number = 182000;
+  totalPagar: number = 0;
   fechaVencimiento: string = '';
   idSucursal: number | null = null;
-cajaActiva: any = null;
-comprobantePago: string | null = null;
+  cajaActiva: any = null;
+  comprobantePago: string | null = null;
+  todosLosProductosSucursal: any[]=[];
+categoriaSeleccionada: any = null;
+
 
   constructor(
     private categoriasService: CategoriasService,
@@ -66,34 +73,37 @@ comprobantePago: string | null = null;
     private cotizacionService: CotizacionService,
     private dialog: MatDialog,
     private loginService: LoginService,
-    private pagosService: PagosService // ⬅️ Aquí lo agregas
-
+    private pagosService: PagosService,
+    private metodosPago: MetodoPagoService,
+    private transaccionesCajaService:TransaccionesCajaService,
+    private ventasService: VentasService // <<-- AÑADIDO
   ) {}
 
   ngOnInit(): void {
-    const usuario = this.loginService.getUser();
-    if (usuario && usuario.sucursal && usuario.sucursal.idSucursal) {
-      this.idSucursal = usuario.sucursal.idSucursal;
-    } else {
-      Swal.fire("Error", "No se encontró la sucursal del usuario", "error");
-      return;
-    }
+  const usuario = this.loginService.getUser();
+  if (usuario && usuario.sucursal && usuario.sucursal.idSucursal) {
+    this.idSucursal = usuario.sucursal.idSucursal;
+  } else {
+    Swal.fire("Error", "No se encontró la sucursal del usuario", "error");
+    return;
+  }
 
     this.categoriasService.listarCategorias().subscribe({
       next: (data) => this.categorias = data,
       error: (err) => console.error('Error cargando categorías', err)
     });
-const cajaGuardada = localStorage.getItem('cajaActiva');
-  if (cajaGuardada) {
-    const caja = JSON.parse(cajaGuardada);
-    console.log('Caja activa recuperada:', caja);
-    // Aquí puedes asignarla a una variable de tu componente
-    this.cajaActiva = caja;
-  } else {
-    console.log('No hay caja activa guardada.');
-  }
+
+    const cajaGuardada = localStorage.getItem('cajaActiva');
+    if (cajaGuardada) {
+      this.cajaActiva = JSON.parse(cajaGuardada);
+      console.log('Caja activa del usuario:', this.cajaActiva);
+    } else {
+      console.log('No hay caja activa en localStorage.');
+    }
+
     this.listarClientes();
     this.listarProductos();
+    this.listarMetodosPago();
   }
 
   listarClientes() {
@@ -106,21 +116,34 @@ const cajaGuardada = localStorage.getItem('cajaActiva');
     });
   }
 
- listarProductos() {
+  listarMetodosPago() {
+    this.metodosPago.listarMetodosPago().subscribe({
+      next: (data: any) => {
+        this.metodosDePago = data || [];
+      },
+      error: (err) => {
+        console.error('Error cargando métodos de pago', err);
+        Swal.fire("Error", "No se pudieron cargar los métodos de pago", "error");
+      }
+    });
+  }
+
+listarProductos() {
   if (!this.idSucursal) {
     Swal.fire("Error", "No se ha definido la sucursal", "error");
     return;
   }
   this.productosService.listarProductosPorSucursal(this.idSucursal).subscribe({
     next: (data: any) => {
-      console.log('Productos recibidos de la API:', data); // 🚀 Aquí imprime los productos crudos
-      this.productos = (data || []).map((p: any) => ({
+      const productosProcesados = (data || []).map((p: any) => ({
         idproducto: p.producto?.idproducto || p.idproducto,
         nombre: p.producto?.nombre || p.nombre,
         costoVenta: p.producto?.costoVenta || p.costo_venta || p.costoVenta,
-        imagen: p.producto?.imagen || p.imagen
+        imagen: p.producto?.imagen || p.imagen,
+        idcategoria: p.producto?.categoria?.idcategoria || p.idcategoria
       }));
-      console.log('Productos mapeados:', this.productos); // 🚀 Aquí imprime los productos procesados
+      this.productos = productosProcesados;
+      this.todosLosProductosSucursal = productosProcesados; // <<-- AQUÍ guardas todo
     },
     error: (err) => {
       Swal.fire("Error", "No se pudieron cargar los productos", "error");
@@ -140,6 +163,7 @@ const cajaGuardada = localStorage.getItem('cajaActiva');
         descuento: 0
       });
     }
+    this.totalPagar = this.totalCompra;
   }
 
   get totalCompra(): number {
@@ -147,40 +171,38 @@ const cajaGuardada = localStorage.getItem('cajaActiva');
       total + item.cantidad * item.producto.costoVenta * (1 - item.descuento / 100), 0
     );
   }
-
-  seleccionarCategoria(categoria: any): void {
-    if (categoria?.idcategoria) {
-      this.productosService.listarProductosPorCategoria(categoria.idcategoria).subscribe({
-        next: (data: any) => {
-          this.productos = data || [];
-        },
-        error: (err) => {
-          Swal.fire("Error", "No se pudieron cargar los productos", "error");
-          console.error(err);
-        }
-      });
-    }
+seleccionarCategoria(categoria: any): void {
+  this.categoriaSeleccionada = categoria;
+  if (categoria?.idcategoria) {
+    this.productos = this.todosLosProductosSucursal.filter(
+      p => p.idcategoria === categoria.idcategoria
+    );
   }
+}
+
+mostrarTodosLosProductos(): void {
+  this.productos = this.todosLosProductosSucursal;
+}
 
   abrirModalCotizacion() {
     this.mostrarModalCotizacion = true;
   }
 
- abrirModalPago() {
-  if (!this.cajaActiva) {
-    Swal.fire(
-      "Caja no abierta",
-      "No hay ninguna caja activa. Por favor, abra una caja antes de procesar pagos.",
-      "warning"
-    );
-    return;
-  }
+  abrirModalPago() {
+    if (!this.tieneCajaAbiertaPorUsuario()) {
+      Swal.fire(
+        "Caja no abierta",
+        "No hay ninguna caja activa por tu usuario. Por favor, abre una caja antes de procesar pagos.",
+        "warning"
+      );
+      return;
+    }
 
-  this.montoPago = this.totalCompra;
-  this.metodoPago = null;
-  this.requiereDelivery = false;
-  this.mostrarModalPago = true;
-}
+    this.montoPago = this.totalCompra;
+    this.metodoPago = null;
+    this.requiereDelivery = false;
+    this.mostrarModalPago = true;
+  }
 
   cerrarModales() {
     this.mostrarModalCotizacion = false;
@@ -201,7 +223,100 @@ const cajaGuardada = localStorage.getItem('cajaActiva');
     });
   }
 
-  generarCotizacion() {
+confirmarPago() {
+  if (!this.tieneCajaAbiertaPorUsuario()) {
+    Swal.fire(
+      "Caja no abierta",
+      "No hay ninguna caja activa por tu usuario. Por favor, abre una caja antes de confirmar pagos.",
+      "warning"
+    );
+    return;
+  }
+
+  if (!this.metodoPago) {
+    Swal.fire("Advertencia", "Debe seleccionar el método de pago", "warning");
+    return;
+  }
+
+  if (!this.clienteSeleccionado) {
+    Swal.fire("Advertencia", "Debe seleccionar el cliente", "warning");
+    return;
+  }
+
+  const venta = {
+    idSucursal: this.idSucursal,
+    id_cliente: this.clienteSeleccionado,
+    tipo_comprobante: this.comprobantePago,
+    total_venta: this.totalCompra,
+    estado: 1,
+    detalles: this.productosAgregados.map(item => ({
+      id_producto: item.producto.idproducto,
+      pecioUnitario: item.producto.costoVenta,
+      cantidad: item.cantidad,
+      subTotal: item.producto.costoVenta * item.cantidad * (1 - item.descuento / 100),
+      estado: 1
+    })),
+    montoPagado: this.montoPago,
+    estadoPago: 'REALIZADO',
+    observaciones: this.requiereDelivery
+      ? `Delivery a ${this.direccionEntrega}`
+      : 'Pago en punto de venta',
+    id_metodo_pago: Number(this.metodoPago)
+  };
+
+  this.ventasService.registrar(venta).subscribe({
+    next: () => {
+      // 🚩🚩🚩 REGISTRAR TRANSACCIÓN EN LA CAJA 🚩🚩🚩
+   const transaccion = {
+  fecha: new Date().toISOString(),
+  monto: this.montoPago,
+  observaciones: `Ingreso por venta`,
+  tipoMovimiento: 'INGRESO',
+  idMetodoPago: Number(this.metodoPago),
+  idCaja: this.cajaActiva.idCaja,
+  id_apertura_caja: this.cajaActiva.idApertura
+};
+
+      this.transaccionesCajaService.registrarTransaccion(transaccion).subscribe({
+        next: () => {
+          Swal.fire("Éxito", "Venta y transacción registradas correctamente", "success");
+          this.cerrarModales();
+          this.router.navigate(['/admin/list-ventas']);
+        },
+        error: (err) => {
+          console.error('Error registrando la transacción:', err);
+          Swal.fire(
+            "Error parcial",
+            "La venta se guardó pero la transacción en caja no se pudo registrar. Por favor verifica manualmente.",
+            "warning"
+          );
+          this.cerrarModales();
+          this.router.navigate(['/admin/list-ventas']);
+        }
+      });
+    },
+    error: (err) => {
+      console.error(err);
+      Swal.fire("Error", "No se pudo registrar la venta", "error");
+    }
+  });
+}
+
+
+  tieneCajaAbiertaPorUsuario(): boolean {
+    return !!this.cajaActiva && this.cajaActiva.idUsuario === this.loginService.getUser()?.idUsuario;
+  }
+
+  generarNumeroAleatorio(): string {
+    return 'COT-' + Math.floor(100000 + Math.random() * 900000);
+  }
+
+  minFechaManana(): string {
+    const manana = new Date();
+    manana.setDate(manana.getDate() + 1);
+    return manana.toISOString().split('T')[0];
+  }
+    generarCotizacion() {
     if (!this.clienteSeleccionado || !this.fechaVencimiento) {
       Swal.fire("Advertencia", "Debe seleccionar cliente y fecha", "warning");
       return;
@@ -239,48 +354,5 @@ const cajaGuardada = localStorage.getItem('cajaActiva');
     });
   }
 
-  generarNumeroAleatorio(): string {
-    return 'COT-' + Math.floor(100000 + Math.random() * 900000);
-  }
-confirmarPago() {
-  if (!this.metodoPago) {
-    Swal.fire("Advertencia", "Debe seleccionar el método de pago", "warning");
-    return;
-  }
 
-  if (!this.clienteSeleccionado) {
-    Swal.fire("Advertencia", "Debe seleccionar el cliente", "warning");
-    return;
-  }
-
-  const pago = {
-    observaciones: this.requiereDelivery ? `Delivery a ${this.direccionEntrega}` : 'Pago en punto de venta',
-    fechaPago: new Date(),
-    montoPagado: this.montoPago,
-    referenciaPago: 'N/A', // o un número de referencia real si aplica
-    estadoPago: 'REALIZADO',
-    estado: 1,
-    id_metodo_pago:1,
-    id_venta: 1 // TODO: reemplaza con el ID real de la venta creada
-  };
-
-  this.pagosService.registrarPago(pago).subscribe({
-    next: () => {
-      Swal.fire("Éxito", "Pago registrado correctamente", "success");
-      this.cerrarModales();
-      // Opcionalmente redirigir
-      this.router.navigate(['/admin/list-ventas']);
-    },
-    error: (err) => {
-      console.error(err);
-      Swal.fire("Error", "No se pudo registrar el pago", "error");
-    }
-  });
-}
-
-  minFechaManana(): string {
-    const manana = new Date();
-    manana.setDate(manana.getDate() + 1);
-    return manana.toISOString().split('T')[0];
-  }
 }

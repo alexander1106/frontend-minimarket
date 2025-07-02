@@ -14,4 +14,9 @@ export class VentasService {
   public listarVentas(): Observable<any> {
     return this.http.get(`${baseUrl}/ventas`);
   }
+
+
+  registrar(ventas: any): Observable<any> {
+    return this.http.post(`${baseUrl}/ventas`, ventas);
+  }
 }

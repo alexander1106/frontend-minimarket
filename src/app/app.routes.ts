@@ -14,7 +14,6 @@ import { AddCajaComponent } from './pages/admin/modulo-caja/caja/add-caja/add-ca
 import { ListAperturaComponent } from './pages/admin/modulo-caja/apertura/list-apertura/list-apertura.component';
 import { ListTransaccionesComponent } from './pages/admin/modulo-caja/transacciones/list-transacciones/list-transacciones.component';
 import { ListEmpresasComponent } from './pages/admin/administrable/empresas/list-empresas.component';
-import { ListSucursalesComponent } from './pages/admin/administrable/sucursales/list-sucursales.component';
 import { ListUnidadesMedidaComponent } from './pages/admin/productos/unidades-medida/list-unidades-medida.component';
 import { ListTipoProductoComponent } from './pages/admin/productos/tipoproducto/list-tipo-producto.component';
 import { ListCategoriasComponent } from './pages/admin/productos/categorias/list-categorias.component';
@@ -26,6 +25,8 @@ import { ListAjusteInventarioComponent } from './pages/admin/inventario/ajustein
 import { ListTrasladoInventarioProductoComponent } from './pages/admin/inventario/trasladoinventarioproducto/list-traslado-inventarioproducto.component';
 import { ListRolesComponent } from './pages/admin/seguridad/roles/list-roles.component';
 import { ListUsuariosComponent } from './pages/admin/seguridad/usuarios/list-usuarios.component';
+import { ListSucursalesComponent } from './pages/admin/administrable/sucursales/list-sucursales.component';
+import { ListPagosComponent } from './pages/admin/modulo-ventas/list-pagos/list-pagos.component';
 
 
 export const routes: Routes = [
@@ -117,6 +118,10 @@ export const routes: Routes = [
       { path: 'sucursales', component: ListSucursalesComponent },
       { path: 'add-sucursales', component: ListSucursalesComponent },
       { path: 'edit-sucursales/:id', component: ListSucursalesComponent },
+
+      // pagos
+            { path: 'pagos', component: ListPagosComponent },
+
     ]
   },
 
