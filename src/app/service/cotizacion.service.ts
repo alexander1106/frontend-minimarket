@@ -9,9 +9,25 @@ import baseUrl from '../components/link';
 export class CotizacionService {
 
  constructor(private http: HttpClient) { }
- // clientes.service.ts o puedes crear cotizaciones.service.ts
-public guardarCotizacion(dto: any): Observable<any> {
-  return this.http.post(`${baseUrl}/cotizaciones`, dto);
-}
+  // clientes.service.ts o puedes crear cotizaciones.service.ts
+  public guardarCotizacion(dto: any): Observable<any> {
+    return this.http.post(`${baseUrl}/cotizaciones`, dto);
+  }
 
+  // Obtener todos los permisos
+  public listarCotizaciones(): Observable<any> {
+    return this.http.get(`${baseUrl}/cotizaciones`);
+  }
+
+  public buscarCotizacionesId(id:any){
+    return this.http.get(`${baseUrl}/cotizaciones/${id}`);
+  }
+
+  public eliminarCotizaciones(id: number): Observable<any> {
+    return this.http.delete(`${baseUrl}/cotizaciones/${id}`,{ responseType: 'text' });
+  }
+
+  public editarCotizacione(cliente: any){
+    return this.http.put(`${baseUrl}/cotizaciones`, cliente);
+  }
 }

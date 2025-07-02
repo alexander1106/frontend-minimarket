@@ -1,0 +1,175 @@
+<div class="contenedor">
+  <div class="barra">
+    <app-barra-lateral></app-barra-lateral>
+  </div>
+  <div class="encabezado">
+    <!-- Header superior -->
+<div class="modulo-admin">
+  Modulo administrable
+</div>    <hr class="border-secondary mb-4" />
+
+    <div class="container">
+      <!-- Header y buscador -->
+      <div class="header d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h2>Sucursales</h2>
+          <span class="subtitle">{{ sucursales.length }} Registradas</span>
+        </div>
+        <div class="search-sort d-flex align-items-center">
+          <input
+            type="text"
+            placeholder="Buscar sucursal"
+            class="search-input me-2"
+            [(ngModel)]="filtro"
+            (ngModelChange)="aplicarFiltro()"
+          />
+          <button (click)="abrirModal()" class="btn-agregar">
+            <i class="fas fa-plus"></i> Sucursal
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabla -->
+      <div class="table-responsive">
+        <table class="customer-table w-100">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Nombre</th>
+              <th>Contacto</th>
+              <th>Dirección</th>
+              <th>Empresa</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let s of filtrados; let i = index">
+              <td>{{ (paginaActual - 1) * elementosPorPagina + i + 1 }}</td>
+
+              <td>{{ s.nombreSucursal }}</td>
+              <td>{{ s.contacto }}</td>
+              <td>{{ s.direccion }}</td>
+              <td>{{ s.empresaNombre }}</td>
+              <td>
+                <button (click)="abrirModal(s)" class="btn-editar me-2">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button (click)="eliminar(s.idSucursal!)" class="btn-eliminar">
+                  <i class="fas fa-trash-alt"></i>
+                </button>
+               <button (click)="usuarios(s.idSucursal)" class="btn-user">
+                  <i class="fas fa-user"></i>
+                </button>
+
+              </td>
+            </tr>
+            <tr *ngIf="filtrados.length === 0">
+              <td colspan="6" class="text-center">No hay registros</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Paginación -->
+      <nav *ngIf="totalPaginas > 1" aria-label="Paginación" class="mt-3">
+        <ul class="pagination justify-content-center mb-0">
+          <li
+            class="page-item"
+            [class.disabled]="paginaActual === 1"
+            (click)="cambiarPagina(paginaActual - 1)"
+          >
+            <a class="page-link" href="javascript:void(0)">Anterior</a>
+          </li>
+          <li
+            class="page-item"
+            *ngFor="let pg of paginasArray"
+            [class.active]="pg === paginaActual"
+            (click)="cambiarPagina(pg)"
+          >
+            <a class="page-link" href="javascript:void(0)">{{ pg }}</a>
+          </li>
+          <li
+            class="page-item"
+            [class.disabled]="paginaActual === totalPaginas"
+            (click)="cambiarPagina(paginaActual + 1)"
+          >
+            <a class="page-link" href="javascript:void(0)">Siguiente</a>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Modal de creación/edición -->
+      <div *ngIf="mostrarModal" class="modal">
+        <div class="modal-content p-4">
+          <h2 class="mb-3">
+            {{ sucursal.idSucursal ? 'Editar' : 'Nueva' }} Sucursal
+          </h2>
+          <form (ngSubmit)="formSubmit()" #f="ngForm" class="empresa-form">
+            <!-- Hidden para controlar edición -->
+            <input
+              type="hidden"
+              name="idSucursal"
+              [(ngModel)]="sucursal.idSucursal"
+            />
+
+            <div class="mb-3">
+              <label class="form-label">Nombre</label>
+              <input
+                name="nombreSucursal"
+                required
+                [(ngModel)]="sucursal.nombreSucursal"
+                class="form-control"
+              />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Contacto</label>
+              <input
+                name="contacto"
+                [(ngModel)]="sucursal.contacto"
+                class="form-control"
+              />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Dirección</label>
+              <input
+                name="direccion"
+                [(ngModel)]="sucursal.direccion"
+                class="form-control"
+              />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Empresa</label>
+              <select
+                name="idEmpresa"
+                required
+                [(ngModel)]="sucursal.idEmpresa"
+                class="form-select"
+              >
+                <option [ngValue]="0" disabled>Seleccione empresa</option>
+                <option
+                  *ngFor="let e of empresas"
+                  [ngValue]="e.idempresa"
+                >
+                  {{ e.razonsocial }}
+                </option>
+              </select>
+            </div>
+
+            <div class="text-end mt-3">
+              <button
+                type="button"
+                class="btn btn-secondary me-2"
+                (click)="cerrarModal()"
+              >
+                Cerrar
+              </button>
+              <button type="submit" class="btn btn-primary">
+                Guardar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

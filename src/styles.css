@@ -1,3 +1,19 @@
+.modulo-admin {
+  padding: 16px 24px;
+  margin: 20px ;
+  background-color: #0e3f73 !important;
+  color: #fff;
+  border-radius: 6px;
+  text-align: center;
+  font-family: Arial, sans-serif;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+.modulo-admin:hover {
+  background-color: #0056b3;
+}
+
 /* You can add global styles to this file, and also import other style files */
 *{
   padding: 0px;
@@ -217,18 +233,21 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
   background-color: #f9fafb;
 }
 
-.btn-editar, .btn-eliminar {
+.btn-editar, .btn-eliminar, .btn-user {
   border: none;
   background: none;
   font-size: 18px;
   cursor: pointer;
-  margin-right: 8px;
 }
 
 .btn-editar {
   color: #3b82f6;
 }
 
+.btn-user{
+  margin-left: 4px;
+  color:rgb(21, 61, 162);
+}
 .btn-editar:hover{
   color: rgb(183, 134, 11);
 }
@@ -256,3 +275,18 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 .btn-ver:hover {
   color: white;
 }
+.btn-transacciones {
+  border: none;
+  color: rgb(48, 42, 42);
+  font-size: 18px;
+  background-color: transparent !important;
+  cursor: pointer;
+}
+
+.btn-transacciones i {
+  color: rgb(20, 112, 152);
+  margin-left: 2px;
+  margin-right: 10px;
+  pointer-events: none; /* Para que solo el botón capture el click */
+}
+

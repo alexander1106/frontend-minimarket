@@ -1,25 +1,4 @@
 
-.contenedor {
-  display: flex;
-  background-color: rgba(255, 255, 255, 0.797);
-}
-
-.encabezado {
-  width:83% ;
-}
-.barra {
-width: 17%;
-  flex: 1; /* Ocupa el resto del espacio */
-  background-color: #ddd;
-}
-.border-secondary{
-  border: 1px solid #510e0e;
-  height: 1px !important;
-  margin: auto;
-  width: 98%;
-}
-
-
 /* Basic Reset & Body Styles */
 body {
   margin: 0;
@@ -34,7 +13,10 @@ body {
   min-height: 100vh;
   margin-top: -28px;
 }
-
+h3{
+  margin-bottom: 15px !important;
+  text-align: center;
+}
 .header-left {
   display: flex;
   align-items: center;
@@ -42,13 +24,6 @@ body {
   border: 1px solid #ddd;
   border-radius: 5px;
   padding: 5px 10px;
-}
-
-.header-left .icon {
-  width: 20px;
-  margin-top: 5px !important;
-  height: 20px;
-  margin-right: 10px;
 }
 
 .search-input {
@@ -250,12 +225,19 @@ body {
   font-size: 15px;
   color: #333;
 }
+.summary-row button{
+  height: 6vh !important;
+  margin-right: 1px;
+
+}
 .btn-success{
-  width: 13vw !important;
+  width: 11vw !important;
 }
 .btn-primary{
   width: 9vw !important;
 }
+
+
 .summary-row input[type="checkbox"] {
   margin-right: 8px;
 }
@@ -274,38 +256,7 @@ body {
   margin-top: 10px;
 }
 
-.total-amount {
-  /* No specific styles here as it's already defined by total-compra */
-}
 
-.bags-input {
-  align-items: center;
-}
-
-.quantity-control {
-  display: flex;
-  align-items: center;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  overflow: hidden;
-}
-
-.quantity-control button {
-  background-color: #e9ecef;
-  border: none;
-  padding: 5px 10px;
-  cursor: pointer;
-  font-size: 16px;
-  color: #555;
-}
-
-.quantity-control input {
-  width: 40px;
-  text-align: center;
-  border: none;
-  outline: none;
-  font-size: 15px;
-}
 
 
 .btn-categoria {
@@ -335,71 +286,194 @@ body {
   height: 24px;
   object-fit: contain;
 }
+.modal-overlay * {
+  pointer-events: auto;
+}
+
+.input-celda {
+  width: 80px;
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.input-celda:focus {
+  outline: none;
+  border-color: #10b981; /* verde bonito */
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.input-contenedor {
+  position: relative;
+  display: inline-block;
+}
+
+.input-sufijo {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #555;
+  font-size: 13px;
+  pointer-events: none;
+}
+
+
+
+
+/* Fondo oscuro translúcido */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0, 0, 0, 0.5);  /* Fondo semitransparente */
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 1050;  /* Asegura que esté sobre el resto */
 }
-
-.modal-dialog {
+.modal-dialog, .modal-content {
   background: white;
-  width: 700px;
-  border-radius: 6px;
-  justify-content: center;
-  text-align: center;
-  overflow: hidden;
-  box-shadow: 0 0 15px rgba(0,0,0,0.3);
+  padding: 20px;
+  border-radius: 10px;
+  max-width: 600px;
+  width: 90%;
+  z-index: 1060; /* Más alto que el overlay */
+  position: relative;
 }
 
-.modal-header {
-  display: flex;
-  padding: 15px 30px ;
-  justify-content: space-between;
-  align-items: center;
-  background: #000000;
-  color: white;
-  font-size: 1.25rem;
-  margin-bottom: 20px;
+/* Animación de entrada */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
+/* Contenedor modal principal */
+.modal-dialog {
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 5px 25px rgba(0,0,0,0.2);
+  max-width: 600px;
+  width: 90%;
+  padding: 1.5rem;
+  animation: slideIn 0.3s ease;
+}
+
+/* Animación de aparición */
+@keyframes slideIn {
+  from { transform: translateY(-20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Encabezado del modal */
+
+/* Botón cerrar */
 .close-btn {
-  background: transparent;
+  color: red !important;
+  background: none;
   border: none;
-  color: white;
-  font-size: 1.5rem;
-  cursor: pointer;
+  font-size: 20px !important;
+  color: #888;
+  cursor: pointer !important;
+  transition: color 0.2s ease;
 }
 
-.modal-body .row {
-    padding:0px 20px;
+.close-btn:hover {
+  color: #333;
+}
 
+/* Cuerpo del modal */
+.modal-body .row {
   display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
 }
 
-.modal-footer {
-  margin: 20px;
-  text-align: right;
+.modal-body .col {
+  flex: 1 1 45%;
 }
 
+/* Estilo para select y inputs */
+.form-control {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  transition: border-color 0.2s ease;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0,123,255,0.2);
+}
+
+/* Etiquetas */
+.form-label {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-weight: 500;
+  color: #555;
+}
+
+/* Footer del modal */
+.modal-footer {
+  margin-top: 1rem;
+}
+
+/* Botones */
+.btn {
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.btn-primary {
+  background-color: #007bff;
+  color: #fff;
+}
 
 
 .btn-secondary {
   background-color: #6c757d;
-  border: none;
+  color: #fff;
+  margin-left: 15px;
 }
-.selector{
-  width:90vw !important;
+
+.btn-secondary:hover {
+  background-color: #5a6268;
+}
+
+/* Botón crear cliente más llamativo */
+.add-cliente {
+  background-color: #17a2b8;
+  color: #fff;
+  width: 3vw !important;
+  padding: 10px;
 }
 #cliente{
-    width:33vw !important;
-    margin-right: -30px !important;
+  width: 32vw !important;
+}
+.unir{
+  display: flex;
+  justify-content: space-between;
+}/* Contenedor externo */
+.mi-dropdown {
+  background-color: #f0f8ff !important;
+}
 
+.mi-dropdown .ng-option {
+  background-color: #f0f8ff !important;
+}
+
+.mi-dropdown .ng-option:hover {
+  background-color: #d0e7ff !important;
 }

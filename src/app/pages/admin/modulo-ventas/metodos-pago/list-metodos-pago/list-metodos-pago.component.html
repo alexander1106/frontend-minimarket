@@ -32,7 +32,6 @@
           <tr>
             <th>#</th>
             <th>Nombre</th>
-            <th>Descripcion</th>
 
             <th>Acciones</th>
           </tr>
@@ -41,7 +40,6 @@
           <tr *ngFor="let metodo of metodosFiltrados; let i = index">
             <td>{{ (paginaActual - 1) * elementosPorPagina + i + 1 }}</td>
             <td>{{ metodo.nombre }}</td>
-
             <td>
               <button (click)="verMetodo(metodo.idMetodoPago)" class="btn-ver">
                 <i class="fas fa-eye"></i>

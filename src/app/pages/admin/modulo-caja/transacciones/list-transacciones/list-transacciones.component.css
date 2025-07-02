@@ -1,0 +1,187 @@
+.detalle-caja {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem 2rem; /* espacio entre filas y columnas */
+  list-style: none;
+  width: 72vw;
+  padding: 1rem;
+  margin: 0;
+  border: 1px solid #ddd;
+  border-radius: 0.5rem;
+}
+
+.detalle-caja li {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0;
+  width: 20 vw !important;
+  border-bottom: none; /* quitamos líneas */
+}
+
+.detalle-caja i {
+  color: #6c757d;
+  font-size: 1.1rem;
+  margin-right: 0.5rem;
+}
+
+.detalle-caja .label {
+  font-weight: 500;
+  color: #555;
+  margin-right: 0.3rem;
+}
+
+.detalle-caja .valor {
+  font-weight: 600;
+  color: #222;
+}
+
+.detalle-caja .estado-abierta {
+  color: #28a745;
+}
+.filtros-transacciones {
+  background: #fdfdfd;
+  border: 1px solid #ddd;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.filtros-transacciones label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.3rem;
+}
+
+.filtros-transacciones select,
+.filtros-transacciones input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 0.4rem;
+}
+
+.filtros-transacciones button {
+  width: 100%;
+  padding: 0.6rem;
+  border: none;
+  background-color: #007bff;
+  color: white;
+  font-weight: 500;
+  border-radius: 0.4rem;
+  cursor: pointer;
+}
+
+.filtros-transacciones button i {
+  margin-right: 0.3rem;
+}
+
+/* Fondo semitransparente */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5); /* Fondo oscuro transparente */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1050; /* encima de todo */
+}
+
+/* Contenido centrado */
+.modal-content {
+  background: #fff;
+  border-radius: 0.75rem;
+  box-shadow: 0 0 20px rgba(0,0,0,0.2);
+  padding: 2rem;
+  width: 60vw;
+  max-width: 450px;
+  animation: fadeIn 0.3s ease;
+}
+
+/* Animación suave */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Título */
+.modal-content h4 {
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  color: #333;
+}
+
+/* Campos */
+.modal-content .form-label {
+  font-weight: 500;
+  color: #555;
+}
+
+.modal-content .form-control,
+.modal-content .form-select,
+.modal-content textarea {
+  border-radius: 0.5rem;
+  border: 1px solid #ccc;
+  padding: 0.6rem 0.75rem;
+  font-size: 1rem;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.modal-content .form-control:focus,
+.modal-content .form-select:focus,
+.modal-content textarea:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.15rem rgba(13,110,253,0.25);
+}
+
+/* Botones */
+.modal-content .btn-primary {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+  border-radius: 0.5rem;
+  font-weight: 500;
+}
+
+.modal-content .btn-primary:hover {
+  background-color: #0b5ed7;
+  border-color: #0b5ed7;
+}
+
+.modal-content .btn-secondary {
+  background-color: #6c757d;
+  border-color: #6c757d;
+  border-radius: 0.5rem;
+  font-weight: 500;
+}
+
+.modal-content .btn-secondary:hover {
+  background-color: #5c636a;
+  border-color: #5c636a;
+}
+
+/* Alineación de botones */
+.modal-content .d-flex {
+  justify-content: flex-end;
+}
+
+/* Espacio entre botones */
+.modal-content .d-flex.gap-2 > * {
+  margin-left: 0.5rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .modal-content {
+    width: 90vw;
+    padding: 1.2rem;
+  }
+}

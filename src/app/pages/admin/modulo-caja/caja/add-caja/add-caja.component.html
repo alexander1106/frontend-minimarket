@@ -1,0 +1,64 @@
+  <div class="cont">
+    <h2>Crear Caja</h2>
+
+    <form (ngSubmit)="guardarCaja()">
+      <div class="form-group">
+        <label>Nombre de la Caja</label>
+        <input
+          type="text"
+          class="form-control"
+          [(ngModel)]="caja.nombreCaja"
+          name="nombreCaja"
+          required
+        />
+      </div>
+
+    <div class="form-group">
+  <label>Sucursal</label>
+  <select
+    class="form-control"
+    [(ngModel)]="caja.sucursal"
+    name="idSucursal"
+    required
+    [disabled]="esEdicion"
+  >
+    <option *ngFor="let s of sucursales" [ngValue]="s">
+      {{ s.nombreSucursal }}
+    </option>
+  </select>
+</div>
+
+      <div class="form-group">
+        <label>Saldo Actual</label>
+        <input
+          type="number"
+          class="form-control"
+          [(ngModel)]="caja.saldoActual"
+          name="saldoActual"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Estado</label>
+        <select
+          class="form-control"
+          [(ngModel)]="caja.estadoCaja"
+          name="estadoCaja"
+          required
+        >
+          <option value="LIBRE">LIBRE</option>
+          <option value="OCUPADA">OCUPADA</option>
+          <option value="MALOGRADA">MALOGRADA</option>
+
+        </select>
+      </div>
+      <div class="cont-btn">
+  <button type="submit" class="btn btn-primary">Guardar</button>
+      <button type="button" class="btn btn-secondary" (click)="cancelar()">
+        Cancelar
+      </button>
+      </div>
+
+    </form>
+  </div>

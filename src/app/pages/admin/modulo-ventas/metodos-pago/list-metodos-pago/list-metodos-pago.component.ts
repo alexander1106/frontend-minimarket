@@ -1,9 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { Router, ActivatedRoute } from '@angular/router';
-import Swal from 'sweetalert2';
 import { FormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
+import { CommonModule } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
+import Swal from 'sweetalert2';
 import { BarraLateralComponent } from '../../../../../components/barra-lateral/barra-lateral.component';
 import { HeaderComponent } from '../../../../../components/header/header.component';
 import { MetodoPagoService } from '../../../../../service/metodo-pago.service';

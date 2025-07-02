@@ -7,6 +7,44 @@ import baseUrl from '../components/link';
   providedIn: 'root'
 })
 export class LoginService  {
+    private roles: string[] = [];
+
+setRoles(roles: string[]) {
+    this.roles = roles;
+    localStorage.setItem('roles', JSON.stringify(roles));
+  }
+ public setRol(rol: string) {
+    localStorage.setItem('rol', rol);
+  }
+
+  // Verifica si el usuario tiene un rol
+  public hasRole(role: string): boolean {
+    const rolGuardado = this.getRol();
+    return rolGuardado === role;
+  }
+ // Obtiene el rol
+  public getRol(): string | null {
+    return localStorage.getItem('rol');
+  }
+ // Verifica si el usuario tiene alguno de los roles permitidos
+  public hasAnyRole(roles: string[]): boolean {
+    const rolGuardado = this.getRol();
+    return roles.includes(rolGuardado!);
+  }
+
+  // Logout
+  public logout() {
+    localStorage.clear();
+  }
+  getRoles(): string[] {
+    if (this.roles.length > 0) {
+      return this.roles;
+    }
+    const stored = localStorage.getItem('roles');
+    return stored ? JSON.parse(stored) : [];
+  }
+
+
 
   public loginStatusSubjec = new Subject<boolean>();
 
@@ -19,28 +57,23 @@ export class LoginService  {
   public loginUser(token:any){
     localStorage.setItem('token', token);
   }
-  public isLoggedIn(){
-    let tokenStr= localStorage.getItem('token');
-    if(tokenStr==undefined || tokenStr=='' ||tokenStr==null){
-      return false;
-    }else{
-      return true;
-    }
+
+
+  public isLoggedIn(): boolean {
+    return !!localStorage.getItem('token');
   }
-
-  //cerramos sesion
-  public logout(){
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    return true;
-
-  }
-
   //obtenemos el token
   public getToken(){
     return localStorage.getItem('token');
 
   }
+  public getEmpresa() {
+  const empresaStr = localStorage.getItem('empresa');
+  if (empresaStr != null) {
+    return JSON.parse(empresaStr);
+  }
+  return null;
+}
 
   public setUser(user:any){
      localStorage.setItem('user',JSON.stringify(user));
@@ -78,5 +111,12 @@ export class LoginService  {
   resetPassword(token: string, nuevaClave: string): Observable<any> {
     return this.httpClient.post(`${baseUrl}/reset-password`, { token, nuevaClave }, { responseType: 'text' });
   }
+  public setUsername(username: string) {
+  localStorage.setItem('username', username);
+}
+
+public getUsername(): string | null {
+  return localStorage.getItem('username');
+}
 
 }

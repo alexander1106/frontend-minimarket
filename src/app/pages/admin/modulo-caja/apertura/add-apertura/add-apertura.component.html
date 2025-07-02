@@ -1,0 +1,26 @@
+<div class="cont form-container">
+  <h3>Aperturar Caja</h3>
+  <form (ngSubmit)="guardar()">
+    <div class="form-group">
+      <label>Fecha de Apertura:</label>
+      <input type="datetime-local" [(ngModel)]="fechaApertura" name="fechaApertura" required />
+    </div>
+    <div class="form-group">
+      <label>Monto Inicial:</label>
+      <input type="number" [(ngModel)]="monto" name="monto" required />
+    </div>
+    <div class="form-group">
+      <label>Caja:</label>
+      <select [(ngModel)]="idCaja" name="idCaja" required>
+        <option [ngValue]="undefined">Seleccione una caja</option>
+        <option *ngFor="let caja of cajasDisponibles" [ngValue]="caja.idCaja">
+          {{ caja.nombreCaja }}
+        </option>
+      </select>
+    </div>
+    <div class="acciones">
+      <button type="submit" class="btn btn-primary">Guardar</button>
+      <button type="button" class="btn btn-secondary" (click)="cerrarModal()">Cancelar</button>
+    </div>
+  </form>
+</div>

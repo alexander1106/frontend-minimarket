@@ -1,0 +1,192 @@
+<div class="contenedor">
+  <!-- Barra lateral fija -->
+  <div class="barra">
+    <app-barra-lateral></app-barra-lateral>
+  </div>
+
+  <div class="encabezado">
+    <!-- Header superior -->
+    <app-header></app-header>
+    <hr class="border-secondary mb-4" />
+
+    <div class="container">
+      <!-- Título, buscador y botón de agregar -->
+      <div class="header d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h2>Almacenes</h2>
+          <span class="subtitle">{{ almacenes.length }} Registrados</span>
+        </div>
+
+        <div class="search-sort d-flex align-items-center">
+          <!-- 🔽 FILTRO POR SUCURSAL AÑADIDO -->
+          <select
+            class="form-select me-2"
+            [(ngModel)]="sucursalFiltro"
+            (change)="aplicarFiltro()"
+            style="max-width: 220px;"
+          >
+            <option [ngValue]="0">Todas las sucursales</option>
+            <option *ngFor="let s of sucursales" [ngValue]="s.idsucursal">
+              {{ s.nombre }}
+            </option>
+          </select>
+          <!-- 🔼 -->
+
+          <input
+            type="text"
+            placeholder="Buscar almacén"
+            class="search-input me-2"
+            [(ngModel)]="filtro"
+            (ngModelChange)="aplicarFiltro()"
+          />
+          <button (click)="abrirModal()" class="btn-agregar">
+            <i class="fas fa-plus"></i> Almacén
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabla de almacenes -->
+      <table class="customer-table w-100">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nombre</th>
+            <th>Descripción</th>
+            <th>Dirección</th>
+            <th>Encargado</th>
+            <th>Sucursal</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let a of filtrados; let i = index">
+            <td>{{ (paginaActual - 1) * elementosPorPagina + i + 1 }}</td>
+            <td>{{ a.nombre }}</td>
+            <td>{{ a.descripcion }}</td>
+            <td>{{ a.direccion }}</td>
+            <td>{{ a.encargado }}</td>
+            <td>{{ a.sucursalNombre }}</td>
+            <td>
+              <button (click)="abrirModal(a)" class="btn-editar me-2">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button (click)="eliminar(a.idalmacen)" class="btn-eliminar">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="filtrados.length === 0">
+            <td colspan="7" class="text-center">No hay registros</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Paginación -->
+      <nav *ngIf="totalPaginas > 1" aria-label="Paginación" class="mt-3">
+        <ul class="pagination justify-content-center mb-0">
+          <li
+            class="page-item"
+            [class.disabled]="paginaActual === 1"
+            (click)="cambiarPagina(paginaActual - 1)"
+          >
+            <a class="page-link" href="javascript:void(0)">Anterior</a>
+          </li>
+          <li
+            class="page-item"
+            *ngFor="let pg of paginasArray"
+            [class.active]="pg === paginaActual"
+            (click)="cambiarPagina(pg)"
+          >
+            <a class="page-link" href="javascript:void(0)">{{ pg }}</a>
+          </li>
+          <li
+            class="page-item"
+            [class.disabled]="paginaActual === totalPaginas"
+            (click)="cambiarPagina(paginaActual + 1)"
+          >
+            <a class="page-link" href="javascript:void(0)">Siguiente</a>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Modal de creación/edición -->
+      <div *ngIf="mostrarModal" class="modal">
+        <div class="modal-content p-4">
+          <h2 class="mb-3">
+            {{ almacen.idalmacen ? 'Editar' : 'Nuevo' }} Almacén
+          </h2>
+          <form (ngSubmit)="formSubmit()" #f="ngForm">
+            <div class="mb-3">
+              <label class="form-label">Nombre</label>
+              <input
+                name="nombre"
+                required
+                [(ngModel)]="almacen.nombre"
+                placeholder="Nombre"
+                class="form-control"
+              />
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Descripción</label>
+              <input
+                name="descripcion"
+                [(ngModel)]="almacen.descripcion"
+                class="form-control"
+              />
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Dirección</label>
+              <input
+                name="direccion"
+                [(ngModel)]="almacen.direccion"
+                class="form-control"
+              />
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Encargado</label>
+              <input
+                name="encargado"
+                [(ngModel)]="almacen.encargado"
+                class="form-control"
+              />
+            </div>
+
+              <div class="mb-3">
+                <label class="form-label">Sucursal</label>
+                <select
+                  name="idsucursal"
+                  [(ngModel)]="almacen.idsucursal"
+                  class="form-select"
+                  required
+                >
+                  <option [ngValue]="0" disabled>Seleccione sucursal</option>
+                  <option *ngFor="let s of sucursales" [ngValue]="s.idsucursal">
+                    {{ s.nombre }}
+                  </option>
+                </select>
+              </div>
+              
+            <div class="text-end mt-3">
+              <button
+                type="button"
+                class="btn btn-secondary me-2"
+                (click)="cerrarModal()"
+              >
+                Cerrar
+              </button>
+              <button
+              type="submit"
+              class="btn btn-primary"
+            >
+              Guardar
+            </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
