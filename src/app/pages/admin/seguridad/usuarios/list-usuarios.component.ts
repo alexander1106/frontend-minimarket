@@ -11,73 +11,27 @@ import { RolesService } from '../../../../service/roles.service';
 import { EmpresasService } from '../../../../service/empresas.service';
 import { SucursalesService } from '../../../../service/sucursales.service';
 import { Observable, forkJoin } from 'rxjs';
+import { ActivatedRoute } from '@angular/router';
 
-// Interfaces
-interface Usuario {
-  idUsuario: number;
-  nombre: string;
-  apellidos: string;
-  username: string;
-  email: string;
-  dni: string;
-  turno: string;
-  estado: boolean;
-  idEmpresa: number | null;
-  rolId: number | null;
-  idSucursal: number | null;
-  empresaNombre?: string;
-  rolNombre?: string;
-  password?: string;
-}
-
-interface Empresa {
-  idempresa: number;
-  razonsocial: string;
-}
-
-interface Rol {
-  id: number;
-  nombre: string;
-}
-
-interface Sucursal {
-  id_sucursal: number;
-  nombreSucursal: string;
-  idempresa: number;
-}
-
-// Componente
 @Component({
   selector: 'app-list-usuarios',
   standalone: true,
-  imports: [CommonModule, FormsModule, HttpClientModule, BarraLateralComponent, HeaderComponent],
+  imports: [CommonModule, FormsModule, HttpClientModule, BarraLateralComponent],
   templateUrl: './list-usuarios.component.html',
   styleUrls: ['./list-usuarios.component.css']
 })
 export class ListUsuariosComponent implements OnInit {
-  usuarios: Usuario[] = [];
-  filtrados: Usuario[] = [];
-  empresas: Empresa[] = [];
-  roles: Rol[] = [];
-  sucursalesRaw: Sucursal[] = [];
-  sucursalesFiltradas: Sucursal[] = [];
+  usuarios: any[] = [];
+  filtrados: any[] = [];
+  empresas: any[] = [];
+  roles: any[] = [];
 
   filtro = '';
   mostrarModal = false;
 
-  usuario: Usuario = {
-    idUsuario: 0,
-    nombre: '',
-    apellidos: '',
-    username: '',
-    email: '',
-    dni: '',
-    turno: '',
-    estado: true,
-    idEmpresa: null,
-    rolId: null,
-    idSucursal: null
-  };
+  idSucursalActual: number | null = null;
+
+  usuario: any = this.crearUsuarioVacio();
 
   paginaActual = 1;
   elementosPorPagina = 5;
@@ -86,49 +40,47 @@ export class ListUsuariosComponent implements OnInit {
     private svc: UsuariosService,
     private rolSvc: RolesService,
     private empSvc: EmpresasService,
-    private sucSvc: SucursalesService
+    private sucSvc: SucursalesService,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
+    const sucursalIdParam = this.route.snapshot.paramMap.get('id');
+    const sucursalId = sucursalIdParam ? Number(sucursalIdParam) : null;
+    this.idSucursalActual = sucursalId;
+
     forkJoin({
       emp: this.empSvc.listarEmpresas(),
-      rol: this.rolSvc.listarRoles(),
-      suc: this.sucSvc.listarSucursales()
+      rol: this.rolSvc.listarRoles()
     }).subscribe(
-      ({ emp, rol, suc }) => {
+      (res: any) => {
+        const { emp, rol } = res;
         this.empresas = emp;
         this.roles = rol;
-        this.sucursalesRaw = suc.map((s: any) => ({
-          id_sucursal: s.id_sucursal,
-          nombreSucursal: s.nombreSucursal,
-          idempresa: s.idempresa || s.empresa?.idempresa
-        }));
-        this.sucursalesFiltradas = [];
+
         this.cargarUsuarios();
       },
       () => Swal.fire('Error', 'No se pudieron cargar datos', 'error')
     );
   }
 
-  onEmpresaChange(idEmpresa: number): void {
-    this.usuario.idSucursal = null;
-    this.sucursalesFiltradas = this.sucursalesRaw.filter(s => s.idempresa === idEmpresa);
-    console.log('Sucursales filtradas:', this.sucursalesFiltradas);
-  }
-
   private cargarUsuarios(): void {
-    this.svc.listarUsuarios().subscribe({
+    if (!this.idSucursalActual) {
+      this.usuarios = [];
+      this.filtrados = [];
+      return;
+    }
+
+    this.sucSvc.listarUsuariosPorSUcursales(this.idSucursalActual).subscribe({
       next: data => {
-        this.usuarios = data.map((u: any) => {
-          return {
-            ...u,
-            idEmpresa: u.idEmpresa,
-            rolId: u.rolId,
-            idSucursal: u.idSucursal,
-            empresaNombre: u.empresaNombre,
-            rolNombre: u.rolNombre
-          };
-        });
+        this.usuarios = data.map((u: any) => ({
+          ...u,
+          idEmpresa: u.idEmpresa,
+          rolId: u.rolId,
+          idSucursal: u.idSucursal,
+          empresaNombre: u.empresaNombre,
+          rolNombre: u.rolNombre
+        }));
         this.aplicarFiltro();
       },
       error: () => Swal.fire('Error', 'No se pudieron cargar usuarios', 'error')
@@ -166,26 +118,18 @@ export class ListUsuariosComponent implements OnInit {
     }
   }
 
-  abrirModal(u?: Usuario): void {
+  abrirModal(u?: any): void {
     if (u) {
+      // Editar usuario
       this.usuario = { ...u };
-      this.onEmpresaChange(this.usuario.idEmpresa!);
     } else {
-      this.usuario = {
-        idUsuario: 0,
-        nombre: '',
-        apellidos: '',
-        username: '',
-        email: '',
-        dni: '',
-        turno: '',
-        estado: true,
-        idEmpresa: null,
-        rolId: null,
-        idSucursal: null
-      };
-      this.sucursalesFiltradas = [];
+      // Nuevo usuario
+      this.usuario = this.crearUsuarioVacio();
     }
+
+    // Siempre asignar la sucursal actual
+    this.usuario.idSucursal = this.idSucursalActual;
+
     this.mostrarModal = true;
   }
 
@@ -195,14 +139,24 @@ export class ListUsuariosComponent implements OnInit {
 
   formSubmit(): void {
     const u = this.usuario;
-    if (!u.nombre || !u.username || !u.idEmpresa || !u.rolId || !u.idSucursal) {
-      Swal.fire('Atención', 'Completa todos los campos obligatorios', 'warning');
+
+    if (!u.rolId) {
+      Swal.fire('Error', 'Debe seleccionar un rol', 'error');
       return;
     }
 
     const dto = {
-      ...u,
-      estado: u.estado ? 1 : 0
+      idUsuario: u.idUsuario,
+      nombre: u.nombre,
+      apellidos: u.apellidos,
+      username: u.username,
+      email: u.email,
+      dni: u.dni,
+      turno: u.turno,
+      estado: u.estado ? 1 : 0,
+      rolId: u.rolId,
+      idSucursal: u.idSucursal,
+      password: u.password
     };
 
     const pet$: Observable<any> = u.idUsuario > 0 ? this.svc.editar(dto) : this.svc.registrar(dto);
@@ -227,9 +181,29 @@ export class ListUsuariosComponent implements OnInit {
     }).then(res => {
       if (!res.isConfirmed) return;
       this.svc.eliminar(id).subscribe({
-        next: () => { Swal.fire('Eliminado', 'Usuario eliminado', 'success'); this.cargarUsuarios(); },
+        next: () => {
+          Swal.fire('Eliminado', 'Usuario eliminado', 'success');
+          this.cargarUsuarios();
+        },
         error: err => Swal.fire('Error', err.error?.message || 'No se pudo eliminar', 'error')
       });
     });
+  }
+
+  private crearUsuarioVacio(): any {
+    return {
+      idUsuario: 0,
+      nombre: '',
+      apellidos: '',
+      username: '',
+      email: '',
+      dni: '',
+      turno: '',
+      estado: true,
+      idEmpresa: null,
+      rolId: null,
+      idSucursal: null,
+      password: ''
+    };
   }
 }

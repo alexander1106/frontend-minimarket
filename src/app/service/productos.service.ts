@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
@@ -9,30 +8,6 @@ import baseUrl from '../components/link';
 })
 export class ProductosService {
 
- constructor(private http: HttpClient) { }
-
-  // Obtener todos los permisos
-  public listarProductos(): Observable<any> {
-    return this.http.get(`${baseUrl}/productos`);
-  }
-  public listarProductosPorSucursal(idSucursal: number): Observable<any> {
-  return this.http.get(`${baseUrl}/sucursales/${idSucursal}/productos`);
-}
-
-listarProductosPorCategoria(idCategoria: any) {
-  return this.http.get(`${baseUrl}/productos/${idCategoria}/categoria`);
-}
-
-}
-=======
-// productos.service.ts
-import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import baseUrl from '../components/link';
-
-@Injectable({ providedIn: 'root' })
-export class ProductosService {
   private apiPath = `${baseUrl}/productos`;
 
   constructor(private http: HttpClient) {}
@@ -41,9 +16,7 @@ export class ProductosService {
     return this.http.get(`${this.apiPath}`);
   }
 
-  listarProductosPorCategoria(id: number): Observable<any> {
-    return this.http.get(`${this.apiPath}/${id}/categoria`);
-  }
+
 
   buscar(id: number): Observable<any> {
     return this.http.get(`${this.apiPath}/${id}`);
@@ -60,5 +33,13 @@ export class ProductosService {
   eliminar(id: number): Observable<any> {
     return this.http.delete(`${this.apiPath}/${id}`, { responseType: 'text' });
   }
+
+  public listarProductosPorSucursal(idSucursal: number): Observable<any> {
+  return this.http.get(`${baseUrl}/sucursales/${idSucursal}/productos`);
 }
->>>>>>> 058cbc6a4c9021a15fe40018b006294083b61c7c
+
+listarProductosPorCategoria(idCategoria: any) {
+  return this.http.get(`${baseUrl}/productos/${idCategoria}/categoria`);
+}
+
+}

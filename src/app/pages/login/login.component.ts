@@ -9,6 +9,7 @@ import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import Swal from 'sweetalert2';
 import { LoginService } from '../../service/login.service';
+import { SucursalesService } from '../../service/sucursales.service';
 
 @Component({
   selector: 'app-login',
@@ -43,6 +44,7 @@ throw new Error('Method not implemented.');
     private snack: MatSnackBar,
     private loginService: LoginService,
     private router: Router,
+    private sucursalesService:SucursalesService
 
   ) {}
 
@@ -63,19 +65,34 @@ formSubmit() {
     return;
   }
 
-this.loginService.generarToken(this.loginData).subscribe(
-  (data: any) => {
-    this.loginService.loginUser(data.token);
-    this.loginService.setRol(data.rol);
+  // Primero generas el token
+  this.loginService.generarToken(this.loginData).subscribe(
+    (data: any) => {
+      // Guardas datos de login
+      this.loginService.loginUser(data.token);
+      this.loginService.setRol(data.rol);
+      this.loginService.setUser(data.usuario);
 
-    // Guarda todo el usuario en localStorage
-    this.loginService.setUser(data.usuario);
+      console.log('Sucursal ID:', data.usuario.sucursal.idSucursal);
 
-    console.log('Sucursal ID:', data.usuario.sucursal.idSucursal);
+      // Ahora que tienes la sucursal, obtienes la empresa
+      this.sucursalesService.obtenerEmpresPorSucursal(data.usuario.sucursal.idSucursal).subscribe(
+        (empresa) => {
+          console.log("Empresa cargada:", empresa);
 
-    this.snack.open('Inicio de sesión exitoso', 'Aceptar', { duration: 3000 });
-    this.router.navigate(['admin']);
-  },
+          // Guarda la empresa en localStorage
+          localStorage.setItem('empresa', JSON.stringify(empresa));
+
+          // Ahora sí navegas al dashboard
+          this.snack.open('Inicio de sesión exitoso', 'Aceptar', { duration: 3000 });
+          this.router.navigate(['admin']);
+        },
+        (error) => {
+          console.error("Error al cargar empresa:", error);
+          this.snack.open('Error cargando datos de empresa', 'Aceptar', { duration: 3000 });
+        }
+      );
+    },
     (error) => {
       if (error.error.error === 'USUARIO DESHABILITADO') {
         Swal.fire({
@@ -95,5 +112,6 @@ this.loginService.generarToken(this.loginData).subscribe(
     }
   );
 }
+
 
 }

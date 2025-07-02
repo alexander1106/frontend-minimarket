@@ -105,6 +105,8 @@ export const routes: Routes = [
       { path: 'edit-roles/:id', component: ListRolesComponent },
 
       { path: 'usuarios', component: ListUsuariosComponent },
+      { path: 'usuarios/:id', component: ListUsuariosComponent },
+
       { path: 'add-usuarios', component: ListUsuariosComponent },
       { path: 'edit-roles/:id', component: ListUsuariosComponent },
 

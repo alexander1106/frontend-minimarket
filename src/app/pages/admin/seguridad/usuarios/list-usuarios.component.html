@@ -1,8 +1,9 @@
 <div class="contenedor">
   <div class="barra"><app-barra-lateral></app-barra-lateral></div>
   <div class="encabezado">
-    <app-header></app-header>
-    <hr class="border-secondary mb-4" />
+<div class="modulo-admin">
+  Modulo administrable
+</div>    <hr class="border-secondary mb-4" />
     <div class="container">
       <div class="header d-flex justify-content-between align-items-center mb-3">
         <div>
@@ -29,7 +30,6 @@
             <th>#</th>
             <th>Nombre</th>
             <th>Username</th>
-            <th>Empresa</th>
             <th>Rol</th>
             <th>DNI</th>
             <th>Email</th>
@@ -42,8 +42,8 @@
             <td>{{ (paginaActual - 1) * elementosPorPagina + i + 1 }}</td>
             <td>{{ u.nombre }} {{ u.apellidos }}</td>
             <td>{{ u.username }}</td>
-            <td>{{ u.empresaNombre || '—' }}</td>
-            <td>{{ u.rolNombre || '—' }}</td>
+            <td>{{ u.rol?.nombre }}</td>
+
             <td>{{ u.dni || '—' }}</td>
             <td>{{ u.email || '—' }}</td>
             <td>{{ u.turno || '—' }}</td>
@@ -84,36 +84,6 @@
           <h2 class="mb-3">{{ usuario.idUsuario ? 'Editar' : 'Nuevo' }} Usuario</h2>
           <form #f="ngForm" (ngSubmit)="formSubmit()">
 
-            <div class="mb-3">
-              <label>Empresa:</label>
-              <select
-                name="idEmpresa"
-                [(ngModel)]="usuario.idEmpresa"
-                (ngModelChange)="onEmpresaChange($event)"
-                class="form-select"
-                required
-              >
-                <option value="" disabled>-- Seleccione empresa --</option>
-                <option *ngFor="let e of empresas" [value]="e.idempresa">
-                  {{ e.razonsocial }}
-                </option>
-              </select>
-            </div>
-
-            <div class="mb-3">
-              <label>Sucursal:</label>
-              <select
-                name="idSucursal"
-                [(ngModel)]="usuario.idSucursal"
-                class="form-select"
-                required
-              >
-                <option value="" disabled>-- Seleccione sucursal --</option>
-                <option *ngFor="let s of sucursalesFiltradas" [value]="s.id_sucursal">
-                  {{ s.nombreSucursal }}
-                </option>
-              </select>
-            </div>
 
             <div class="mb-3">
               <label>Rol:</label>
@@ -123,8 +93,8 @@
                 class="form-select"
                 required
               >
-                <option value="" disabled>-- Seleccione rol --</option>
-                <option *ngFor="let r of roles" [value]="r.id">
+                <option [ngValue]="null" disabled>-- Seleccione rol --</option>
+                <option *ngFor="let r of roles" [ngValue]="r.id">
                   {{ r.nombre }}
                 </option>
               </select>
@@ -161,7 +131,7 @@
 
             <div class="text-end mt-3">
               <button type="button" class="btn btn-secondary me-2" (click)="cerrarModal()">Cerrar</button>
-              <button type="submit" class="btn btn-primary" [disabled]="f.invalid">Guardar</button>
+<button type="submit" class="btn btn-primary">Guardar</button>
             </div>
           </form>
         </div>
