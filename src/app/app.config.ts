@@ -8,9 +8,10 @@ import { authInterceptorProviders } from './service/auth.interceptor';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideHttpClient(
-      withInterceptorsFromDi()  // <- Aquí decimos que usaremos interceptores DI como clases
+      withInterceptorsFromDi()
     ),
-    ...authInterceptorProviders, // <- Tu clase interceptor registrada como provider
+
+    ...authInterceptorProviders,
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes)
   ]

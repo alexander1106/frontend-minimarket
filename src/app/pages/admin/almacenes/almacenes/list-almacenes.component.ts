@@ -17,6 +17,7 @@ interface Almacen {
   estado: number;
   idsucursal: number;
   sucursalNombre?: string;
+  fechaRegistro?: string; // ✅ añadido para filtro por fecha
 }
 
 interface Sucursal {
@@ -43,7 +44,11 @@ export class ListAlmacenesComponent implements OnInit {
   sucursales: Sucursal[] = [];
 
   filtro = '';
-  sucursalFiltro: number = 0;      // ← NUEVO filtro por sucursal
+  sucursalFiltro: number = 0;
+
+  // ✅ Filtro por rango de fechas
+  fechaInicio: string = '';
+  fechaFin: string = '';
 
   mostrarModal = false;
 
@@ -95,7 +100,8 @@ export class ListAlmacenesComponent implements OnInit {
             encargado: a.encargado,
             estado: a.estado,
             idsucursal: sid,
-            sucursalNombre: this.sucursales.find(s => s.idsucursal === sid)?.nombre ?? '—'
+            sucursalNombre: this.sucursales.find(s => s.idsucursal === sid)?.nombre ?? '—',
+            fechaRegistro: a.fechaRegistro ?? a.fechaCreacion ?? '' // 👈 asegurar que tu API mande este campo
           } as Almacen;
         });
         this.aplicarFiltro();
@@ -105,10 +111,9 @@ export class ListAlmacenesComponent implements OnInit {
   }
 
   aplicarFiltro(): void {
-    const t = this.filtro.trim().toLowerCase();
     let list = this.almacenes;
 
-    // Filtro por texto
+    const t = this.filtro.trim().toLowerCase();
     if (t) {
       list = list.filter(a =>
         a.nombre.toLowerCase().includes(t) ||
@@ -117,9 +122,18 @@ export class ListAlmacenesComponent implements OnInit {
       );
     }
 
-    // Filtro por sucursal seleccionada
     if (this.sucursalFiltro !== 0) {
       list = list.filter(a => a.idsucursal === this.sucursalFiltro);
+    }
+
+    // ✅ Filtro por rango de fechas
+    if (this.fechaInicio && this.fechaFin) {
+      const inicio = new Date(this.fechaInicio);
+      const fin = new Date(this.fechaFin);
+      list = list.filter(a => {
+        const fecha = new Date(a.fechaRegistro || '');
+        return fecha >= inicio && fecha <= fin;
+      });
     }
 
     const start = (this.paginaActual - 1) * this.elementosPorPagina;

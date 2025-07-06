@@ -27,6 +27,9 @@ import { ListRolesComponent } from './pages/admin/seguridad/roles/list-roles.com
 import { ListUsuariosComponent } from './pages/admin/seguridad/usuarios/list-usuarios.component';
 import { ListSucursalesComponent } from './pages/admin/administrable/sucursales/list-sucursales.component';
 import { ListPagosComponent } from './pages/admin/modulo-ventas/list-pagos/list-pagos.component';
+import { ReporteVentasComponent } from './pages/admin/reporte/reporte-ventas/reporte-ventas.component';
+import { ReporteAlmacenesComponent} from './pages/admin/reporte/reporte-almacenes/reporte-almacenes.component';
+
 
 
 export const routes: Routes = [
@@ -118,6 +121,8 @@ export const routes: Routes = [
       { path: 'sucursales', component: ListSucursalesComponent },
       { path: 'add-sucursales', component: ListSucursalesComponent },
       { path: 'edit-sucursales/:id', component: ListSucursalesComponent },
+      { path: 'reporte-ventas', component: ReporteVentasComponent },
+      { path: 'reporte-almacenes', component: ReporteAlmacenesComponent },
 
       // pagos
             { path: 'pagos', component: ListPagosComponent },
