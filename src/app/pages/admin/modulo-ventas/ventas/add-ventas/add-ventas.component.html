@@ -16,33 +16,25 @@
 
           <div class="category-tabs">
             <button class="btn-categoria" (click)="listarProductos()">
-              <img src="assets/img/carrito.jpeg" class="icono-categoria">
-              <span>Todos</span>
             </button>
          <button
   *ngFor="let cat of categorias"
   (click)="seleccionarCategoria(cat)"
+  class="categorias-btn"
   [class.active]="cat.idcategoria === categoriaSeleccionada?.idcategoria"
 >
-  <img
-    [src]="cat.img"
-    [alt]="cat.nombre"
-    class="icono-categoria"
-  />
+
   {{ cat.nombre }}
 </button>
 
 
-<button (click)="mostrarTodosLosProductos()">
-  Mostrar todos
-</button>
 
           </div>
 
           <div class="product-grid">
             <div class="product-card" *ngFor="let producto of productos" (click)="agregarProducto(producto)">
               <div class="product-price">${{ producto.costo_venta }}</div>
-              <img [src]="producto.imagen" [alt]="producto.nombre" class="product-image" />
+              <img [src]="'assets/img/' + producto.imagen" [alt]="producto.nombre" class="product-image" />
               <div class="product-name">{{ producto.nombre }}</div>
             </div>
           </div>

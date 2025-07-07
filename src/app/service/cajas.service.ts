@@ -34,5 +34,8 @@ export class CajasService {
   obtenerCajasAbiertasMismaSucursal(idCaja: number) {
   return this.http.get<any[]>(`${baseUrl}/cajas/${idCaja}/sucursal-cajas-abiertas`);
 }
+obtenerCajasConAperturaAbierta(): Observable<any[]> {
+  return this.http.get<any[]>(`${baseUrl}/aperturas-caja/cajas-abiertas`);
+}
 
 }

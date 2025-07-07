@@ -9,6 +9,8 @@ import { CotizacionService } from '../../../../service/cotizacion.service';
 import { FormsModule } from '@angular/forms';
 import { LoginService } from '../../../../service/login.service';
 import { MetodoPagoService } from '../../../../service/metodo-pago.service';
+import baseUrl from '../../../../components/link';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-list-pagos',
@@ -22,29 +24,32 @@ export class ListPagosComponent implements OnInit {
 metodosPago: any[] = [];
   mostrandoFormulario = false;
   nuevoPago: any = {
-    cotizacionId: null,
-    observaciones: '',
-    fechaPago: '',
-    montoPagado: null,
-    estadoPago: 'Realizado',
-      metodoPagoId: null
-
-  };
-
+  cotizacionId: null,
+  observaciones: '',
+  fechaPago: '',
+  montoPagado: null,
+  estadoPago: 'Realizado',
+  metodoPagoId: null,
+  comprobantePago: null // <-- INICIALIZADO
+};
   constructor(
     private pagosService: PagosService,
     private cotizacionesService: CotizacionService,
     private router: Router,
     private route: ActivatedRoute,
     private loginService:LoginService,
-    private metodosPagoService:MetodoPagoService
+    private metodosPagoService:MetodoPagoService,
+    private http:HttpClient
   ) {}
 
-  ngOnInit(): void {
-    this.listarPagos();
-    this.listarCotizaciones();
-    this.listarMetodosPago()
-  }
+  cajaActiva: any = null; // 👈 nuevo campo
+
+ngOnInit(): void {
+  this.validarCajaActiva(); // 👈 nueva llamada
+  this.listarPagos();
+  this.listarCotizaciones();
+  this.listarMetodosPago();
+}
 listarMetodosPago() {
   const usuario = this.loginService.getUser();
   const sucursalId = usuario.sucursal?.idSucursal || 1;
@@ -60,7 +65,29 @@ listarMetodosPago() {
     }
   });
 }
+validarCajaActiva() {
+  const usuario = this.loginService.getUser();
+  if (!usuario) {
+    Swal.fire("Error", "No se encontró el usuario logueado", "error");
+    return;
+  }
 
+  this.http.get(`${baseUrl}/aperturas-caja/usuario/${usuario.idUsuario}/abierta`)
+    .subscribe({
+      next: (data) => {
+        if (data) {
+          this.cajaActiva = data;
+          console.log('Caja activa encontrada:', this.cajaActiva);
+        } else {
+          Swal.fire("Caja no abierta", "No hay caja activa asociada al usuario", "warning");
+        }
+      },
+      error: (err) => {
+        console.error("Error al consultar la caja activa:", err);
+        Swal.fire("Error", "No se pudo validar la caja activa", "error");
+      }
+    });
+}
   listarPagos() {
     this.pagosService.listarPagos().subscribe({
       next: (data: any) => {
@@ -111,15 +138,21 @@ onCotizacionSeleccionada(cotizacionId: any) {
     this.nuevoPago.montoPagado = null;
   }
 }
-
 guardarPago() {
+  if (!this.cajaActiva) {
+    Swal.fire("Caja no abierta", "Debes abrir una caja antes de registrar el pago", "warning");
+    return;
+  }
+
   const dto = {
     id_venta: this.nuevoPago.cotizacionId,
     id_metodo_pago: this.nuevoPago.metodoPagoId,
     observaciones: this.nuevoPago.observaciones,
     fechaPago: this.nuevoPago.fechaPago,
     montoPagado: this.nuevoPago.montoPagado,
-    estadoPago: this.nuevoPago.estadoPago
+    estadoPago: this.nuevoPago.estadoPago,
+    comprobantePago: this.nuevoPago.comprobantePago,
+    id_apertura_caja: this.cajaActiva.idAperturaCaja // 👈 AÑADIDO
   };
 
   this.pagosService.registrarPago(dto).subscribe({
@@ -132,8 +165,9 @@ guardarPago() {
         observaciones: '',
         fechaPago: '',
         montoPagado: null,
-        estadoPago: 'Relizado',
-        metodoPagoId: null
+        estadoPago: 'Realizado',
+        metodoPagoId: null,
+        comprobantePago: null
       };
     },
     error: (err) => {
@@ -142,5 +176,6 @@ guardarPago() {
     }
   });
 }
+
 
 }

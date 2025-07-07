@@ -39,7 +39,6 @@
       <th>Fecha de envío</th>
       <th>Fecha de entrega</th>
       <th>Observaciones</th>
-      <th>Vendedor</th>
       <th>Acciones</th>
     </tr>
   </thead>
@@ -53,15 +52,12 @@
 
       <td>{{ delivery.observaciones }}</td>
 
-      <td>{{ delivery.encargado }}</td>
 
       <td>
         <button class="btn-editar">
           <i class="fas fa-edit"></i>
         </button>
-        <button (click)="eliminarCliente(delivery.iddelivery)" class="btn-eliminar" title="Eliminar delivery">
-          <i class="fas fa-trash-alt"></i>
-        </button>
+
       </td>
     </tr>
   </tbody>
