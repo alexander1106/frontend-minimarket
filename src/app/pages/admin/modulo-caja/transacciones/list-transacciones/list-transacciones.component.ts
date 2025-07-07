@@ -275,9 +275,9 @@ this.transaccionService.registrarTransaccion(nuevaTransaccion).subscribe(
       (error) => {
         console.error('Error al registrar transferencia:', error);
         Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'Ocurrió un error al guardar la transferencia.'
+          icon: 'warning',
+          title: 'warning',
+          text: 'Saldo insuficinete.'
         });
       }
     );

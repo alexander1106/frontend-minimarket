@@ -20,8 +20,8 @@ export class PagosService {
     return this.http.get(`${baseUrl}/pagos/${id}`);
   }
 
-  public registrarPago(cliente: any) {
-    return this.http.post(`${baseUrl}/pagos`, cliente );
+  public registrarPago(pagos: any) {
+    return this.http.post(`${baseUrl}/pagos`, pagos );
   }
 
  // Eliminar un permiso por ID

@@ -57,6 +57,18 @@ listarVentasPorSucursal(idSucursal: number) {
     }
   });
 }
+verDetallesVenta(venta: any) {
+  Swal.fire({
+    title: 'Detalles de la Venta',
+    html: `
+      <p><strong>Cliente:</strong> ${venta.cliente?.nombre || '-'}</p>
+      <p><strong>Fecha:</strong> ${venta.fecha_venta}</p>
+      <p><strong>Documento:</strong> ${venta.tipo_comprobante} - ${venta.nro_comrprobante}</p>
+      <p><strong>Total:</strong> S/ ${venta.total_venta}</p>
+    `,
+    icon: 'info'
+  });
+}
 
 consoleLogVenta(venta: any) {
   console.log('Venta seleccionada:', venta);

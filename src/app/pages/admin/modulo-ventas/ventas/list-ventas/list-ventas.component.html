@@ -51,12 +51,10 @@
     <td>{{ venta.total_venta }}</td>
 
         <td>
-    <button class="btn-editar">
-  <i class="fas fa-edit"></i>
-</button>
-          <button  class="btn-eliminar">
-            <i class="fas fa-trash-alt"></i>
-          </button>
+
+           <button class="btn-detalles" (click)="verDetallesVenta(venta)">
+    <i class="fas fa-eye"></i>
+  </button>
             <!-- Botón PDF -->
 <button class="btn-pdf" (click)="generarComprobantePdf(venta.idVenta)">
   <i class="fas fa-file-pdf"></i>
