@@ -10,6 +10,7 @@ import { SucursalesService } from '../../../../../service/sucursales.service';
 import { CajasService } from '../../../../../service/cajas.service';
 import Swal from 'sweetalert2';
 import { LoginService } from '../../../../../service/login.service';
+
 @Component({
   selector: 'app-list-caja',
   standalone: true,
@@ -38,49 +39,35 @@ export class ListCajaComponent implements OnInit {
 
   modalAbierto = false;
   cajaSeleccionada: any = null;
-rolUsuario: any;
-idSucursalUsuario: number | null = null;
+  rolUsuario: any;
+  idSucursalUsuario: number | null = null;
+
   constructor(
     private router: Router,
     private route: ActivatedRoute,
     private sucursalesService: SucursalesService,
     private cajasService: CajasService,
-      private loginService: LoginService  // <-- AÑADIR ESTO
-
+    private loginService: LoginService
   ) {}
 
-ngOnInit(): void {
-  this.rolUsuario = this.loginService.getRol();
-  const usuario = this.loginService.getUser();
-  this.idSucursalUsuario = usuario?.sucursal?.idSucursal ?? null;
+  ngOnInit(): void {
+    this.rolUsuario = this.loginService.getRol();
+    const usuario = this.loginService.getUser();
+    this.idSucursalUsuario = usuario?.sucursal?.idSucursal ?? null;
 
-  if (this.rolUsuario !== 'ADMIN' && this.idSucursalUsuario) {
-    this.sucursalSeleccionada = this.idSucursalUsuario;
+    if (this.rolUsuario !== 'ADMIN' && this.idSucursalUsuario) {
+      this.sucursalSeleccionada = this.idSucursalUsuario;
+    }
+
+
+    this.listarSucursales();
+    this.cargarCajas();
   }
-
-  this.listarSucursales();
-  this.listarCajas();
-}
 
   listarSucursales() {
     this.sucursalesService.listarSucursales().subscribe({
       next: (data) => {
         this.sucursales = data || [];
-        this.cajas = [];
-
-        this.sucursales.forEach((sucursal) => {
-          if (sucursal.cajas) {
-            sucursal.cajas.forEach((caja: any) => {
-              caja.sucursal = {
-                idSucursal: sucursal.idSucursal,
-                nombreSucursal: sucursal.nombreSucursal
-              };
-              this.cajas.push(caja);
-            });
-          }
-        });
-
-        this.actualizarFiltradoYPagina();
       },
       error: (err) => {
         console.error('Error al listar sucursales:', err);
@@ -88,69 +75,58 @@ ngOnInit(): void {
     });
   }
 
-  listarCajas() {
-    this.cajasService.listarCaja().subscribe({
-      next: (data) => {
-        this.cajas = data || [];
-        this.actualizarFiltradoYPagina();
-      },
-      error: (err) => {
-        console.error('Error al listar cajas:', err);
-      },
-    });
+  cargarCajas() {
+    if (this.sucursalSeleccionada != null) {
+      // Si hay una sucursal seleccionada, traer solo sus cajas
+      this.sucursalesService.listarCajasPorSucursal(this.sucursalSeleccionada).subscribe({
+        next: (data: any) => {
+          this.cajas = data || [];
+          this.actualizarFiltradoYPagina();
+        },
+        error: (err) => {
+          console.error('Error al listar cajas por sucursal:', err);
+        },
+      });
+    } else {
+      // Si no hay sucursal seleccionada, traer todas las cajas
+      this.cajasService.listarCaja().subscribe({
+        next: (data: any) => {
+          this.cajas = data || [];
+          this.actualizarFiltradoYPagina();
+        },
+        error: (err) => {
+          console.error('Error al listar todas las cajas:', err);
+        },
+      });
+    }
   }
 
   actualizarFiltradoYPagina() {
     this.paginaActual = 1;
 
-    let cajasDeSucursal: any[] = [];
-
-    if (this.sucursalSeleccionada != null) {
-      cajasDeSucursal = this.cajas.filter(
-        (c) => c.sucursales?.idSucursal === this.sucursalSeleccionada
-      );
-    } else {
-      cajasDeSucursal = this.cajas;
-    }
-
-    this.actualizarPaginaFiltrada(cajasDeSucursal);
-  }
-
-  actualizarPaginaFiltrada(listaFiltrada: any[]) {
-    let filtradas = listaFiltrada;
+    let listaFiltrada = this.cajas;
 
     if (this.filtroBusqueda.trim() !== '') {
       const term = this.filtroBusqueda.toLowerCase();
-      filtradas = filtradas.filter((c) =>
+      listaFiltrada = listaFiltrada.filter((c) =>
         (c.nombreCaja || '').toLowerCase().includes(term)
       );
     }
 
     this.totalPaginas = Math.max(
       1,
-      Math.ceil(filtradas.length / this.elementosPorPagina)
+      Math.ceil(listaFiltrada.length / this.elementosPorPagina)
     );
 
     const inicio = (this.paginaActual - 1) * this.elementosPorPagina;
     const fin = inicio + this.elementosPorPagina;
-    this.cajasFiltradas = filtradas.slice(inicio, fin);
+    this.cajasFiltradas = listaFiltrada.slice(inicio, fin);
   }
 
   cambiarPagina(pagina: number) {
     if (pagina < 1 || pagina > this.totalPaginas) return;
     this.paginaActual = pagina;
-
-    let listaFiltrada: any[];
-
-    if (this.sucursalSeleccionada != null) {
-      listaFiltrada = this.cajas.filter(
-        (c) => c.sucursal?.idSucursal === this.sucursalSeleccionada
-      );
-    } else {
-      listaFiltrada = this.cajas;
-    }
-
-    this.actualizarPaginaFiltrada(listaFiltrada);
+    this.actualizarFiltradoYPagina();
   }
 
   paginasArray(): number[] {
@@ -158,24 +134,15 @@ ngOnInit(): void {
   }
 
   crearCaja() {
-    if (this.sucursalSeleccionada) {
-      const sucursalPreseleccionada = this.sucursales.find(
-        s => s.idSucursal === this.sucursalSeleccionada
-      );
-      this.cajaSeleccionada = {
-        nombreCaja: '',
-        sucursal: sucursalPreseleccionada ?? null,
-        saldoActual: 0,
-        estadoCaja: 'ACTIVA'
-      };
-    } else {
-      this.cajaSeleccionada = {
-        nombreCaja: '',
-        sucursal: null,
-        saldoActual: 0,
-        estadoCaja: 'ACTIVA'
-      };
-    }
+    const sucursalPreseleccionada = this.sucursales.find(
+      s => s.idSucursal === this.sucursalSeleccionada
+    );
+    this.cajaSeleccionada = {
+      nombreCaja: '',
+      sucursal: sucursalPreseleccionada ?? null,
+      saldoActual: 0,
+      estadoCaja: 'ACTIVA'
+    };
     this.modalAbierto = true;
   }
 
@@ -193,7 +160,7 @@ ngOnInit(): void {
 
   onCajaGuardada() {
     this.modalAbierto = false;
-    this.listarCajas();
+    this.cargarCajas(); // Refresca las cajas al guardar
   }
 
   verCaja(id: number) {
@@ -213,9 +180,7 @@ ngOnInit(): void {
         this.cajasService.eliminarCaja(id).subscribe({
           next: () => {
             Swal.fire('Eliminado', 'La caja se eliminó correctamente.', 'success').then(() => {
-              this.listarCajas();
-              this.listarSucursales();
-
+              this.cargarCajas();
             });
           },
           error: (err) => {

@@ -1,0 +1,114 @@
+<div class="contenedor">
+  <div class="barra">
+    <app-barra-lateral></app-barra-lateral>
+  </div>
+
+  <div class="encabezado">
+    <app-header></app-header>
+    <hr class="border-secondary mb-4" />
+
+    <div class="container">
+      <div class="header d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h2>Reporte de Ventas</h2>
+          <span class="subtitle">Ventas registradas</span>
+        </div>
+        <div class="search-sort d-flex gap-2">
+          <input
+            type="text"
+            placeholder="Buscar por cliente"
+            class="form-control"
+            [(ngModel)]="filtroCliente"
+            (input)="aplicarFiltros()"
+          />
+          <input
+            type="text"
+            placeholder="Buscar por fecha (YYYY-MM-DD)"
+            class="form-control"
+            [(ngModel)]="filtroFecha"
+            (input)="aplicarFiltros()"
+          />
+          <button class="btn btn-secondary" (click)="limpiarFiltros()">
+            <i class="fas fa-eraser"></i> Limpiar
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="isLoading">Cargando ventas...</div>
+
+      <table class="table table-striped" *ngIf="!isLoading && ventasFiltradas.length > 0">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Fecha</th>
+            <th>Tipo documento</th>
+            <th>Número</th>
+            <th>Cliente</th>
+            <th>Total</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let venta of ventasPaginadas; let i = index">
+            <td>{{ (paginaActual - 1) * ventasPorPagina + i + 1 }}</td>
+            <td>{{ venta.fecha_venta | date: 'dd/MM/yyyy' }}</td>
+            <td>{{ venta.tipo_comprobante }}</td>
+            <td>{{ venta.nro_comrprobante }}</td>
+            <td>{{ venta.cliente?.nombre }}</td>
+            <td>{{ venta.total_venta | currency: 'PEN':'symbol':'1.2-2' }}</td>
+            <td>
+              <button class="btn btn-sm btn-primary" (click)="verDetalle(venta)">
+                <i class="fas fa-eye"></i>
+              </button>
+              <button class="btn btn-sm btn-success" (click)="descargarPDF(venta)">
+                <i class="fas fa-file-pdf"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div *ngIf="!isLoading && ventasFiltradas.length === 0" class="text-center mt-4">
+        <i class="fas fa-folder-open fa-2x text-muted"></i>
+        <p class="text-muted">No hay ventas para mostrar.</p>
+      </div>
+
+      <div *ngIf="ventasFiltradas.length > ventasPorPagina" class="d-flex justify-content-center align-items-center gap-2 mt-3">
+        <button class="btn btn-outline-primary" (click)="paginaAnterior()" [disabled]="paginaActual === 1">Anterior</button>
+        <span>Página {{ paginaActual }}</span>
+        <button
+          class="btn btn-outline-primary"
+          (click)="paginaSiguiente()"
+          [disabled]="paginaActual * ventasPorPagina >= ventasFiltradas.length"
+        >
+          Siguiente
+        </button>
+      </div>
+
+      <!-- Modal Detalle -->
+      <div class="modal fade show d-block" *ngIf="mostrarModal" style="background: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Detalle de Venta</h5>
+              <button type="button" class="btn-close" (click)="cerrarModal()"></button>
+            </div>
+            <div class="modal-body">
+              <p><strong>Cliente:</strong> {{ ventaSeleccionada?.cliente?.nombre }}</p>
+              <p><strong>Fecha:</strong> {{ ventaSeleccionada?.fecha_venta | date: 'dd/MM/yyyy' }}</p>
+              <p><strong>Tipo documento:</strong> {{ ventaSeleccionada?.tipo_comprobante }}</p>
+              <p><strong>Número:</strong> {{ ventaSeleccionada?.nro_comrprobante }}</p>
+              <p><strong>Total:</strong> {{ ventaSeleccionada?.total_venta | currency: 'PEN' }}</p>
+              <p><strong>Estado:</strong> {{ ventaSeleccionada?.estado || 'N/A' }}</p>
+              <!-- Puedes agregar más detalles si quieres -->
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" (click)="cerrarModal()">Cerrar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Fin Modal -->
+    </div>
+  </div>
+</div>

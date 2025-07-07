@@ -1,4 +1,3 @@
-
 import { Component, Inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -11,6 +10,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatSelectModule } from '@angular/material/select';
 import { MatOptionModule } from '@angular/material/core';
 import { ClientesService } from '../../../../../service/clientes.service';
+import { LoginService } from '../../../../../service/login.service'; // Importante: Asegúrate de importar
 
 @Component({
   selector: 'app-add-cliente',
@@ -37,17 +37,20 @@ export class AddClienteComponent implements OnInit {
     tipoDocumento: '',
     documento: '',
     direccion: '',
+    sucursal: {
+      idSucursal: null // Aquí se guardará la sucursal
+    }
   };
 
   documentosExistentes: string[] = [];
 
-  // 'crear' | 'editar' | 'ver'
   modo: 'crear' | 'editar' | 'ver' = 'crear';
 
   constructor(
     private dialogRef: MatDialogRef<AddClienteComponent>,
     private clienteService: ClientesService,
     private router: Router,
+    private loginService: LoginService, // Inyecta LoginService
     @Inject(MAT_DIALOG_DATA) public data: any
   ) {}
 
@@ -64,6 +67,17 @@ export class AddClienteComponent implements OnInit {
 
       if (this.data.cliente) {
         this.cliente = { ...this.data.cliente };
+      }
+    }
+
+    // Si estás creando, asignar sucursal
+    if (this.modo === 'crear') {
+      const user = this.loginService.getUser();
+      if (user?.sucursal?.idSucursal) {
+        this.cliente.sucursal.idSucursal = user.sucursal.idSucursal;
+        console.log('Sucursal asignada al cliente:', this.cliente.sucursal.idSucursal);
+      } else {
+        console.warn('No se encontró sucursal en el usuario logueado');
       }
     }
 

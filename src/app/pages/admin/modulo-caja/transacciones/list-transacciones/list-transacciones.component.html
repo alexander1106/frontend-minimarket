@@ -7,9 +7,11 @@
     <app-header></app-header>
     <hr class="border-secondary mb-4" />
 
+
     <div class="container">
       <div class="header d-flex justify-content-between align-items-center p-3 border rounded bg-light mb-3">
         <h2 class="mb-3">Detalles de Caja</h2>
+
         <div class="d-flex gap-2">
           <button class="btn btn-danger" (click)="cerrarCaja()">
             <i class="fas fa-lock"></i> Cerrar Caja
@@ -24,7 +26,6 @@
 
         </div>
       </div>
-
       <ul class="detalle-caja" *ngIf="detalleCaja">
         <li>
           <i class="fas fa-calendar-alt"></i>
@@ -36,22 +37,50 @@
           <span class="label">Monto de apertura:</span>
           <span class="valor">S/ {{ detalleCaja.saldoInicial }}</span>
         </li>
-        <li>
-          <i class="fas fa-money-bill-wave"></i>
-          <span class="label">Monto en efectivo:</span>
-          <span class="valor">S/ {{ detalleCaja.saldoEfectivo }}</span>
-        </li>
+
         <li>
           <i class="fas fa-calculator"></i>
           <span class="label">Monto total:</span>
           <span class="valor">S/ {{ detalleCaja.saldoFinal }}</span>
         </li>
+
         <li>
           <i class="fas fa-check-circle"></i>
           <span class="label">Estado:</span>
           <span class="valor estado-abierta">Abierta</span>
         </li>
+
       </ul>
+
+      <div class="row">
+        <div class="col-md-4 mb-3" *ngFor="let saldo of saldosMetodoPago  ">
+          <div class="card shadow-sm h-100">
+            <div class="card-body">
+              <h5 class="card-title">
+                {{ saldo.metodoPago?.nombre }}
+              </h5>
+              <p class="card-text">
+                Saldo: <strong>{{ saldo.saldo | currency:'PEN' }}</strong>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+<div class="row mb-4">
+  <div
+    class="col"
+    *ngFor="let metodo of metodosPago"
+  >
+    <div class="card text-center border-primary shadow-sm h-100">
+      <div class="card-body">
+        <h6 class="card-title text-primary">{{ metodo.nombre }}</h6>
+        <p class="card-text text-muted">Método de pago</p>
+      </div>
+    </div>
+  </div>
+</div>
+<h1>Transacciones</h1>
 
       <table class="customer-table mt-3">
         <thead>
@@ -125,15 +154,17 @@
 
       <div class="mb-2">
         <label class="form-label">Tipo de Movimiento</label>
-        <select
-          class="form-select"
-          [(ngModel)]="tipoMovimiento"
-          name="tipoMovimiento"
-          required
-        >
-          <option value="INGRESO">Ingreso</option>
-          <option value="EGRESO">Egreso</option>
-        </select>
+      <select
+  class="form-select"
+  [(ngModel)]="tipoMovimiento"
+  name="tipoMovimiento"
+  (ngModelChange)="onTipoMovimientoChange()"
+  required
+>
+  <option value="INGRESO">Ingreso</option>
+  <option value="EGRESO">Egreso</option>
+</select>
+
       </div>
 
       <div class="mb-2">
@@ -144,7 +175,7 @@
           name="idMetodoPago"
           required
         >
-          <option *ngFor="let metodo of metodosPago" [ngValue]="metodo.idMetodoPago">
+          <option *ngFor="let metodo of metodos" [ngValue]="metodo.idMetodoPago">
             {{ metodo.nombre }}
           </option>
         </select>
@@ -194,19 +225,7 @@
           </option>
         </select>
       </div>
-       <div class="mb-2">
-        <label class="form-label">Método de Pago</label>
-        <select
-          class="form-select"
-          [(ngModel)]="idMetodoPagoTransferencia"
-          name="idMetodoPagoTransferencia"
-          required
-        >
-          <option *ngFor="let metodo of metodosPago" [ngValue]="metodo.idMetodoPago">
-            {{ metodo.nombre }}
-          </option>
-        </select>
-      </div>
+
 
       <div class="mb-2">
         <label class="form-label">Monto</label>
@@ -241,4 +260,46 @@
       </div>
     </form>
   </div>
+
 </div>
+
+<div *ngIf="mostrarFormularioArqueo" class="modal-overlay">
+  <div class="modal-content">
+    <h4>Arqueo de Caja</h4>
+    <form (ngSubmit)="confirmarArqueo()">
+      <div class="mb-2">
+        <label class="form-label">Monto Contado</label>
+        <input
+          type="number"
+          class="form-control"
+          [(ngModel)]="montoContado"
+          name="montoContado"
+          required
+        />
+      </div>
+
+      <div class="mb-2">
+        <label class="form-label">Observaciones</label>
+        <textarea
+          class="form-control"
+          [(ngModel)]="observacionesArqueo"
+          name="observacionesArqueo"
+        ></textarea>
+      </div>
+
+      <div class="d-flex gap-2 mt-2">
+        <button type="submit" class="btn btn-primary">
+          Confirmar Arqueo y Cerrar Caja
+        </button>
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="cancelarArqueo()"
+        >
+          Cancelar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+

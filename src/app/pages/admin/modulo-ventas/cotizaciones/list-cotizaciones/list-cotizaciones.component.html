@@ -31,7 +31,7 @@
         <thead>
           <tr>
             <th>#</th>
-            <th>Numero</th>
+            <th>Codigo</th>
             <th>Cliente</th>
             <th>Fecha cotizacion</th>
             <th>Fecha vencimiento</th>
@@ -50,24 +50,29 @@
 
             <td>S/. {{ cotizacion.totalCotizacion | number: '1.2-2' }}</td>
             <td>{{ cotizacion.estadoCotizacion }}</td>
-            <td>
-              <button
-                class="btn-editar"
-                title="Editar cotización">
-                <i class="fas fa-edit"></i>
-              </button>
-              <button
-                class="btn-ver"
-                title="Ver cotización">
-                <i class="fas fa-eye"></i>
-              </button>
-              <button
-                (click)="eliminarCotizacion(cotizacion.id)"
-                class="btn-eliminar"
-                title="Eliminar cotización">
-                <i class="fas fa-trash-alt"></i>
-              </button>
-            </td>
+          <td>
+  <button
+    class="btn-editar"
+    title="Editar cotización">
+    <i class="fas fa-edit"></i>
+  </button>
+<button
+  class="btn-ver"
+  title="Ver cotización"
+  (click)="verDetallesCotizacion(cotizacion)">
+  <i class="fas fa-eye"></i>
+</button>
+
+
+  <button
+    (click)="eliminarCotizacion(cotizacion.idCotizaciones)"
+    class="btn-eliminar"
+    title="Eliminar cotización">
+    <i class="fas fa-trash-alt"></i>
+  </button>
+
+</td>
+
           </tr>
         </tbody>
       </table>
@@ -98,5 +103,34 @@
         </ul>
       </nav>
     </div>
+  </div>
+</div>
+<div class="modal-overlay" *ngIf="mostrarModalDetalle">
+  <div class="modal-content">
+    <h3>Detalles de la Cotización #{{ cotizacionSeleccionada?.numeroCotizacion }}</h3>
+    <p><strong>Cliente:</strong> {{ cotizacionSeleccionada?.cliente?.nombre }}</p>
+    <p><strong>Fecha:</strong> {{ cotizacionSeleccionada?.fechaCotizacion | date:'shortDate' }}</p>
+    <p><strong>Total:</strong> S/. {{ cotizacionSeleccionada?.totalCotizacion | number:'1.2-2' }}</p>
+
+    <table class="detalle-table">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Cantidad</th>
+          <th>Precio Unitario</th>
+          <th>Subtotal</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let detalle of detallesCotizacion">
+          <td>{{ detalle.productos?.nombre }}</td>
+          <td>{{ detalle.cantidad }}</td>
+          <td>S/. {{ detalle.precioUnitario | number:'1.2-2' }}</td>
+          <td>S/. {{ detalle.subTotal | number:'1.2-2' }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <button class="btn-cerrar" (click)="mostrarModalDetalle = false">Cerrar</button>
   </div>
 </div>

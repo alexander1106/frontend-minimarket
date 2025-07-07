@@ -8,6 +8,7 @@ import { CotizacionService } from '../../../../../service/cotizacion.service';
 import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
 import { RouterModule } from '@angular/router';
+import { LoginService } from '../../../../../service/login.service';
 
 @Component({
   selector: 'app-list-cotizaciones',
@@ -16,33 +17,61 @@ import { RouterModule } from '@angular/router';
   styleUrl: './list-cotizaciones.component.css'
 })
 export class ListCotizacionesComponent implements OnInit {
+generarPago(arg0: any) {
+throw new Error('Method not implemented.');
+}
   cotizaciones: any[] = [];
   cotizacionesFiltradas: any[] = [];
   filtroBusqueda: string = '';
   paginaActual: number = 1;
   elementosPorPagina: number = 5;
+mostrarModalDetalle: boolean = false;
+detallesCotizacion: any[] = [];
+cotizacionSeleccionada: any = null;
 
   constructor(
     private cotizacionService: CotizacionService,
     private router: Router,
+    private loginService:LoginService
   ) {}
 
   ngOnInit() {
+
     this.listarCotizaciones();
   }
 
-  listarCotizaciones() {
-    this.cotizacionService.listarCotizaciones().subscribe({
-      next: (data: any) => {
-        this.cotizaciones = data || [];
-        this.buscarCotizacion();
-      },
-      error: (err) => {
-        Swal.fire("Error", "No se pudieron cargar las cotizaciones", "error");
-        console.error(err);
-      }
-    });
-  }
+listarCotizaciones() {
+  const usuario = this.loginService.getUser(); // Si tienes la sucursal aquí
+  const sucursalId = usuario.sucursal?.idSucursal || 1; // Usa el ID correcto o por defecto 1
+
+  this.cotizacionService.listarCotizacionesPorSucursal(sucursalId).subscribe({
+    next: (data: any) => {
+      this.cotizaciones = data || [];
+      this.buscarCotizacion();
+    },
+    error: (err) => {
+      Swal.fire("Error", "No se pudieron cargar las cotizaciones", "error");
+      console.error(err);
+    }
+  });
+}
+verDetallesCotizacion(cotizacion: any) {
+  this.cotizacionSeleccionada = cotizacion;
+
+  this.cotizacionService.obtenerDetallesPorCotizacion(cotizacion.idCotizaciones).subscribe({
+    next: (detalles: any) => {
+      console.log('DETALLES RECIBIDOS:', detalles);
+      // Aquí lo conviertes a array
+      this.detallesCotizacion = Array.isArray(detalles) ? detalles : [detalles];
+      this.mostrarModalDetalle = true;
+    },
+    error: (err) => {
+      console.error(err);
+      Swal.fire("Error", "No se pudieron cargar los detalles de la cotización", "error");
+    }
+  });
+}
+
 
   eliminarCotizacion(id: number) {
     Swal.fire({

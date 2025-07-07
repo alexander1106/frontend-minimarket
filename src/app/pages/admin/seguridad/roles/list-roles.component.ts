@@ -17,7 +17,7 @@ import { Observable } from 'rxjs';
     FormsModule,
     HttpClientModule,
     BarraLateralComponent,
-    HeaderComponent
+
   ],
   templateUrl: './list-roles.component.html',
   styleUrls: ['./list-roles.component.css']

@@ -16,7 +16,6 @@
     alt="Logo Empresa"
     style="height:100px;width:auto;"
   />
-  <span class="fs-5 fw-bold">{{ empresa?.razonsocial }}</span>
   </div>
 
     </div>
@@ -116,8 +115,12 @@
       <ul class="nav flex-column ms-4 mt-2" *ngIf="activeMenu === 'compras'">
         <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/list-compras']">Compras</a></li>
         <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Detalles compras</a></li>
+<<<<<<< HEAD
         <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Devoluciones</a></li>
         <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/list-proveedores']">Proveedores</a></li>
+=======
+        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Proveedores</a></li>
+>>>>>>> a948ca2ae940103f313694eaad48014a8c8e74d1
       </ul>
     </li>
 
@@ -130,12 +133,14 @@
       </a>
       <ul class="nav flex-column ms-4 mt-2" *ngIf="activeMenu === 'ventas'">
         <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/list-venta']">Ventas</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small">Detalles ventas</a></li>
         <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/list-cotizaciones']">Cotizaciones</a></li>
         <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/list-clientes']">Clientes</a></li>
+<<<<<<< HEAD
         <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/metodos-pago']">Devoluciones</a></li>
         <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/pagos']">Pagos</a></li>
 
+=======
+>>>>>>> a948ca2ae940103f313694eaad48014a8c8e74d1
         <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/metodos-pago']">Métodos de pago</a></li>
       </ul>
     </li>
@@ -163,8 +168,22 @@
       <ul class="nav flex-column ms-4 mt-2" *ngIf="activeMenu === 'caja'">
         <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/list-cajas']">Cajas</a></li>
         <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/list-apertura']">Apertura</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Historial</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Detalles de caja</a></li>
+        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/pagos']">Pagos</a></li>
+
+      </ul>
+    </li>
+ 
+    <!-- REPORTES (ADMIN y CAJERO) -->
+    <li class="nav-item" *ngIf="tieneRolesPermitidos(['ADMIN', 'CAJERO'])">
+      <a class="nav-link custom-link d-flex justify-content-between align-items-center"
+         (click)="toggleSubmenu('reportes')">
+        <span><i class="fas fa-chart-bar me-2"></i> Reportes</span>
+        <i class="{{ activeMenu === 'reportes' ? 'fas fa-chevron-up' : 'fas fa-chevron-down' }}"></i>
+      </a>
+      <ul class="nav flex-column ms-4 mt-2" *ngIf="activeMenu === 'reportes'">
+        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/reporte-ventas']">Reporte de Ventas</a></li>
+        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/reporte-almacenes']">Reporte de Almacenes</a></li>
+        <!-- Aquí podrías agregar más reportes si querés -->
       </ul>
     </li>
 

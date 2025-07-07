@@ -11,6 +11,7 @@ import { BarraLateralComponent } from '../../../../../components/barra-lateral/b
 import { ClientesService } from '../../../../../service/clientes.service';
 import { MatDialog } from '@angular/material/dialog';
 import { AddClienteComponent } from '../add-cliente/add-cliente.component';
+import { LoginService } from '../../../../../service/login.service';
 
 @Component({
   selector: 'app-list-clientes',
@@ -29,7 +30,8 @@ export class ListClientesComponent implements OnInit {
   constructor(
     private clienteService: ClientesService,
     private router: Router,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private loginService:LoginService
   ) {}
 ngOnInit() {
   this.listarClientes();
@@ -165,18 +167,27 @@ eliminarCliente(id: number) {
 }
 
 
-  listarClientes() {
-    this.clienteService.listarClientes().subscribe({
-      next: (data: any) => {
-        this.clientes = data || [];
-        this.buscarCliente();
-      },
-      error: (err) => {
-        Swal.fire("Error", "No se pudieron cargar los clientes", "error");
-        console.error(err);
-      }
-    });
+listarClientes() {
+  const user = this.loginService.getUser();
+  const idSucursal = user?.sucursal?.idSucursal;
+
+  if (!idSucursal) {
+    Swal.fire('Error', 'No se encontró la sucursal del usuario', 'error');
+    return;
   }
+
+  this.clienteService.listarClientesPorSucursal(idSucursal).subscribe({
+    next: (data: any) => {
+      this.clientes = data || [];
+      this.buscarCliente();
+    },
+    error: (err) => {
+      Swal.fire('Error', 'No se pudieron cargar los clientes', 'error');
+      console.error(err);
+    }
+  });
+}
+
 
   buscarCliente() {
     const filtro = this.filtroBusqueda.trim().toLowerCase();

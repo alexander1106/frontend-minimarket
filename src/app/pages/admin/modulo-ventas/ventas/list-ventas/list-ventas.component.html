@@ -13,7 +13,7 @@
   <div class="header">
     <div>
       <h2>Ventas </h2>
-      <span class="subtitle">  Ventas registrados</span>
+      <span class="subtitle"> {{ventas.length}} Ventas registrados</span>
     </div>
     <div class="search-sort">
       <input type="text" placeholder="Buscar venta"
@@ -35,22 +35,19 @@
         <th>Tipo documento</th>
         <th>Numero</th>
         <th>Cliente</th>
-        <th>Empleado</th>
-        <th>Tipo pago</th>
         <th>Total</th>
                 <th>Acciones</th>
 
       </tr>
     </thead>
     <tbody>
-  <tr *ngFor="let venta of ventas; let i = index">
+<tr *ngFor="let venta of ventas; let i = index" (click)="consoleLogVenta(venta)">
     <td>{{ i + 1 }}</td> <!-- Número de fila -->
+
     <td>{{ venta.fecha_venta }}</td>
     <td>{{ venta.tipo_comprobante }}</td>
     <td>{{ venta.nro_comrprobante }}</td>
-<td>{{ venta.cliente | json }}</td>
-    <td>{{ venta.empleado?.nombre || '---' }}</td> <!-- Empleado si existe -->
-    <td>{{ venta.tipo_pago || '---' }}</td> <!-- Tipo pago si existe -->
+<td>{{ venta.cliente?.nombre }}</td>
     <td>{{ venta.total_venta }}</td>
 
         <td>
@@ -60,6 +57,10 @@
           <button  class="btn-eliminar">
             <i class="fas fa-trash-alt"></i>
           </button>
+            <!-- Botón PDF -->
+<button class="btn-pdf" (click)="generarComprobantePdf(venta.idVenta)">
+  <i class="fas fa-file-pdf"></i>
+</button>
         </td>
       </tr>
     </tbody>

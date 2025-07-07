@@ -1,21 +1,30 @@
-import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common'; // ✅ Importar esto
-import { Router, RouterModule } from '@angular/router'; // <-- IMPORTANTE
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Router, RouterModule } from '@angular/router';
 import { LoginService } from '../../service/login.service';
-import ColorThief from 'color-thief';
 
 @Component({
   selector: 'app-barra-lateral',
   standalone: true,
-  imports: [CommonModule,RouterModule], // ✅ Agregar aquí
+  imports: [CommonModule, RouterModule],
   templateUrl: './barra-lateral.component.html',
   styleUrl: './barra-lateral.component.css'
 })
-export class BarraLateralComponent {
+export class BarraLateralComponent implements OnInit {
   constructor(private loginService: LoginService, private router: Router) {}
 
   activeMenu: string | null = null;
-empresaColor = '#000000'; // Color por defecto
+  empresaColor = '#000000'; // Color por defecto
+  empresa: any = null;
+
+  ngOnInit() {
+    this.empresa = this.loginService.getEmpresa();
+    console.log("Empresa cargada:", this.empresa);
+
+    if (this.empresa && this.empresa.logo) {
+      this.empresaColor = this.empresa.logo;
+    }
+  }
 
   toggleSubmenu(menu: string) {
     this.activeMenu = this.activeMenu === menu ? null : menu;
@@ -25,22 +34,12 @@ empresaColor = '#000000'; // Color por defecto
     this.loginService.logout();
     this.router.navigate(['/login']);
   }
-  empresa: any = null;
-
-ngOnInit() {
-  this.empresa = this.loginService.getEmpresa();
-  console.log("Empresa en sidebar:", this.empresa);
-}
-
 
   tieneRol(role: string): boolean {
     return this.loginService.hasRole(role);
   }
 
-
-tieneRolesPermitidos(roles: string[]): boolean {
-  return this.loginService.hasAnyRole(roles);
-}
-
-
+  tieneRolesPermitidos(roles: string[]): boolean {
+    return this.loginService.hasAnyRole(roles);
+  }
 }

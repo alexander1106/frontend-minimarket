@@ -12,6 +12,9 @@ import { TransaccionesCajaService } from '../../../../../service/transacciones-c
 import Swal from 'sweetalert2';
 import { CajasService } from '../../../../../service/cajas.service';
 import { TranseferenciaEntreCajasService } from '../../../../../service/transeferencia-entre-cajas.service';
+import { SaldoMetodoPagoServiceService } from '../../../../../service/saldo-metodo-pago-service.service';
+import { LoginService } from '../../../../../service/login.service';
+import { ArqueoCajaServiceService } from '../../../../../service/arqueo-caja-service.service';
 
 @Component({
   selector: 'app-list-transacciones',
@@ -45,10 +48,19 @@ export class ListTransaccionesComponent implements OnInit {
   transaccionesPaginadas: any[] = [];
   metodosPago: any[] = [];
   idMetodoPagoTransferencia: number | undefined;
+saldosMetodoPago: any[] = [];
+mostrarFormularioArqueo = false;
+
+// Campos del formulario de arqueo
+montoContado: number = 0;
+observacionesArqueo: string = '';
 
   // Paginación
   paginaActual: number = 1;
   itemsPorPagina: number = 5;
+
+ metodos: any[] = [];
+  metodosFiltrados: any[] = [];
 
   constructor(
     private route: ActivatedRoute,
@@ -57,9 +69,12 @@ export class ListTransaccionesComponent implements OnInit {
     private metodoPagoService: MetodoPagoService,
     private transaccionService: TransaccionesCajaService,
     private transaccionesEntreCajas:TranseferenciaEntreCajasService,
-  private router: Router // <<-- AQUI
-  ) {}
+  private router: Router,
+  private loginService:LoginService,
+  private registrarArqueo:ArqueoCajaServiceService,
+    private saldoMetodoPagoService: SaldoMetodoPagoServiceService, // 🚩 Nuevo servicio
 
+  ) {}
 ngOnInit() {
   const idParam = this.route.snapshot.paramMap.get('idAperturaCaja');
 
@@ -72,39 +87,22 @@ ngOnInit() {
       (data) => {
         this.detalleCaja = data;
         console.log('Detalle de la apertura:', this.detalleCaja);
-
         const idCaja = this.detalleCaja?.idCaja || this.detalleCaja?.caja?.idCaja;
-
         if (idCaja) {
-          console.log('ID de la Caja de esta apertura:', idCaja);
 
           this.idCajaOrigen = idCaja; // preseleccionar caja origen
 
-          // 🚩 PASO 2: Obtener sucursal con las cajas
-          this.CajasService.obtenerSucursalPorCaja(idCaja).subscribe(
-            (sucursal: any) => {
-              console.log('Sucursal:', sucursal);
+         this.CajasService.obtenerCajasAbiertasMismaSucursal(idCaja).subscribe(
+          (cajasAbiertas: any[]) => {
+            console.log('Cajas abiertas de la misma sucursal:', cajasAbiertas);
+            this.cajas = cajasAbiertas;
+          },
+          (error) => {
+            console.error('Error al obtener cajas abiertas:', error);
+            this.cajas = [];
+          }
+        );
 
-              const idSucursal = sucursal.idSucursal;
-              if (idSucursal) {
-                console.log('ID Sucursal:', idSucursal);
-
-            // 🚩 PASO 3: Cargar las cajas de la sucursal
-                if (sucursal.cajas && Array.isArray(sucursal.cajas)) {
-                  this.cajas = sucursal.cajas.filter((c: any) => c.estadoCaja === 'OCUPADA');
-                  console.log('Cajas abiertas obtenidas:', this.cajas);
-                } else {
-                  console.warn('La sucursal no contiene una lista de cajas.');
-                  this.cajas = [];
-                }
-              } else {
-                console.warn('Sucursal sin idSucursal.');
-              }
-            },
-            (error) => {
-              console.error('Error al obtener la sucursal:', error);
-            }
-          );
         } else {
           console.warn('No se encontró idCaja en la apertura.');
         }
@@ -114,33 +112,56 @@ ngOnInit() {
       }
     );
 
-    // 🚩 Transacciones filtradas
-    this.transaccionService.listarTransacciones().subscribe(
+    // 🚩 NUEVO: Transacciones de esta apertura
+    this.transaccionService.listarTransaccionesPorApertura(this.idAperturaCaja).subscribe(
       (data) => {
-        this.transacciones = data.filter((t: any) =>
-          t.aperturaCaja?.idAperturaCaja === this.idAperturaCaja
-        );
+        this.transacciones = data;
+        console.log('Transacciones de la apertura:', this.transacciones);
         this.actualizarPaginacion();
       },
       (error) => {
         console.error('Error al obtener transacciones:', error);
       }
     );
+    // 🚩 NUEVO: Saldos de métodos de pago de esta apertura
+    this.saldoMetodoPagoService.listarPorApertura(this.idAperturaCaja).subscribe(
+      (data) => {
+        this.saldosMetodoPago = data;
+        console.log('Saldos de métodos de pago:', this.saldosMetodoPago);
+      },
+      (error) => {
+        console.error('Error al obtener los saldos de métodos de pago:', error);
+      }
+    );
+
   } else {
     console.warn('No se encontró idAperturaCaja en la URL');
   }
 
-  // Métodos de pago
-  this.metodoPagoService.listarMetodosPago().subscribe(
-    (data) => {
-      this.metodosPago = data;
-    },
-    (error) => {
-      console.error('Error al cargar métodos de pago:', error);
-    }
-  );
+
+  this.listarMetodosDeSucursal()
 }
 
+  // ✅ NUEVO MÉTODO PARA LISTAR POR SUCURSAL
+  listarMetodosDeSucursal() {
+    const user = this.loginService.getUser();
+    if (!user || !user.sucursal || !user.sucursal.idSucursal) {
+      Swal.fire("Error", "No se pudo determinar la sucursal del usuario.", "error");
+      return;
+    }
+
+    const idSucursal = user.sucursal.idSucursal;
+
+    this.metodoPagoService.listarMetodosPagoPorSucursal(idSucursal).subscribe({
+      next: (data: any) => {
+        this.metodos = data || [];
+      },
+      error: (err) => {
+        Swal.fire("Error", "No se pudieron cargar los métodos de pago.", "error");
+        console.error(err);
+      }
+    });
+  }
 
   get totalPaginas(): number {
     return Math.max(1, Math.ceil(this.transacciones.length / this.itemsPorPagina));
@@ -165,38 +186,60 @@ ngOnInit() {
     this.mostrarFormularioTransferencia = false;
   }
 
-  guardarTransaccion() {
-    const nuevaTransaccion = {
-      fecha: this.fecha,
-      monto: this.monto,
-      observaciones: this.observaciones,
-      tipoMovimiento: this.tipoMovimiento,
-      idMetodoPago: this.idMetodoPago,
-      idCaja: this.detalleCaja?.idCaja,
-      id_apertura_caja: this.detalleCaja?.idAperturaCaja
-    };
-
-    this.transaccionService.registrarTransaccion(nuevaTransaccion).subscribe(
-      (response) => {
-        Swal.fire({
-          icon: 'success',
-          title: 'Transacción guardada',
-          text: 'La transacción se registró correctamente.'
-        }).then(() => window.location.reload());
-
-        this.mostrarFormularioTransaccion = false;
-        this.resetearFormulario();
-      },
-      (error) => {
-        console.error('Error al registrar transacción:', error);
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'Ocurrió un error al guardar la transacción.'
-        });
-      }
-    );
+guardarTransaccion() {
+  if (!this.idMetodoPago) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Método de Pago requerido',
+      text: 'Debe seleccionar un método de pago antes de continuar.'
+    });
+    return;
   }
+
+  // 🚩 Buscamos el saldo del método de pago seleccionado
+  const saldoSeleccionado = this.saldosMetodoPago.find(
+    (s) => s.metodoPago?.idMetodoPago === this.idMetodoPago
+  );
+
+  const saldoDisponible = saldoSeleccionado?.saldo ?? 0;
+
+
+  const nuevaTransaccion = {
+    fecha: this.fecha,
+    monto: this.monto,
+    observaciones: this.observaciones,
+    tipoMovimiento: this.tipoMovimiento,
+    idMetodoPago: this.idMetodoPago,
+    idCaja: this.detalleCaja?.idCaja,
+    id_apertura_caja: this.detalleCaja?.idAperturaCaja
+  };
+
+this.transaccionService.registrarTransaccion(nuevaTransaccion).subscribe(
+  (response) => {
+    Swal.fire({
+      icon: 'success',
+      title: 'Transacción guardada',
+      text: 'La transacción se registró correctamente.'
+    }).then(() => window.location.reload());
+
+    this.mostrarFormularioTransaccion = false;
+    this.resetearFormulario();
+  },
+  (error) => {
+    console.error('Error al registrar transacción:', error);
+
+    // 🔵 Validamos si hay mensaje del backend
+    const mensaje = error?.error;
+
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: mensaje ? mensaje : 'Ocurrió un error al guardar la transacción.'
+    });
+  }
+);
+
+}
 
   guardarTransferencia() {
     if (this.idCajaOrigen === this.idCajaDestino) {
@@ -213,7 +256,7 @@ ngOnInit() {
       id_caja_destino: this.idCajaDestino,
       monto: this.montoTransferencia,
       observaciones: this.conceptoTransferencia,
-        idMetodoPago: this.idMetodoPagoTransferencia,
+      idMetodoPago: this.idMetodoPagoTransferencia,
 
       fecha: new Date().toISOString()
     };
@@ -239,9 +282,6 @@ ngOnInit() {
       }
     );
   }
-
-
-
 
   resetearFormulario() {
     this.monto = 0;
@@ -270,36 +310,71 @@ resetearFormularioTransferencia() {
       this.actualizarPaginacion();
     }
   }
-
+onTipoMovimientoChange() {
+  if (this.tipoMovimiento === 'EGRESO') {
+    // Buscar método efectivo
+    const metodoEfectivo = this.metodos.find(m => m.nombre?.toLowerCase() === 'efectivo');
+    if (metodoEfectivo) {
+      this.idMetodoPago = metodoEfectivo.idMetodoPago;
+    }
+  }
+  // Opcional: limpiar si vuelve a ingreso
+  // else {
+  //   this.idMetodoPago = undefined;
+  // }
+}
   irPaginaSiguiente() {
     if (this.paginaActual < this.totalPaginas) {
       this.paginaActual++;
       this.actualizarPaginacion();
     }
   }
-  cerrarCaja() {
-  Swal.fire({
-    title: '¿Estás seguro?',
-    text: 'Esto cerrará la caja y no podrás registrar más transacciones.',
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#d33',
-    cancelButtonColor: '#3085d6',
-    confirmButtonText: 'Sí, cerrar caja',
-    cancelButtonText: 'Cancelar'
-  }).then((result) => {
-    if (result.isConfirmed) {
-      if (!this.detalleCaja?.idAperturaCaja) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'No se pudo determinar el ID de la apertura de caja.'
-        });
-        return;
-      }
 
+confirmarArqueo() {
+  if (!this.detalleCaja?.idAperturaCaja) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: 'No se pudo determinar el ID de la apertura de caja.'
+    });
+    return;
+  }
+
+  // 🚩 OBTENER saldo efectivo
+  const saldoEfectivo = this.saldosMetodoPago.find(
+    s => s.metodoPago?.nombre?.toLowerCase() === 'efectivo'
+  )?.saldo ?? 0;
+
+  // 🚩 COMPARAR monto contado con saldo efectivo
+  if (this.montoContado !== saldoEfectivo) {
+    const diferencia = this.montoContado - saldoEfectivo;
+    Swal.fire({
+      icon: 'warning',
+      title: 'Diferencia detectada',
+      html: `
+        El monto contado <strong>S/ ${this.montoContado}</strong> no coincide con el saldo en efectivo <strong>S/ ${saldoEfectivo}</strong>.<br>
+        Diferencia: <strong>S/ ${diferencia}</strong>
+      `,
+      confirmButtonText: 'Ok'
+    });
+    return; // 🚨 Detener el proceso
+  }
+
+  // 🚩 Si todo bien, enviar el arqueo
+  const arqueo = {
+    id_apertura_caja: this.detalleCaja.idAperturaCaja,
+    fechaArqueo: new Date().toISOString(),
+    saldoSistema: saldoEfectivo,
+    observaciones: this.observacionesArqueo
+  };
+
+  // Aquí llamas al servicio de arqueo para registrar el arqueo
+  this.registrarArqueo.registrarArqueo(arqueo).subscribe(
+    () => {
+      // Después del arqueo, cerrar la caja
       this.aperturaService.cerrarCaja(this.detalleCaja.idAperturaCaja).subscribe(
         () => {
+          localStorage.removeItem('cajaActiva');
           Swal.fire({
             icon: 'success',
             title: 'Caja cerrada',
@@ -317,9 +392,41 @@ resetearFormularioTransferencia() {
           });
         }
       );
+    },
+    (error) => {
+      console.error('Error al registrar arqueo:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Ocurrió un error al registrar el arqueo.'
+      });
+    }
+  );
+
+  this.mostrarFormularioArqueo = false;
+}
+
+cancelarArqueo() {
+  this.mostrarFormularioArqueo = false;
+}
+
+cerrarCaja() {
+  Swal.fire({
+    title: '¿Estás seguro?',
+    text: 'Esto iniciará el   arqueo de caja antes de cerrarla.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: 'Sí, iniciar arqueo',
+    cancelButtonText: 'Cancelar'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      // Solo muestra el formulario de arqueo
+      this.mostrarFormularioArqueo = true;
+      this.mostrarFormularioTransaccion = false;
+      this.mostrarFormularioTransferencia = false;
     }
   });
 }
-
-
 }

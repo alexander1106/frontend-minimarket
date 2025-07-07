@@ -243,7 +243,12 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 .btn-editar {
   color: #3b82f6;
 }
-
+.btn-pdf{
+   margin-left: 2px;
+  color:rgb(10, 27, 71);
+  background-color: transparent;
+  border: 0px !important;
+}
 .btn-user{
   margin-left: 4px;
   color:rgb(21, 61, 162);

@@ -20,7 +20,7 @@ import Swal from 'sweetalert2';
 })
 export class AddCajaComponent implements OnInit {
   @Input() cajaInput: any;
-  @Input() cajas: any[] = [];   // <== NUEVO: recibe las cajas filtradas de la sucursal
+  @Input() cajas: any[] = [];   // Recibe todas las cajas disponibles
   @Output() cerrar = new EventEmitter<void>();
   @Output() guardado = new EventEmitter<void>();
 
@@ -41,6 +41,8 @@ export class AddCajaComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+      console.log('Cajas recibidas en el modal:', this.cajas);
+
     this.listarSucursales();
 
     if (this.cajaInput) {
@@ -71,98 +73,86 @@ export class AddCajaComponent implements OnInit {
       }
     });
   }
-
-  guardarCaja() {
-    if (!this.caja.nombreCaja || this.caja.nombreCaja.trim() === '') {
-      Swal.fire('Atención', 'El nombre de la caja es obligatorio.', 'warning');
-      return;
-    }
-
-    if (!this.caja.sucursal || !this.caja.sucursal.idSucursal) {
-      Swal.fire('Atención', 'Debes seleccionar una sucursal.', 'warning');
-      return;
-    }
-
-    if (this.caja.saldoActual == null || this.caja.saldoActual < 0) {
-      Swal.fire('Atención', 'El saldo debe ser mayor o igual a cero.', 'warning');
-      return;
-    }
-
-    if (!this.caja.estadoCaja || this.caja.estadoCaja.trim() === '') {
-      Swal.fire('Atención', 'Debes seleccionar un estado.', 'warning');
-      return;
-    }
-
-    // Validar si existe el nombre en las cajas recibidas por Input
-    const nombreActual = this.caja.nombreCaja.trim().toLowerCase();
-    const idSucursalActual = this.caja.sucursal.idSucursal;
-
-const existeCajaMismoNombre = this.cajas
-.filter(c => c.sucursal && c.sucursal.idSucursal === idSucursalActual)
-  .some(c => {
-    const nombre = (c.nombreCaja || '').trim().toLowerCase();
-    return (
-      nombre === nombreActual &&
-      (!this.caja.idCaja || c.idCaja !== this.caja.idCaja)
-    );
-  });
-
-
-    if (existeCajaMismoNombre) {
-      Swal.fire('Error', 'Ya existe una caja con ese nombre en esta sucursal.', 'error');
-      return;
-    }
-
-    // Confirmación
-    Swal.fire({
-      title: '¿Estás seguro?',
-      text: '¿Deseas guardar esta caja?',
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, guardar',
-      cancelButtonText: 'Cancelar'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        const dto: any = {
-          nombreCaja: this.caja.nombreCaja.trim(),
-          saldoActual: this.caja.saldoActual,
-          estadoCaja: this.caja.estadoCaja,
-          idSucursal: this.caja.sucursal.idSucursal,
-          estado: 1
-        };
-
-        if (this.caja.idCaja) {
-          dto.idCaja = this.caja.idCaja;
-
-          this.cajasService.editarCaja(dto).subscribe({
-            next: () => {
-              Swal.fire('Actualizado', 'La caja se actualizó correctamente.', 'success').then(() => {
-                this.guardado.emit();
-                window.location.reload();
-              });
-            },
-            error: (err) => {
-              console.error('Error al actualizar la caja:', err);
-              Swal.fire('Error', 'Ocurrió un error al actualizar la caja.', 'error');
-            }
-          });
-        } else {
-          this.cajasService.registrarCaja(dto).subscribe({
-            next: () => {
-              Swal.fire('Guardado', 'La caja se creó correctamente.', 'success').then(() => {
-                this.guardado.emit();
-                window.location.reload();
-              });
-            },
-            error: (err) => {
-              console.error('Error al guardar la caja:', err);
-              Swal.fire('Error', 'Ocurrió un error al guardar la caja.', 'error');
-            }
-          });
-        }
-      }
-    });
+guardarCaja() {
+  if (!this.caja.nombreCaja || this.caja.nombreCaja.trim() === '') {
+    Swal.fire('Atención', 'El nombre de la caja es obligatorio.', 'warning');
+    return;
   }
+
+  if (!this.caja.sucursal || !this.caja.sucursal.idSucursal) {
+    Swal.fire('Atención', 'Debes seleccionar una sucursal.', 'warning');
+    return;
+  }
+
+  if (this.caja.saldoActual == null || this.caja.saldoActual < 0) {
+    Swal.fire('Atención', 'El saldo debe ser mayor o igual a cero.', 'warning');
+    return;
+  }
+
+  if (!this.caja.estadoCaja || this.caja.estadoCaja.trim() === '') {
+    Swal.fire('Atención', 'Debes seleccionar un estado.', 'warning');
+    return;
+  }
+
+  Swal.fire({
+    title: '¿Estás seguro?',
+    text: '¿Deseas guardar esta caja?',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, guardar',
+    cancelButtonText: 'Cancelar'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      const dto: any = {
+        nombreCaja: this.caja.nombreCaja.trim(),
+        saldoActual: this.caja.saldoActual,
+        estadoCaja: this.caja.estadoCaja,
+        idSucursal: this.caja.sucursal.idSucursal,
+        estado: 1
+      };
+
+      if (this.caja.idCaja) {
+        dto.idCaja = this.caja.idCaja;
+
+        this.cajasService.editarCaja(dto).subscribe({
+          next: () => {
+            Swal.fire('Actualizado', 'La caja se actualizó correctamente.', 'success').then(() => {
+              this.guardado.emit();
+              window.location.reload();
+            });
+          },
+          error: (err) => {
+            console.error('Error al actualizar la caja:', err);
+            Swal.fire('Error', 'Ocurrió un error al actualizar la caja.', 'error');
+          }
+        });
+      } else {
+        this.cajasService.registrarCaja(dto).subscribe({
+          next: () => {
+            Swal.fire('Guardado', 'La caja se creó correctamente.', 'success').then(() => {
+              this.guardado.emit();
+              window.location.reload();
+            });
+          },
+          error: (err) => {
+            console.error('Error al guardar la caja:', err);
+
+            let mensaje = 'Ocurrió un error al guardar la caja.';
+            if (err.status === 409 && err.error?.error === 'CAJA_DUPLICADA') {
+              mensaje = err.error.mensaje;
+            } else if (err.error && typeof err.error === 'string') {
+              mensaje = err.error;
+            }
+
+            Swal.fire('Error', mensaje, 'error');
+          }
+        });
+      }
+    }
+  });
+}
+
+
 
   cancelar() {
     this.cerrar.emit();
