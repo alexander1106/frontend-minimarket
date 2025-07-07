@@ -10,33 +10,32 @@ export class ComprasService {
 
   constructor(private http: HttpClient) { }
 
-  // Guardar una nueva compra
-  guardarCompra(compra: any): Observable<any> {
-    return this.http.post(`${baseUrl}/compras`, compra);
-  }
-
-  // Editar una compra existente
-  editarCompra(compra: any): Observable<any> {
-    return this.http.put(`${baseUrl}/compras`, compra);
-  }
-
-  // Eliminar una compra por ID
-  eliminarCompra(idCompra: number): Observable<any> {
-    return this.http.delete(`${baseUrl}/compras/${idCompra}`, { responseType: 'text' });
-  }
-
-  // Buscar una compra por ID
-  buscarCompra(idCompra: number): Observable<any> {
-    return this.http.get(`${baseUrl}/compras/${idCompra}`);
-  }
-
-  // Listar todas las compras
   listarCompras(): Observable<any> {
     return this.http.get(`${baseUrl}/compras`);
   }
 
+  obtenerCompra(id: number): Observable<any> {
+    return this.http.get(`${baseUrl}/compras/${id}`);
+  }
+
+  obtenerCompraConDetalles(id: number): Observable<any> {
+    return this.http.get(`${baseUrl}/compras/${id}/detalles`);
+  }
+
+  crearCompra(compra: any): Observable<any> {
+    return this.http.post(`${baseUrl}/compras`, compra);
+  }
+
+  actualizarCompra(compra: any): Observable<any> {
+    return this.http.put(`${baseUrl}/compras`, compra);
+  }
+
+  eliminarCompra(id: number): Observable<any> {
+    return this.http.delete(`${baseUrl}/compras/${id}`);
+  }
+
+
   // Obtener compras por proveedor
   obtenerComprasPorProveedor(idProveedor: number): Observable<any> {
     return this.http.get(`${baseUrl}/compras/proveedor/${idProveedor}`);
-  }
-}
+  }}

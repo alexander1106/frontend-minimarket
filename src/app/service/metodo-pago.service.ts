@@ -30,6 +30,6 @@ export class MetodoPagoService {
   }
   // Editar un permiso existente
   public editarMetodoPago(metodoPago: any){
-    return this.http.put(`${baseUrl}/metodos-pago"/`, metodoPago);
+    return this.http.put(`${baseUrl}/metodos-pago/`, metodoPago);
   }
 }

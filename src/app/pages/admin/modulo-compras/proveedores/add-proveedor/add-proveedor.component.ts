@@ -1,6 +1,6 @@
 import { Component, Inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
@@ -10,7 +10,20 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatSelectModule } from '@angular/material/select';
 import { MatOptionModule } from '@angular/material/core';
 import { ProveedoresService } from '../../../../../service/proveedores.service';
-import { DatePipe } from '@angular/common';
+import { LoginService } from '../../../../../service/login.service';
+
+interface Proveedor {
+  idProveedor?: number;
+  nombre: string;
+  ruc: string;
+  regimen: string;
+  telefono: string;
+  gmail: string;
+  direccion: string;
+  fecha_registro: string;
+  idEmpresa: number;
+  estado: number;
+}
 
 @Component({
   selector: 'app-add-proveedor',
@@ -29,15 +42,16 @@ import { DatePipe } from '@angular/common';
   styleUrls: ['./add-proveedor.component.css']
 })
 export class AddProveedorComponent implements OnInit {
-  public proveedor = {
-    Id_Proveedor: null,
+  public proveedor: Proveedor = {
     nombre: '',
     ruc: '',
     regimen: '',
     telefono: '',
     gmail: '',
     direccion: '',
-    fecha_registro: this.getCurrentDate() // Usamos la función para fecha local
+    fecha_registro: this.getCurrentDate(),
+    idEmpresa: 0,
+    estado: 1
   };
 
   public modo: 'crear' | 'editar' | 'ver' = 'crear';
@@ -46,14 +60,13 @@ export class AddProveedorComponent implements OnInit {
   constructor(
     private dialogRef: MatDialogRef<AddProveedorComponent>,
     private proveedorService: ProveedoresService,
+    private loginService: LoginService,
     private router: Router,
     @Inject(MAT_DIALOG_DATA) public data: any
   ) {}
 
-  // Función para obtener la fecha actual en formato YYYY-MM-DD (local)
   private getCurrentDate(): string {
-    const today = new Date();
-    return today.toLocaleDateString('en-CA'); // Formato ISO (YYYY-MM-DD) en hora local
+    return new Date().toISOString().split('T')[0];
   }
 
   get isEditMode(): boolean {
@@ -67,14 +80,25 @@ export class AddProveedorComponent implements OnInit {
   ngOnInit() {
     if (this.data) {
       this.modo = this.data.modo || 'crear';
-      
+
       if (this.data.proveedor) {
         this.proveedor = { 
           ...this.data.proveedor,
-          fecha_registro: this.formatDate(this.data.proveedor.fecha_registro)
+          fecha_registro: this.formatDate(this.data.proveedor.fecha_registro),
+          idEmpresa: this.data.proveedor.idEmpresa || this.loginService.getEmpresa()?.idempresa,
+          estado: this.data.proveedor.estado ?? 1
         };
-      } else if (this.data.Id_Proveedor) {
-        this.cargarProveedor(this.data.Id_Proveedor);
+      } else if (this.data.idProveedor) {
+        this.cargarProveedor(this.data.idProveedor);
+      } else if (this.data.idEmpresa) {
+        this.proveedor.idEmpresa = this.data.idEmpresa;
+      }
+    }
+
+    if (this.modo === 'crear' && !this.proveedor.idEmpresa) {
+      const empresa = this.loginService.getEmpresa();
+      if (empresa?.idempresa) {
+        this.proveedor.idEmpresa = empresa.idempresa;
       }
     }
 
@@ -83,15 +107,8 @@ export class AddProveedorComponent implements OnInit {
 
   private formatDate(dateString: string): string {
     if (!dateString) return this.getCurrentDate();
-    
-    // Si ya está en formato YYYY-MM-DD
-    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
-      return dateString;
-    }
-    
-    // Si viene como timestamp o otro formato
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-CA');
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return dateString;
+    return new Date(dateString).toISOString().split('T')[0];
   }
 
   cargarRucsExistentes() {
@@ -110,7 +127,9 @@ export class AddProveedorComponent implements OnInit {
       next: (data) => {
         this.proveedor = { 
           ...data,
-          fecha_registro: this.formatDate(data.fecha_registro)
+          fecha_registro: this.formatDate(data.fecha_registro),
+          idEmpresa: data.idEmpresa || this.loginService.getEmpresa()?.idempresa,
+          estado: data.estado ?? 1
         };
       },
       error: () => {
@@ -135,44 +154,56 @@ export class AddProveedorComponent implements OnInit {
   }
 
   guardarProveedor() {
-    // Validación de campos requeridos
-    if (!this.proveedor.nombre || !this.proveedor.ruc || !this.proveedor.regimen) {
+    // Validaciones básicas
+    if (!this.proveedor.nombre || !this.proveedor.ruc || !this.proveedor.regimen || !this.proveedor.idEmpresa) {
       Swal.fire('Error', 'Por favor complete todos los campos requeridos', 'error');
       return;
     }
 
-    // Validación de RUC
     if (this.proveedor.ruc.length !== 11) {
-      Swal.fire('Error', 'El RUC debe tener 11 dígitos.', 'error');
+      Swal.fire('Error', 'El RUC debe tener exactamente 11 dígitos', 'error');
       return;
     }
 
-    // Actualizamos la fecha de registro con la fecha actual local
-    this.proveedor.fecha_registro = this.getCurrentDate();
+    // Preparar datos para enviar
+    const proveedorParaGuardar = {
+      ...this.proveedor,
+      fecha_registro: this.getCurrentDate(),
+      estado: 1
+    };
 
-    if (this.modo === 'editar') {
-      this.proveedorService.modificar(this.proveedor).subscribe({
-        next: () => {
-          Swal.fire('Éxito', 'Proveedor actualizado correctamente', 'success');
-          this.dialogRef.close('guardado');
-        },
-        error: (err) => {
-          console.error('Error al actualizar proveedor:', err);
-          Swal.fire('Error', 'No se pudo actualizar el proveedor', 'error');
-        }
-      });
+    // Eliminar idProveedor si es creación (usando destructuring)
+    if (this.modo === 'crear') {
+      const { idProveedor, ...proveedorSinId } = proveedorParaGuardar;
+      this.enviarProveedor(proveedorSinId);
     } else {
-      this.proveedorService.guardar(this.proveedor).subscribe({
-        next: () => {
-          Swal.fire('Éxito', 'Proveedor creado correctamente', 'success');
-          this.dialogRef.close('guardado');
-        },
-        error: (err) => {
-          console.error('Error al crear proveedor:', err);
-          Swal.fire('Error', 'No se pudo crear el proveedor', 'error');
-        }
-      });
+      this.enviarProveedor(proveedorParaGuardar);
     }
+  }
+
+  private enviarProveedor(proveedor: any) {
+    const servicio = this.modo === 'editar' 
+      ? this.proveedorService.modificar(proveedor) 
+      : this.proveedorService.guardar(proveedor);
+
+    servicio.subscribe({
+      next: () => {
+        Swal.fire('Éxito', `Proveedor ${this.modo === 'editar' ? 'actualizado' : 'creado'} correctamente`, 'success');
+        this.dialogRef.close('guardado');
+      },
+      error: (err) => {
+        console.error(`Error al ${this.modo === 'editar' ? 'actualizar' : 'crear'} proveedor:`, err);
+        let mensaje = `No se pudo ${this.modo === 'editar' ? 'actualizar' : 'crear'} el proveedor`;
+        
+        if (err.error?.message) {
+          mensaje += `: ${err.error.message}`;
+        } else if (err.status === 500) {
+          mensaje += ': Error interno del servidor';
+        }
+        
+        Swal.fire('Error', mensaje, 'error');
+      }
+    });
   }
 
   cancelar() {

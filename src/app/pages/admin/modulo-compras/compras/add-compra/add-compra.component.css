@@ -1,0 +1,33 @@
+/* list-compras.component.css o styles.css global */
+.custom-dialog {
+  position: fixed;
+  top: 65px; /* Margen superior ajustado */
+  left: 270px; /* Margen izquierdo ajustado */
+  right: 15px; /* Margen derecho ajustado */
+  bottom: 15px; /* Margen inferior ajustado */
+  overflow-y: auto;
+  z-index: 1000;
+  background: white;
+  padding: 15px; /* Padding reducido */
+  box-shadow: 0 0 8px rgba(0,0,0,0.3); /* Sombra más sutil */
+  border-radius: 6px; /* Bordes menos redondeados */
+}
+
+/* Estilo específico para el título */
+.custom-dialog h2 {
+  font-size: 1.5rem; /* Tamaño reducido de 1.75rem (normal) a 1.5rem */
+  font-weight: 500; /* Peso de fuente medio */
+  margin-bottom: 1rem; /* Espaciado inferior ajustado */
+  color: #333; /* Color más suave */
+}
+
+/* Ajustes del overlay */
+.cdk-overlay-container {
+  z-index: 1000 !important;
+}
+
+.cdk-global-overlay-wrapper {
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+  padding: 8px; /* Espacio más ajustado */
+}

@@ -1,0 +1,193 @@
+<div class="form-compras">
+  <h2 class="mb-4">
+    {{ modo === 'crear' ? 'Nueva Compra' : 'Detalle de Compra' }}
+  </h2>
+
+  <form class="needs-validation" novalidate>
+    <!-- Sección de datos generales de la compra -->
+    <div class="row g-3 mb-4">
+      <!-- Proveedor -->
+      <div class="col-md-4">
+        <label for="proveedor" class="form-label">Proveedor</label>
+        <select 
+          id="proveedor" 
+          class="form-control" 
+          [(ngModel)]="compra.proveedor" 
+          [ngModelOptions]="{standalone: true}"
+          [disabled]="soloLectura"
+          required>
+          <option [ngValue]="null">Seleccionar proveedor...</option>
+          <option *ngFor="let prov of proveedores" [ngValue]="prov">
+            {{ prov.nombre }} ({{ prov.ruc }})
+          </option>
+        </select>
+      </div>
+
+      <!-- Sucursal -->
+      <div class="col-md-4">
+        <label for="sucursal" class="form-label">Sucursal</label>
+        <select 
+          id="sucursal" 
+          class="form-control" 
+          [(ngModel)]="compra.sucursal" 
+          [ngModelOptions]="{standalone: true}"
+          [disabled]="soloLectura"
+          required>
+          <option [ngValue]="null">Seleccionar sucursal...</option>
+          <option *ngFor="let suc of sucursales" [ngValue]="suc">
+            {{ suc.nombreSucursal }} ({{ suc.direccion }})
+          </option>
+        </select>
+      </div>
+
+      <!-- Método de Pago -->
+      <div class="col-md-4">
+        <label for="metodoPago" class="form-label">Método de Pago</label>
+        <select 
+          id="metodoPago" 
+          class="form-control" 
+          [(ngModel)]="compra.metodoPago" 
+          [ngModelOptions]="{standalone: true}"
+          [disabled]="soloLectura"
+          required>
+          <option [ngValue]="null">Seleccionar método...</option>
+          <option *ngFor="let metodo of metodosPago" [ngValue]="metodo">
+            {{ metodo.nombre }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Descripción -->
+      <div class="col-md-12">
+        <label for="descripcion" class="form-label">Descripción</label>
+        <textarea 
+          id="descripcion" 
+          class="form-control" 
+          [(ngModel)]="compra.descripcion" 
+          [ngModelOptions]="{standalone: true}"
+          [readonly]="soloLectura"
+          rows="3"></textarea>
+      </div>
+    </div>
+
+    <!-- Sección para agregar productos (solo en modo creación/edición) -->
+    <div class="card mb-4" *ngIf="!soloLectura">
+      <div class="card-header">Agregar Productos</div>
+      <div class="card-body">
+        <div class="row g-3">
+          <!-- Selección de producto -->
+          <div class="col-md-5">
+            <label for="producto" class="form-label">Producto</label>
+            <select 
+              id="producto" 
+              class="form-control" 
+              [(ngModel)]="productoSeleccionado" 
+              [ngModelOptions]="{standalone: true}"
+              (change)="onProductoChange()">
+              <option [ngValue]="null">Seleccionar producto...</option>
+              <option *ngFor="let prod of productos" [ngValue]="prod">
+                {{ prod.nombre }} ({{ prod.codigo || 'Sin código' }})
+              </option>
+            </select>
+          </div>
+
+          <!-- Cantidad -->
+          <div class="col-md-2">
+            <label for="cantidad" class="form-label">Cantidad</label>
+            <input 
+              type="number" 
+              id="cantidad" 
+              class="form-control" 
+              [(ngModel)]="cantidad" 
+              [ngModelOptions]="{standalone: true}"
+              min="1"
+              required>
+          </div>
+
+          <!-- Precio Compra (solo lectura) -->
+          <div class="col-md-3">
+            <label class="form-label">Precio Compra</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              [value]="productoSeleccionado?.costoCompra | currency:'S/ '"
+              readonly>
+          </div>
+
+          <!-- Botón Agregar -->
+          <div class="col-md-2 d-flex align-items-end">
+            <button type="button" class="btn btn-primary" (click)="agregarProducto()">
+              <i class="fas fa-plus"></i> Agregar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabla de productos agregados -->
+    <div class="mb-4">
+      <h5>Productos agregados</h5>
+      <div class="table-responsive">
+        <table class="table table-bordered">
+          <thead class="table-light">
+            <tr>
+              <th>Producto</th>
+              <th>Cantidad</th>
+              <th>Precio Compra</th>
+              <th>Precio Venta</th>
+              <th>Subtotal</th>
+              <th *ngIf="!soloLectura">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Filas de productos -->
+            <tr *ngFor="let detalle of compra.detalles; let i = index">
+              <td>{{ detalle.nombre }}</td>
+              <td>{{ detalle.cantidad }}</td>
+              <td>{{ detalle.precioCompra | currency:'S/ ' }}</td>
+              <td>{{ detalle.precioVenta | currency:'S/ ' }}</td>
+              <td>{{ detalle.subTotal | currency:'S/ ' }}</td>
+              <td *ngIf="!soloLectura">
+                <button type="button" class="btn btn-danger btn-sm" (click)="eliminarProducto(i)">
+                  <i class="fas fa-trash-alt"></i> Eliminar
+                </button>
+              </td>
+            </tr>
+            
+            <!-- Mensaje cuando no hay productos -->
+            <tr *ngIf="compra.detalles.length === 0">
+              <td [attr.colspan]="soloLectura ? 5 : 6" class="text-center">No hay productos agregados</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="4" class="text-end"><strong>Total:</strong></td>
+              <td colspan="2"><strong>{{ compra.total | currency:'S/ ' }}</strong></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- Botones de acción -->
+    <div class="mt-4 d-flex justify-content-end gap-3">
+      <!-- Botón Guardar (solo en modo creación/edición) -->
+      <button 
+        type="button" 
+        class="btn btn-primary" 
+        (click)="guardarCompra()" 
+        *ngIf="!soloLectura"
+        [disabled]="!compra.proveedor || !compra.sucursal || !compra.metodoPago || compra.detalles.length === 0">
+        <i class="fas fa-save"></i> Guardar
+      </button>
+      
+      <!-- Botón Cancelar/Cerrar -->
+      <button 
+        type="button" 
+        class="btn btn-secondary" 
+        (click)="cancelar()">
+        <i class="fas fa-times"></i> {{ soloLectura ? 'Cerrar' : 'Cancelar' }}
+      </button>
+    </div>
+  </form>
+</div>

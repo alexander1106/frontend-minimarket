@@ -34,4 +34,8 @@ export class ProveedoresService {
     return this.http.delete(`${baseUrl}/proveedores/${id}`,{ responseType: 'text' });
   }
 
+   buscarPorEmpresa(idEmpresa: number) {
+    return this.http.get(`${baseUrl}/proveedores/empresas/${idEmpresa}`);
+  }
+
 }

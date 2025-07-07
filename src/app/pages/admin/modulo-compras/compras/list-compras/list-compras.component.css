@@ -1,0 +1,26 @@
+/* list-compras.component.css */
+.contenido-principal {
+  margin-left: 250px; /* Ajusta según el ancho de tu barra lateral */
+  padding: 20px;
+}
+
+/* add-compra.component.css */
+.card {
+  margin-bottom: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.card-header {
+  background-color: #f8f9fa;
+  font-weight: bold;
+}
+
+.table th {
+  background-color: #f8f9fa;
+}
+
+.btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}

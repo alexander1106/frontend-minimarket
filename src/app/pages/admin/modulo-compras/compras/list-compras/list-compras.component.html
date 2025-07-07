@@ -16,7 +16,7 @@
         <div class="search-sort">
           <input
             type="text"
-            placeholder="Buscar compra"
+            placeholder="Buscar compra..."
             class="search-input"
             [(ngModel)]="filtroBusqueda"
             (ngModelChange)="buscarCompra()"
@@ -32,26 +32,20 @@
           <tr>
             <th>#</th>
             <th>Proveedor</th>
+            <th>Fecha</th>
             <th>Total</th>
             <th>Descripción</th>
-            <th>Fecha de Compra</th>
             <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let compra of comprasFiltradas; let i = index">
             <td>{{ (paginaActual - 1) * elementosPorPagina + i + 1 }}</td>
-            <td>{{ compra.proveedor.nombre }}</td> <!-- Asumiendo que Proveedores tiene un campo nombre -->
-            <td>{{ compra.total | currency }}</td>
-            <td>{{ compra.descripcion }}</td>
+            <td>{{ compra.proveedor?.nombre || 'Sin proveedor' }}</td>
             <td>{{ compra.fechaCompra | date:'dd/MM/yyyy' }}</td>
+            <td>{{ compra.total | currency }}</td>
+            <td>{{ compra.descripcion || 'Sin descripción' }}</td>
             <td>
-              <button
-                class="btn-editar"
-                (click)="navegarYEditarCompra(compra.idCompra)"
-                title="Editar compra">
-                <i class="fas fa-edit"></i>
-              </button>
               <button
                 class="btn-ver"
                 (click)="navegarYVerCompra(compra.idCompra)"

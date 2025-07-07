@@ -45,7 +45,6 @@ setRoles(roles: string[]) {
   }
 
 
-
   public loginStatusSubjec = new Subject<boolean>();
 
   constructor(private httpClient:HttpClient) { }
@@ -58,7 +57,6 @@ setRoles(roles: string[]) {
     localStorage.setItem('token', token);
   }
 
-
   public isLoggedIn(): boolean {
     return !!localStorage.getItem('token');
   }
@@ -67,12 +65,16 @@ setRoles(roles: string[]) {
     return localStorage.getItem('token');
 
   }
-  public getEmpresa() {
+public getEmpresa() {
   const empresaStr = localStorage.getItem('empresa');
   if (empresaStr != null) {
     return JSON.parse(empresaStr);
   }
   return null;
+}
+
+public setEmpresa(empresa: any) {
+  localStorage.setItem('empresa', JSON.stringify(empresa));
 }
 
   public setUser(user:any){
@@ -91,14 +93,12 @@ setRoles(roles: string[]) {
   public getUserRole(): string | null {
     const user = this.getUser();
     console.log("Usuario cargado:", user);
-    if (user && user.rol && user.rol.nombreRol) {
-      console.log("Rol detectado:", user.rol.nombreRol);
-      return user.rol.nombreRol;
+    if (user && user.rol && user.rol.nombre) {
+      return user.rol.nombre;
     }
     console.warn("No se encontró un rol válido");
     return null;
   }
-
 
 
   public getCurrentUser(){

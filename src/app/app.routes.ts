@@ -51,6 +51,11 @@ export const routes: Routes = [
       { path: 'list-clientes', component: ListClientesComponent },
       {path: 'add-clientes',component: ListClientesComponent },
       {path: 'add-proveedores',component: ListClientesComponent },
+        
+        { path: 'list-proveedores', component: ListProveedoresComponent },
+        { path: 'add-proveedores', component: ListProveedoresComponent }, 
+        { path: 'list-compras', component: ListComprasComponent },
+        { path: 'add-compras', component: ListComprasComponent }, 
       {path: 'list-delivery',component: ListDeliveryComponent },
       { path: 'edit-clientes/:id', component: ListClientesComponent },
       { path: 'view-clientes/:id', component: ListClientesComponent },
@@ -127,5 +132,4 @@ export const routes: Routes = [
 
   { path: '', redirectTo: 'admin', pathMatch: 'full' },
   { path: '**', redirectTo: 'admin' } // Wildcard para rutas no encontradas
-];
->>>>>>> 5a792982f68aa0bf36447ddbdab32745180746b2
+]
