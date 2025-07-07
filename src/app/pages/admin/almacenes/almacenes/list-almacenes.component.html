@@ -1,51 +1,65 @@
 <div class="contenedor">
-  <!-- Barra lateral fija -->
   <div class="barra">
     <app-barra-lateral></app-barra-lateral>
   </div>
 
   <div class="encabezado">
-    <!-- Header superior -->
     <app-header></app-header>
     <hr class="border-secondary mb-4" />
 
     <div class="container">
-      <!-- Título, buscador y botón de agregar -->
-      <div class="header d-flex justify-content-between align-items-center mb-3">
+      <div class="header d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
         <div>
           <h2>Almacenes</h2>
           <span class="subtitle">{{ almacenes.length }} Registrados</span>
         </div>
 
-        <div class="search-sort d-flex align-items-center">
-          <!-- 🔽 FILTRO POR SUCURSAL AÑADIDO -->
+        <div class="search-sort d-flex align-items-center flex-wrap gap-2">
+          <!-- Filtro por sucursal -->
           <select
-            class="form-select me-2"
+            class="form-select"
             [(ngModel)]="sucursalFiltro"
             (change)="aplicarFiltro()"
-            style="max-width: 220px;"
+            style="max-width: 160px;"
           >
             <option [ngValue]="0">Todas las sucursales</option>
             <option *ngFor="let s of sucursales" [ngValue]="s.idsucursal">
               {{ s.nombre }}
             </option>
           </select>
-          <!-- 🔼 -->
+
+          <!-- Input fechas -->
+          <input
+            type="date"
+            [(ngModel)]="fechaInicio"
+            (change)="aplicarFiltro()"
+            class="form-control"
+            style="max-width: 150px;"
+          />
+          <input
+            type="date"
+            [(ngModel)]="fechaFin"
+            (change)="aplicarFiltro()"
+            class="form-control"
+            style="max-width: 150px;"
+          />
 
           <input
             type="text"
             placeholder="Buscar almacén"
-            class="search-input me-2"
+            class="form-control"
+            style="max-width: 180px;"
             [(ngModel)]="filtro"
             (ngModelChange)="aplicarFiltro()"
           />
-          <button (click)="abrirModal()" class="btn-agregar">
+
+          <button (click)="abrirModal()" class="btn btn-success">
             <i class="fas fa-plus"></i> Almacén
           </button>
         </div>
       </div>
 
-      <!-- Tabla de almacenes -->
+      <!-- Tabla -->
       <table class="customer-table w-100">
         <thead>
           <tr>
@@ -55,6 +69,7 @@
             <th>Dirección</th>
             <th>Encargado</th>
             <th>Sucursal</th>
+            <th>Fecha Registro</th> <!-- ✅ Añadido -->
             <th>Acciones</th>
           </tr>
         </thead>
@@ -66,6 +81,7 @@
             <td>{{ a.direccion }}</td>
             <td>{{ a.encargado }}</td>
             <td>{{ a.sucursalNombre }}</td>
+            <td>{{ a.fechaRegistro ? (a.fechaRegistro | date: 'dd/MM/yyyy') : '—' }}</td> 
             <td>
               <button (click)="abrirModal(a)" class="btn-editar me-2">
                 <i class="fas fa-edit"></i>
@@ -108,85 +124,89 @@
           </li>
         </ul>
       </nav>
-
       <!-- Modal de creación/edición -->
-      <div *ngIf="mostrarModal" class="modal">
-        <div class="modal-content p-4">
-          <h2 class="mb-3">
-            {{ almacen.idalmacen ? 'Editar' : 'Nuevo' }} Almacén
-          </h2>
-          <form (ngSubmit)="formSubmit()" #f="ngForm">
-            <div class="mb-3">
-              <label class="form-label">Nombre</label>
-              <input
-                name="nombre"
-                required
-                [(ngModel)]="almacen.nombre"
-                placeholder="Nombre"
-                class="form-control"
-              />
-            </div>
-
-            <div class="mb-3">
-              <label class="form-label">Descripción</label>
-              <input
-                name="descripcion"
-                [(ngModel)]="almacen.descripcion"
-                class="form-control"
-              />
-            </div>
-
-            <div class="mb-3">
-              <label class="form-label">Dirección</label>
-              <input
-                name="direccion"
-                [(ngModel)]="almacen.direccion"
-                class="form-control"
-              />
-            </div>
-
-            <div class="mb-3">
-              <label class="form-label">Encargado</label>
-              <input
-                name="encargado"
-                [(ngModel)]="almacen.encargado"
-                class="form-control"
-              />
-            </div>
-
-              <div class="mb-3">
-                <label class="form-label">Sucursal</label>
-                <select
-                  name="idsucursal"
-                  [(ngModel)]="almacen.idsucursal"
-                  class="form-select"
-                  required
-                >
-                  <option [ngValue]="0" disabled>Seleccione sucursal</option>
-                  <option *ngFor="let s of sucursales" [ngValue]="s.idsucursal">
-                    {{ s.nombre }}
-                  </option>
-                </select>
-              </div>
-              
-            <div class="text-end mt-3">
-              <button
-                type="button"
-                class="btn btn-secondary me-2"
-                (click)="cerrarModal()"
-              >
-                Cerrar
-              </button>
-              <button
-              type="submit"
-              class="btn btn-primary"
-            >
-              Guardar
-            </button>
-            </div>
-          </form>
-        </div>
+<div *ngIf="mostrarModal" class="modal">
+  <div class="modal-content p-4">
+    <h2 class="mb-3">
+      {{ almacen.idalmacen ? 'Editar' : 'Nuevo' }} Almacén
+    </h2>
+    <form (ngSubmit)="formSubmit()" #f="ngForm">
+      <div class="mb-3">
+        <label class="form-label">Nombre</label>
+        <input
+          name="nombre"
+          required
+          [(ngModel)]="almacen.nombre"
+          placeholder="Nombre"
+          class="form-control"
+        />
       </div>
-    </div>
+
+      <div class="mb-3">
+        <label class="form-label">Descripción</label>
+        <input
+          name="descripcion"
+          [(ngModel)]="almacen.descripcion"
+          class="form-control"
+        />
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Dirección</label>
+        <input
+          name="direccion"
+          [(ngModel)]="almacen.direccion"
+          class="form-control"
+        />
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Encargado</label>
+        <input
+          name="encargado"
+          [(ngModel)]="almacen.encargado"
+          class="form-control"
+        />
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Sucursal</label>
+        <select
+          name="idsucursal"
+          [(ngModel)]="almacen.idsucursal"
+          class="form-select"
+          required
+        >
+          <option [ngValue]="0" disabled>Seleccione sucursal</option>
+          <option *ngFor="let s of sucursales" [ngValue]="s.idsucursal">
+            {{ s.nombre }}
+          </option>
+        </select>
+      </div>
+
+      <!-- ✅ Campo de solo lectura para la fecha -->
+      <div class="mb-3">
+        <label class="form-label">Fecha de registro</label>
+        <input
+          type="text"
+          class="form-control"
+          [value]="almacen.fechaRegistro ? (almacen.fechaRegistro | date:'dd/MM/yyyy') : '—'"
+          readonly
+        />
+      </div>
+
+      <div class="text-end mt-3">
+        <button
+          type="button"
+          class="btn btn-secondary me-2"
+          (click)="cerrarModal()"
+        >
+          Cerrar
+        </button>
+        <button type="submit" class="btn btn-primary">
+          Guardar
+        </button>
+      </div>
+    </form>
   </div>
 </div>

@@ -10,7 +10,6 @@ export class VentasService {
 
   constructor(private http: HttpClient) { }
 
-  // Obtener todas las ventas
   public listarVentas(): Observable<any> {
     return this.http.get(`${baseUrl}/ventas`);
   }
@@ -27,6 +26,11 @@ export class VentasService {
 
   // 🔹 NUEVO: Filtrar ventas por sucursal
   buscarVentasPorSucursal(idSucursal: number): Observable<any> {
-    return this.http.get(`${baseUrl}/ventas/sucursal/${idSucursal}`);
+    return this.http.get(`${baseUrl}/ventas/sucursal/${idSucursal}`)}
+
+  descargarPDF(idVenta: number): Observable<Blob> {
+    return this.http.get(`${baseUrl}/ventas/${idVenta}/pdf`, {
+      responseType: 'blob'
+    });
   }
 }

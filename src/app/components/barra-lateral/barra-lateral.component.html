@@ -161,6 +161,20 @@
 
       </ul>
     </li>
+ 
+    <!-- REPORTES (ADMIN y CAJERO) -->
+    <li class="nav-item" *ngIf="tieneRolesPermitidos(['ADMIN', 'CAJERO'])">
+      <a class="nav-link custom-link d-flex justify-content-between align-items-center"
+         (click)="toggleSubmenu('reportes')">
+        <span><i class="fas fa-chart-bar me-2"></i> Reportes</span>
+        <i class="{{ activeMenu === 'reportes' ? 'fas fa-chevron-up' : 'fas fa-chevron-down' }}"></i>
+      </a>
+      <ul class="nav flex-column ms-4 mt-2" *ngIf="activeMenu === 'reportes'">
+        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/reporte-ventas']">Reporte de Ventas</a></li>
+        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/reporte-almacenes']">Reporte de Almacenes</a></li>
+        <!-- Aquí podrías agregar más reportes si querés -->
+      </ul>
+    </li>
 
 
 

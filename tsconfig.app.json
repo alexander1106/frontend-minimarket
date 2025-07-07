@@ -4,7 +4,7 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./out-tsc/app",
-    "types": []
+    "types": ["chart.js", "ng2-charts"]
   },
   "files": [
     "src/main.ts"

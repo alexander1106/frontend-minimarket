@@ -1,0 +1,160 @@
+/* General */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+h2 {
+  text-align: left;
+  margin-bottom: 5px;
+  color: #1f2937;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+/* Inputs y select del header */
+.search-sort select,
+.search-sort input[type="text"],
+.search-sort input[type="date"] {
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+
+.search-sort select:focus,
+.search-sort input[type="text"]:focus,
+.search-sort input[type="date"]:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  outline: none;
+}
+
+.btn-export,
+.btn-imprimir {
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.btn-export:hover,
+.btn-imprimir:hover {
+  background-color: #2563eb;
+  transform: translateY(-1px);
+}
+
+.btn-export:active,
+.btn-imprimir:active {
+  transform: translateY(0);
+}
+
+/* Tabla */
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 8px;
+  font-size: 14px;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+}
+
+table th {
+  background-color: #3b82f6;
+  color: white;
+  font-weight: 600;
+}
+
+table th, table td {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 12px 14px;
+  text-align: left;
+}
+
+table tbody tr:nth-child(even) {
+  background-color: #f9fafb;
+}
+
+table tbody tr:hover {
+  background-color: #f0f9ff;
+}
+
+table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Paginación */
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 15px;
+}
+
+.pagination .page-item a {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background-color: #e5e7eb;
+  color: #1f2937;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.pagination .page-item.active a {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.pagination .page-item a:hover {
+  background-color: #2563eb;
+  color: white;
+}
+
+.pagination .page-item.disabled a {
+  background-color: #f3f4f6;
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+/* ✅ Solo mostrar tabla en impresión */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  table, table * {
+    visibility: visible;
+  }
+
+  table {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    box-shadow: none;
+  }
+
+  /* Ocultar barra lateral, header y controles */
+  app-barra-lateral, app-header, .search-sort, h2, .subtitle, select, input, button, .pagination {
+    display: none !important;
+  }
+  .container {
+  max-width: 1000px; /* antes estaba en 1200px */
+  margin: 0 auto;
+}
+
+}
