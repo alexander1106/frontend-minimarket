@@ -257,12 +257,13 @@
       <!-- Método de pago -->
       <div class="mb-3">
         <label class="form-label"><strong>Método de Pago</strong></label>
-       <select class="form-control" [(ngModel)]="metodoPago">
+    <select class="form-control" [(ngModel)]="metodoPago">
   <option [ngValue]="null" disabled>Seleccione método</option>
   <option *ngFor="let metodo of metodosDePago" [value]="metodo.idMetodoPago">
     {{ metodo.nombre }}
   </option>
 </select>
+
 
       </div>
 

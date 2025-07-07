@@ -13,7 +13,7 @@
   <div class="header">
     <div>
       <h2>Ventas </h2>
-      <span class="subtitle">  Ventas registrados</span>
+      <span class="subtitle"> {{ventas.length}} Ventas registrados</span>
     </div>
     <div class="search-sort">
       <input type="text" placeholder="Buscar venta"
@@ -41,8 +41,9 @@
       </tr>
     </thead>
     <tbody>
-  <tr *ngFor="let venta of ventas; let i = index">
+<tr *ngFor="let venta of ventas; let i = index" (click)="consoleLogVenta(venta)">
     <td>{{ i + 1 }}</td> <!-- Número de fila -->
+
     <td>{{ venta.fecha_venta }}</td>
     <td>{{ venta.tipo_comprobante }}</td>
     <td>{{ venta.nro_comrprobante }}</td>
@@ -57,9 +58,9 @@
             <i class="fas fa-trash-alt"></i>
           </button>
             <!-- Botón PDF -->
-  <button class="btn-pdf" (click)="generarPdfVenta(venta)">
-    <i class="fas fa-file-pdf"></i>
-  </button>
+<button class="btn-pdf" (click)="generarComprobantePdf(venta.idVenta)">
+  <i class="fas fa-file-pdf"></i>
+</button>
         </td>
       </tr>
     </tbody>

@@ -11,21 +11,21 @@
       <div class="header">
         <div>
           <h2>Pagos</h2>
-          <span class="subtitle">Pagos registrados</span>
+          <span class="subtitle">{{pagos.length}} Pagos registrados</span>
         </div>
         <div class="search-sort">
           <input
             type="text"
             placeholder="Buscar por observaciones o referencia"
             class="search-input"
-
           />
-          <button class="btn-agregar" [routerLink]="['/admin/add-pago']">
-            <i class="fas fa-plus"></i> Pago
+          <button class="btn-agregar" (click)="mostrarFormularioPago()">
+            <i class="fas fa-plus"></i> Añadir Pago
           </button>
         </div>
       </div>
 
+      <!-- Tabla de pagos -->
       <table class="customer-table">
         <thead>
           <tr>
@@ -37,18 +37,75 @@
           </tr>
         </thead>
         <tbody>
-          <tr
-            *ngFor="let pago of pagos ; let i = index"
-          >
+          <tr *ngFor="let pago of pagos; let i = index">
             <td>{{ i + 1 }}</td>
             <td>{{ pago.observaciones || '---' }}</td>
             <td>{{ pago.fechaPago | date: 'short' }}</td>
             <td>{{ pago.montoPagado | currency }}</td>
             <td>{{ pago.estadoPago }}</td>
-
           </tr>
         </tbody>
       </table>
+
+      <!-- Formulario nuevo pago -->
+    <!-- Formulario nuevo pago en overlay -->
+<div *ngIf="mostrandoFormulario" class="overlay-form">
+  <div class="formulario-nuevo-pago">
+    <h3>Registrar Nuevo Pago</h3>
+
+    <form (ngSubmit)="guardarPago()">
+      <div class="form-group">
+        <label>Cotización</label>
+      <select
+  [ngModel]="nuevoPago.cotizacionId"
+  (ngModelChange)="onCotizacionSeleccionada($event)"
+  name="cotizacionId"
+>
+  <option value="">Seleccione una cotización</option>
+  <option *ngFor="let c of cotizaciones" [value]="c.idCotizaciones">
+    {{ c.numeroCotizacion }}: {{ c.cliente?.nombre }}
+  </option>
+</select>
+
+      </div>
+
+      <div class="form-group">
+        <label>Observaciones</label>
+        <input [(ngModel)]="nuevoPago.observaciones" name="observaciones" />
+      </div>
+
+      <div class="form-group">
+        <label>Fecha de Pago</label>
+        <input type="date" [(ngModel)]="nuevoPago.fechaPago" name="fechaPago" />
+      </div>
+
+      <div class="form-group">
+        <label>Monto Pagado</label>
+<input
+  type="number"
+  [(ngModel)]="nuevoPago.montoPagado"
+  name="montoPagado"
+/>
+</div>
+<div class="form-group">
+  <label>Método de Pago</label>
+  <select [(ngModel)]="nuevoPago.metodoPagoId" name="metodoPagoId" required>
+    <option value="">Seleccione un método</option>
+    <option *ngFor="let m of metodosPago" [value]="m.idMetodoPago">
+      {{ m.nombre }}
+    </option>
+  </select>
+</div>
+
+
+      <div class="form-buttons">
+        <button type="submit" class="btn-guardar">Guardar Pago</button>
+        <button type="button" class="btn-cancelar" (click)="mostrandoFormulario=false">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
     </div>
   </div>
 </div>

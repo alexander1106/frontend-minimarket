@@ -7,9 +7,10 @@ import baseUrl from '../components/link';
   providedIn: 'root'
 })
 export class AperturaCajaService {
-  obtenerAperturaPorCaja(arg0: number) {
-    throw new Error('Method not implemented.');
-  }
+obtenerTransaccionesPorApertura(idApertura: number) {
+  return this.http.get<any[]>(`${baseUrl}/aperturas-cajas/${idApertura}/transacciones`);
+}
+
 
 
   constructor(private http: HttpClient) { }

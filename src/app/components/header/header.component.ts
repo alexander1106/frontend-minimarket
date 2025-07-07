@@ -26,7 +26,6 @@ export class HeaderComponent implements OnInit {
       } else {
         this.empresaNombre = '';
       }
-      console.log('Nombre de la empresa:', this.empresaNombre);
     }
 
     // Recuperar nombre de usuario

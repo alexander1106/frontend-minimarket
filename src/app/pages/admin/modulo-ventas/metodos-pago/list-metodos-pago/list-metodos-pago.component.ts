@@ -7,6 +7,7 @@ import Swal from 'sweetalert2';
 import { BarraLateralComponent } from '../../../../../components/barra-lateral/barra-lateral.component';
 import { HeaderComponent } from '../../../../../components/header/header.component';
 import { MetodoPagoService } from '../../../../../service/metodo-pago.service';
+import { LoginService } from '../../../../../service/login.service'; // ✅ IMPORTA LOGIN SERVICE
 
 @Component({
   selector: 'app-list-metodos-pago',
@@ -32,12 +33,13 @@ export class ListMetodosPagoComponent implements OnInit {
 
   constructor(
     private metodoPagoService: MetodoPagoService,
+    private loginService: LoginService, // ✅ INYECTA LOGIN SERVICE
     private router: Router,
     private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
-    this.listarMetodos();
+    this.listarMetodosDeSucursal();
 
     this.route.url.subscribe(() => {
       const id = this.route.snapshot.params['id'];
@@ -57,14 +59,23 @@ export class ListMetodosPagoComponent implements OnInit {
     this.router.navigate(['/admin/add-metodos-pago']);
   }
 
-  listarMetodos() {
-    this.metodoPagoService.listarMetodosPago().subscribe({
+  // ✅ NUEVO MÉTODO PARA LISTAR POR SUCURSAL
+  listarMetodosDeSucursal() {
+    const user = this.loginService.getUser();
+    if (!user || !user.sucursal || !user.sucursal.idSucursal) {
+      Swal.fire("Error", "No se pudo determinar la sucursal del usuario.", "error");
+      return;
+    }
+
+    const idSucursal = user.sucursal.idSucursal;
+
+    this.metodoPagoService.listarMetodosPagoPorSucursal(idSucursal).subscribe({
       next: (data: any) => {
         this.metodos = data || [];
         this.actualizarFiltradoYPagina();
       },
       error: (err) => {
-        Swal.fire("Error", "No se pudieron cargar los métodos", "error");
+        Swal.fire("Error", "No se pudieron cargar los métodos de pago.", "error");
         console.error(err);
       }
     });
@@ -144,37 +155,46 @@ export class ListMetodosPagoComponent implements OnInit {
   }
 
   formSubmit() {
-    if (this.modoModal === 'ver') return;
+  if (this.modoModal === 'ver') return;
 
-    if (this.metodo.id_metodo) {
-      this.metodoPagoService.editarMetodoPago(this.metodo).subscribe({
-        next: () => {
-          Swal.fire("Actualizado", "Método actualizado correctamente", "success");
-          this.cerrarModal();
-          this.listarMetodos();
-        },
-        error: () => {
-          Swal.fire("Error", "No se pudo actualizar el método", "error");
-        }
-      });
-    } else {
-      this.metodoPagoService.registrarMetodoPago(this.metodo).subscribe({
-        next: () => {
-          Swal.fire("Guardado", "Método registrado exitosamente", "success");
-          this.cerrarModal();
-          this.listarMetodos();
-        },
-        error: (error) => {
-          if (error.status === 400) {
-            Swal.fire("Duplicado", error.error || "Ya existe un método de pago con ese nombre", "warning");
-          } else {
-            console.error("Error al registrar método de pago:", error);
-            Swal.fire("Error", "No se pudo guardar el método", "error");
-          }
-        }
-      });
+  if (this.metodo.id_metodo) {
+    // Edición
+    this.metodoPagoService.editarMetodoPago(this.metodo).subscribe({
+      next: () => {
+        Swal.fire("Actualizado", "Método actualizado correctamente", "success");
+        this.cerrarModal();
+        this.listarMetodosDeSucursal();
+      },
+      error: () => {
+        Swal.fire("Error", "No se pudo actualizar el método", "error");
+      }
+    });
+  } else {
+    // Alta NUEVA en una sucursal
+    const user = this.loginService.getUser();
+    if (!user || !user.sucursal || !user.sucursal.idSucursal) {
+      Swal.fire("Error", "No se pudo determinar la sucursal del usuario.", "error");
+      return;
     }
+    const idSucursal = user.sucursal.idSucursal;
+
+    this.metodoPagoService.registrarMetodoPagoEnSucursal(idSucursal, this.metodo).subscribe({
+      next: () => {
+        Swal.fire("Guardado", "Método registrado exitosamente", "success");
+        this.cerrarModal();
+        this.listarMetodosDeSucursal();
+      },
+      error: (error) => {
+        if (error.status === 400) {
+          Swal.fire("Duplicado", error.error || "Ya existe un método de pago con ese nombre", "warning");
+        } else {
+          console.error("Error al registrar método de pago:", error);
+          Swal.fire("Error", "No se pudo guardar el método", "error");
+        }
+      }
+    });
   }
+}
 
   editarMetodo(id: number) {
     this.router.navigate(['/admin/edit-metodos-pago', id]);
@@ -201,7 +221,7 @@ export class ListMetodosPagoComponent implements OnInit {
         this.metodoPagoService.eliminarMetodoPago(id).subscribe({
           next: () => {
             Swal.fire("Eliminado", "El método fue eliminado", "success");
-            this.listarMetodos();
+            this.listarMetodosDeSucursal();
           },
           error: (err) => {
             Swal.fire("Error", "No se pudo eliminar", "error");

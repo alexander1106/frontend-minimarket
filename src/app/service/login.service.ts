@@ -92,7 +92,6 @@ public getEmpresa() {
     const user = this.getUser();
     console.log("Usuario cargado:", user);
     if (user && user.rol && user.rol.nombre) {
-      console.log("Rol detectado:", user.rol.nombre);
       return user.rol.nombre;
     }
     console.warn("No se encontró un rol válido");

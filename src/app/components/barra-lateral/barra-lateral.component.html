@@ -16,7 +16,6 @@
     alt="Logo Empresa"
     style="height:100px;width:auto;"
   />
-  <span class="fs-5 fw-bold">{{ empresa?.razonsocial }}</span>
   </div>
 
     </div>
@@ -116,7 +115,6 @@
       <ul class="nav flex-column ms-4 mt-2" *ngIf="activeMenu === 'compras'">
         <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Compras</a></li>
         <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Detalles compras</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Devoluciones</a></li>
         <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Proveedores</a></li>
       </ul>
     </li>
@@ -130,12 +128,8 @@
       </a>
       <ul class="nav flex-column ms-4 mt-2" *ngIf="activeMenu === 'ventas'">
         <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/list-venta']">Ventas</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small">Detalles ventas</a></li>
         <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/list-cotizaciones']">Cotizaciones</a></li>
         <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/list-clientes']">Clientes</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/metodos-pago']">Devoluciones</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/pagos']">Pagos</a></li>
-
         <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/metodos-pago']">Métodos de pago</a></li>
       </ul>
     </li>
@@ -163,8 +157,8 @@
       <ul class="nav flex-column ms-4 mt-2" *ngIf="activeMenu === 'caja'">
         <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/list-cajas']">Cajas</a></li>
         <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/list-apertura']">Apertura</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Historial</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Detalles de caja</a></li>
+        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/pagos']">Pagos</a></li>
+
       </ul>
     </li>
 

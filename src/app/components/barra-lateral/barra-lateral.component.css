@@ -21,6 +21,10 @@
   width: 100px;
   color: #0b5ed7 !important;
 }
+img{
+  width: 14vw !important;
+  height: 15vw !important;
+}
 .custom-sidebar .logo i {
   font-size: 1.5rem;
   color: #007bff;

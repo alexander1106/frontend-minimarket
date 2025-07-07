@@ -1,0 +1,89 @@
+/* Fondo semi-transparente que cubre todo */
+.overlay-form {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5); /* Sombra oscura */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* Encima de todo */
+}
+
+/* El formulario en sí */
+.formulario-nuevo-pago {
+  background: #fff;
+  padding: 30px;
+  border-radius: 8px;
+  width: 400px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  animation: fadeIn 0.3s ease;
+}
+
+/* Títulos */
+.formulario-nuevo-pago h3 {
+  margin-top: 0;
+  text-align: center;
+  color: #333;
+}
+
+/* Campos */
+.formulario-nuevo-pago .form-group {
+  margin-bottom: 15px;
+}
+
+.formulario-nuevo-pago label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 600;
+  color: #555;
+}
+
+.formulario-nuevo-pago input,
+.formulario-nuevo-pago select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* Botones */
+.form-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.btn-guardar {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-cancelar {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-guardar:hover {
+  background-color: #218838;
+}
+
+.btn-cancelar:hover {
+  background-color: #c82333;
+}
+
+/* Animación de entrada */
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}

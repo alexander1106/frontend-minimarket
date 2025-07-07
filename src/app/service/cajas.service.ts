@@ -31,4 +31,8 @@ export class CajasService {
     public obtenerSucursalPorCaja(id:any){
     return this.http.get(`${baseUrl}/cajas/${id}/sucursal`);
   }
+  obtenerCajasAbiertasMismaSucursal(idCaja: number) {
+  return this.http.get<any[]>(`${baseUrl}/cajas/${idCaja}/sucursal-cajas-abiertas`);
+}
+
 }

@@ -16,6 +16,7 @@ import { PagosService } from '../../../../../service/pagos.service';
 import { MetodoPagoService } from '../../../../../service/metodo-pago.service';
 import { VentasService } from '../../../../../service/ventas.service';
 import { TransaccionesCajaService } from '../../../../../service/transacciones-caja.service';
+import { DetallesCotizacionesService } from '../../../../../service/detalles-cotizaciones.service';
 
 export interface CotizacionesDTO {
   id_cliente: number;
@@ -74,6 +75,7 @@ categoriaSeleccionada: any = null;
     private dialog: MatDialog,
     private loginService: LoginService,
     private pagosService: PagosService,
+    private detallesCotizacionesService:DetallesCotizacionesService,
     private metodosPago: MetodoPagoService,
     private transaccionesCajaService:TransaccionesCajaService,
     private ventasService: VentasService // <<-- AÑADIDO
@@ -103,7 +105,7 @@ categoriaSeleccionada: any = null;
 
     this.listarClientes();
     this.listarProductos();
-    this.listarMetodosPago();
+    this.listarMetodosPagoPorSucursal();
   }
 
   listarClientes() {
@@ -116,17 +118,23 @@ categoriaSeleccionada: any = null;
     });
   }
 
-  listarMetodosPago() {
-    this.metodosPago.listarMetodosPago().subscribe({
-      next: (data: any) => {
-        this.metodosDePago = data || [];
-      },
-      error: (err) => {
-        console.error('Error cargando métodos de pago', err);
-        Swal.fire("Error", "No se pudieron cargar los métodos de pago", "error");
-      }
-    });
+ listarMetodosPagoPorSucursal() {
+  if (!this.idSucursal) {
+    Swal.fire("Error", "No se ha definido la sucursal", "error");
+    return;
   }
+
+  this.metodosPago.listarMetodosPagoPorSucursal(this.idSucursal).subscribe({
+    next: (data: any) => {
+      this.metodosDePago = data || [];
+    },
+    error: (err) => {
+      console.error('Error cargando métodos de pago de la sucursal', err);
+      Swal.fire("Error", "No se pudieron cargar los métodos de pago de esta sucursal", "error");
+    }
+  });
+}
+
 
 listarProductos() {
   if (!this.idSucursal) {
@@ -316,43 +324,79 @@ confirmarPago() {
     manana.setDate(manana.getDate() + 1);
     return manana.toISOString().split('T')[0];
   }
-    generarCotizacion() {
-    if (!this.clienteSeleccionado || !this.fechaVencimiento) {
-      Swal.fire("Advertencia", "Debe seleccionar cliente y fecha", "warning");
-      return;
-    }
-
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-    const fechaVencimientoDate = new Date(this.fechaVencimiento);
-    fechaVencimientoDate.setHours(0, 0, 0, 0);
-
-    if (fechaVencimientoDate <= hoy) {
-      Swal.fire("Advertencia", "La fecha de vencimiento debe ser posterior a hoy", "warning");
-      return;
-    }
-
-    const cotizacion: CotizacionesDTO = {
-      id_cliente: this.clienteSeleccionado,
-      fechaCotizacion: hoy.toISOString().split('T')[0],
-      fechaVencimiento: this.fechaVencimiento,
-      estadoCotizacion: "pendiente",
-      numeroCotizacion: this.generarNumeroAleatorio(),
-      totalCotizacion: this.totalCompra
-    };
-
-    this.cotizacionService.guardarCotizacion(cotizacion).subscribe({
-      next: () => {
-        Swal.fire("Éxito", "Cotización guardada correctamente", "success");
-        this.cerrarModales();
-        this.router.navigate(['/admin/list-cotizaciones']);
-      },
-      error: (err) => {
-        console.error(err);
-        Swal.fire("Error", "No se pudo guardar la cotización", "error");
-      }
-    });
+generarCotizacion() {
+  if (!this.clienteSeleccionado || !this.fechaVencimiento) {
+    Swal.fire("Advertencia", "Debe seleccionar cliente y fecha", "warning");
+    return;
   }
+
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const fechaVencimientoDate = new Date(this.fechaVencimiento);
+  fechaVencimientoDate.setHours(0, 0, 0, 0);
+
+  if (fechaVencimientoDate <= hoy) {
+    Swal.fire("Advertencia", "La fecha de vencimiento debe ser posterior a hoy", "warning");
+    return;
+  }
+
+  const cotizacion: CotizacionesDTO = {
+    id_cliente: this.clienteSeleccionado,
+    fechaCotizacion: hoy.toISOString().split('T')[0],
+    fechaVencimiento: this.fechaVencimiento,
+    estadoCotizacion: "PENDIENTE",
+    numeroCotizacion: this.generarNumeroAleatorio(),
+    totalCotizacion: this.totalCompra
+  };
+
+  this.cotizacionService.guardarCotizacion(cotizacion).subscribe({
+    next: (respuesta) => {
+      // 🚩 Aquí recibes la cotización creada
+      console.log('Cotización creada:', respuesta);
+
+      const idCotizacionCreada = respuesta.idCotizaciones; // Cambia el nombre si tu backend devuelve otro campo
+
+      if (!idCotizacionCreada) {
+        Swal.fire("Error", "El servidor no devolvió el ID de la cotización creada", "error");
+        return;
+      }
+
+      // Registrar cada detalle
+      const peticiones = this.productosAgregados.map((item) => {
+        const detalle = {
+          id_producto: item.producto.idproducto,
+          id_cotizacion: idCotizacionCreada,
+          cantidad: item.cantidad,
+          precioUnitario: item.producto.costoVenta,
+          subTotal: item.producto.costoVenta * item.cantidad * (1 - item.descuento / 100),
+          fechaCotizaciones: hoy.toISOString().split('T')[0]
+        };
+
+        return this.detallesCotizacionesService.registrarDetalle(detalle);
+      });
+
+      // Ejecutar todas las llamadas
+      Promise.all(peticiones.map(p => p.toPromise()))
+        .then(() => {
+          Swal.fire("Éxito", "Cotización y detalles guardados correctamente", "success");
+          this.cerrarModales();
+          this.router.navigate(['/admin/list-cotizaciones']);
+        })
+        .catch((err) => {
+          console.error('Error guardando los detalles', err);
+          Swal.fire("Error parcial", "La cotización se creó, pero algunos detalles no se guardaron correctamente.", "warning");
+          this.router.navigate(['/admin/list-cotizaciones']);
+                window.location.reload();
+
+        });
+    },
+    error: (err) => {
+      console.error(err);
+      Swal.fire("Error", "No se pudo guardar la cotización", "error");
+    }
+  });
+}
+
 
 
 }

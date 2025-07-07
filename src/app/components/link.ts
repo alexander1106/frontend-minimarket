@@ -1,2 +1,2 @@
-let baseUrl= 'http://rapimarket.spring.informaticapp.com:7300/api/minimarket'
+let baseUrl= 'http://localhost:8080/api/minimarket'
 export default baseUrl;

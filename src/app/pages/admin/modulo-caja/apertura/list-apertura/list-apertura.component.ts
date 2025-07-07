@@ -10,6 +10,8 @@ import { HeaderComponent } from '../../../../../components/header/header.compone
 import { AddAperturaComponent } from '../add-apertura/add-apertura.component';
 import Swal from 'sweetalert2';
 import { LoginService } from '../../../../../service/login.service';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 @Component({
   selector: 'app-list-apertura',
@@ -40,7 +42,10 @@ aperturasGlobales: any[] = [];
   paginaActual: number = 1;
   elementosPorPagina: number = 5;
   totalPaginas: number = 1;
-
+// Para el modal de detalles
+mostrarModalDetalle: boolean = false;
+detalleApertura: any = null;
+transaccionesApertura: any[] = [];
   mostrarModal: boolean = false;
 
   constructor(
@@ -159,6 +164,82 @@ listarAperturas() {
     },
   });
 }
+exportarPDF(idAperturaCaja: number) {
+  // 1. Mostrar cargando
+  Swal.fire({
+    title: 'Generando PDF...',
+    allowOutsideClick: false,
+    didOpen: () => {
+      Swal.showLoading();
+    }
+  });
+
+  // 2. Llamar al backend para traer transacciones
+  this.aperturaCajaService.obtenerTransaccionesPorApertura(idAperturaCaja).subscribe({
+    next: (transacciones) => {
+      Swal.close();
+
+      // 3. Buscar la información de la apertura
+      const apertura = this.aperturasGlobales.find(
+        (a) => Number(a.idAperturaCaja) === Number(idAperturaCaja)
+      );
+
+      if (!apertura) {
+        Swal.fire('Error', 'No se encontró la información de la apertura.', 'error');
+        return;
+      }
+
+      // 4. Crear el PDF
+      const doc = new jsPDF();
+
+      doc.setFontSize(16);
+      doc.text('Reporte de Apertura de Caja', 14, 20);
+
+      doc.setFontSize(12);
+      doc.text(`Apertura ID: ${apertura.idAperturaCaja}`, 14, 30);
+      doc.text(`Caja: ${apertura.caja?.nombreCaja || ''}`, 14, 38);
+      doc.text(`Sucursal: ${apertura.caja?.sucursales?.nombreSucursal || ''}`, 14, 46);
+      doc.text(`Usuario: ${apertura.usuarios?.username || ''}`, 14, 54);
+      doc.text(`Estado: ${apertura.estadoCaja || ''}`, 14, 62);
+      doc.text(`Fecha de Apertura: ${apertura.fechaApertura || ''}`, 14, 70);
+      doc.text(`Generado: ${new Date().toLocaleString()}`, 14, 78);
+
+      // Si no hay transacciones, mostrar solo la información de apertura
+      if (!transacciones || transacciones.length === 0) {
+        doc.setFontSize(12);
+        doc.text('Esta apertura no tiene transacciones registradas.', 14, 90);
+        doc.save(`apertura_${idAperturaCaja}.pdf`);
+        return;
+      }
+
+      // 5. Preparar datos de la tabla
+      const body = transacciones.map((t: any, index: number) => [
+        index + 1,
+        t.fecha || '',
+        t.tipoMovimiento || '',
+        t.monto || 0,
+        t.observaciones || '',
+        t.aperturaCaja?.usuarios?.username || ''
+      ]);
+
+      // 6. Crear tabla de transacciones
+      autoTable(doc, {
+        head: [['#', 'Fecha', 'Tipo', 'Monto', 'Descripción', 'Usuario']],
+        body: body,
+        startY: 88
+      });
+
+      // 7. Descargar PDF
+      doc.save(`apertura_${idAperturaCaja}.pdf`);
+    },
+    error: (error) => {
+      Swal.close();
+      console.error('Error al obtener transacciones:', error);
+      Swal.fire('Error', 'No se pudieron obtener las transacciones.', 'error');
+    }
+  });
+}
+
 
 onSucursalChange() {
   this.cajaSeleccionadaFiltro = undefined;
@@ -223,7 +304,11 @@ onSucursalChange() {
 
   abrirModalApertura() {
   if (this.cajaSeleccionadaFiltro == null) {
-    alert('Por favor seleccione una caja antes de aperturar.');
+Swal.fire(
+  'Atención',
+  'Por favor seleccione una caja antes de aperturar.',
+  'warning'
+);
     return;
   }
 
@@ -259,9 +344,41 @@ onSucursalChange() {
     this.listarAperturas();
   }
 
-  verApertura(id: number) {
-    console.log('Ver apertura:', id);
-  }
+verApertura(id: number) {
+  // Mostrar cargando
+  Swal.fire({
+    title: 'Cargando información...',
+    allowOutsideClick: false,
+    didOpen: () => {
+      Swal.showLoading();
+    }
+  });
+
+  // Obtener apertura y transacciones
+  this.aperturaCajaService.buscarAperturaId(id).subscribe({
+    next: (apertura) => {
+      this.aperturaCajaService.obtenerTransaccionesPorApertura(id).subscribe({
+        next: (transacciones) => {
+          Swal.close();
+          this.detalleApertura = apertura;
+          this.transaccionesApertura = transacciones;
+          this.mostrarModalDetalle = true;
+        },
+        error: (err) => {
+          Swal.close();
+          console.error('Error al obtener transacciones:', err);
+          Swal.fire('Error', 'No se pudieron cargar las transacciones.', 'error');
+        }
+      });
+    },
+    error: (err) => {
+      Swal.close();
+      console.error('Error al obtener apertura:', err);
+      Swal.fire('Error', 'No se pudo cargar la apertura.', 'error');
+    }
+  });
+}
+
 
   editarApertura(id: number) {
     console.log('Editar apertura:', id);

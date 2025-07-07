@@ -36,5 +36,9 @@ export class ClientesService {
     public consultarReniec(dni:any){
     return this.http.get(`${baseUrl}/clientes/reniec/${dni}`);
   }
+  public listarClientesPorSucursal(idSucursal: number): Observable<any> {
+  return this.http.get(`${baseUrl}/clientes/sucursal/${idSucursal}`);
+}
+
 }
 

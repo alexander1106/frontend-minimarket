@@ -65,7 +65,7 @@
             <td>{{ (paginaActual - 1) * elementosPorPagina + i + 1 }}</td>
             <td>{{ caja.nombreCaja || 'N/A' }}</td>
             <td>{{ caja.sucursales?.nombreSucursal || 'N/A' }}</td>
-            <td>{{ caja.saldoActual || 'N/A' }}</td>
+            <td>{{ caja.saldoActual || 0}}</td>
             <td>{{ caja.estadoCaja || 'N/A' }}</td>
             <td>
               <button (click)="verCaja(caja.idCaja)" class="btn-ver">
@@ -120,12 +120,13 @@
 
 <div class="modal-overlay" *ngIf="modalAbierto">
   <div class="modal-content">
-   <app-add-caja
+<app-add-caja
+  *ngIf="modalAbierto"
   [cajaInput]="cajaSeleccionada"
   [cajas]="cajas"
   (cerrar)="cerrarModal()"
-  (guardado)="onCajaGuardada()"
-></app-add-caja>
+  (guardado)="onCajaGuardada()">
+</app-add-caja>
 
   </div>
 </div>

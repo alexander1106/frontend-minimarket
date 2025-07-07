@@ -23,7 +23,6 @@ export class BarraLateralComponent implements OnInit {
 
     if (this.empresa && this.empresa.logo) {
       this.empresaColor = this.empresa.logo;
-      console.log("Color de empresa:", this.empresaColor);
     }
   }
 
