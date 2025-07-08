@@ -35,6 +35,8 @@
     <tr>
       <th>#</th>
       <th>Cliente</th>
+            <th>Estado</th>
+
       <th>Dirección</th>
       <th>Fecha de envío</th>
       <th>Fecha de entrega</th>
@@ -46,6 +48,8 @@
 <tr *ngFor="let delivery of clientesFiltrados; let i = index">
       <td>{{ (paginaActual - 1) * elementosPorPagina + i + 1 }}</td>
     <td>{{ delivery.venta?.cliente?.nombre }}</td>
+            <td>{{ delivery.estadoDelivery }}</td>
+
       <td>{{ delivery.direccion }}</td>
       <td>{{ delivery.fechaEnvio | date:'shortDate' }}</td>
       <td>{{ delivery.fechaEntrega | date:'shortDate' }}</td>
@@ -54,9 +58,11 @@
 
 
       <td>
-        <button class="btn-editar">
-          <i class="fas fa-edit"></i>
-        </button>
+<button class="btn-editar"
+        (click)="mostrarFormularioEditar(delivery)"
+        [disabled]="delivery.estadoDelivery === 'ENTREGADO'">
+  <i class="fas fa-edit"></i>
+</button>
 
       </td>
     </tr>
@@ -89,6 +95,29 @@
   </ul>
 </nav>
 
+    </div>
+  </div>
+</div>
+<div *ngIf="editingDelivery" class="overlay-formulario">
+  <div class="formulario-edicion">
+    <h5 class="text-center mb-3">Editar estado del Delivery</h5>
+
+    <p><strong>Cliente:</strong> {{ editingDelivery?.venta?.cliente?.nombre }}</p>
+    <p><strong>Dirección:</strong> {{ editingDelivery?.direccion }}</p>
+
+    <div class="form-group mb-3">
+      <label for="estado" class="form-label">Estado</label>
+<select id="estado" class="form-select" [(ngModel)]="nuevoEstado" [value]="editingDelivery?.esttadoDelivery">
+        <option value="PENDIENTE">PENDIENTE</option>
+        <option value="EN CAMINO">EN CAMINO</option>
+        <option value="ENTREGADO">ENTREGADO</option>
+        <option value="CANCELADO">CANCELADO</option>
+      </select>
+    </div>
+
+    <div class="d-flex justify-content-between">
+      <button class="btn btn-primary w-45" (click)="guardarEstado()">Guardar</button>
+      <button class="btn btn-secondary w-45" (click)="cancelarEdicion()">Cancelar</button>
     </div>
   </div>
 </div>

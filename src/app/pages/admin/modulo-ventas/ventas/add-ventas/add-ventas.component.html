@@ -67,13 +67,14 @@
       />
     </td>
     <td>
-   <input
+  <input
   type="number"
   [(ngModel)]="item.producto.costoVenta"
   min="0"
   step="0.01"
   class="input-celda"
 />
+
     </td>
     <td>
       <div class="input-contenedor">
@@ -87,9 +88,14 @@
         <span class="input-sufijo">%</span>
       </div>
     </td>
-    <td>
-      ${{ (item.costoVenta * item.cantidad * (1 - item.descuento / 100)).toFixed(2) }}
-    </td>
+   <td>
+  ${{ (
+    (item?.producto?.costoVenta || 0) *
+    (item?.cantidad || 0) *
+    (1 - (item?.descuento || 0) / 100)
+  ).toFixed(2) }}
+</td>
+
   </tr>
   <tr *ngIf="productosAgregados.length === 0">
     <td colspan="6" class="no-records">

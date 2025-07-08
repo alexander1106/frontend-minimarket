@@ -134,6 +134,7 @@ export class AddAperturaComponent implements OnInit, OnChanges {
       },
       (error) => {
         console.error('Error al guardar apertura:', error);
+    alert('Error: ' + (error.error?.message || 'Error del servidor'));
 
         Swal.fire({
           icon: 'error',

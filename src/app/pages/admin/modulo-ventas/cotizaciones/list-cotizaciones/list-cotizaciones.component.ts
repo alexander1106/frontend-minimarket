@@ -73,38 +73,46 @@ verDetallesCotizacion(cotizacion: any) {
 }
 
 
-  eliminarCotizacion(id: number) {
-    Swal.fire({
-      title: '¿Estás seguro?',
-      text: 'Esta acción eliminará la cotización permanentemente',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        this.cotizacionService.eliminarCotizaciones(id).subscribe({
-          next: () => {
-            Swal.fire({
-              title: 'Eliminado',
-              text: 'La cotización ha sido eliminada',
-              icon: 'success',
-              timer: 1500,
-              showConfirmButton: false
-            }).then(() => {
-              this.listarCotizaciones();
-            });
-          },
-          error: (err) => {
-            Swal.fire('Error', 'No se pudo eliminar la cotización', 'error');
-            console.error(err);
-          }
-        });
-      }
-    });
+eliminarCotizacion(cotizacionId: number) {
+  const cotizacion = this.cotizaciones.find(c => c.idCotizaciones === cotizacionId);
+
+  if (cotizacion?.estadoCotizacion?.toUpperCase() === 'PAGADA') {
+    Swal.fire('Acción no permitida', 'No puedes eliminar una cotización con estado PAGADO.', 'warning');
+    return;
   }
+
+  Swal.fire({
+    title: '¿Estás seguro?',
+    text: 'Esta acción eliminará la cotización permanentemente',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: 'Sí, eliminar',
+    cancelButtonText: 'Cancelar'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      this.cotizacionService.eliminarCotizaciones(cotizacionId).subscribe({
+        next: () => {
+          Swal.fire({
+            title: 'Eliminado',
+            text: 'La cotización ha sido eliminada',
+            icon: 'success',
+            timer: 1500,
+            showConfirmButton: false
+          }).then(() => {
+            this.listarCotizaciones();
+          });
+        },
+        error: (err) => {
+          Swal.fire('Error', 'No se pudo eliminar la cotización', 'error');
+          console.error(err);
+        }
+      });
+    }
+  });
+}
+
 
   buscarCotizacion() {
     const filtro = this.filtroBusqueda.trim().toLowerCase();

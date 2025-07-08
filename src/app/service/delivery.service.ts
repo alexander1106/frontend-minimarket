@@ -16,5 +16,9 @@ export class DeliveryService {
   public eliminarDelivery(id: number): Observable<any> {
     return this.http.delete(`${baseUrl}/delivery/${id}`,{ responseType: 'text' });
   }
+  public actualizarDelivery(id: number, delivery: any): Observable<any> {
+  return this.http.put(`${baseUrl}/delivery/${id}`, delivery);
+}
+
 
 }

@@ -261,26 +261,26 @@ this.transaccionService.registrarTransaccion(nuevaTransaccion).subscribe(
       fecha: new Date().toISOString()
     };
 
-    this.transaccionesEntreCajas.registrarTransferenciasEntreCajas(transferencia).subscribe(
-      (response) => {
-        Swal.fire({
-          icon: 'success',
-          title: 'Transferencia registrada',
-          text: 'La transferencia se guardó correctamente.'
-        }).then(() => window.location.reload());
+      this.transaccionesEntreCajas.registrarTransferenciasEntreCajas(transferencia).subscribe(
+        (response) => {
+          Swal.fire({
+            icon: 'success',
+            title: 'Transferencia registrada',
+            text: 'La transferencia se guardó correctamente.'
+          }).then(() => window.location.reload());
 
-        this.mostrarFormularioTransferencia = false;
-        this.resetearFormularioTransferencia();
-      },
-      (error) => {
-        console.error('Error al registrar transferencia:', error);
-        Swal.fire({
-          icon: 'warning',
-          title: 'warning',
-          text: 'Saldo insuficinete.'
-        });
-      }
-    );
+          this.mostrarFormularioTransferencia = false;
+          this.resetearFormularioTransferencia();
+        },
+        (error) => {
+          console.error('Error al registrar transferencia:', error);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Ocurrió un error al guardar la transferencia.'
+          });
+        }
+      );
   }
 
   resetearFormulario() {

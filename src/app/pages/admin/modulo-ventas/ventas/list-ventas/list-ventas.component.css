@@ -139,3 +139,53 @@ width: 17%;
 .btn-eliminar {
   color: #ef4444;
 }
+
+
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999; /* Asegura que esté encima de todo */
+}
+
+.modal-dialog {
+  background: #fff;
+  border-radius: 8px;
+  max-width: 800px;
+  width: 90%;
+  padding: 20px;
+  z-index: 10000; /* Más alto aún por si acaso */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.close-btn {
+  font-size: 24px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #333;
+}
+
+.modal-body {
+  margin-top: 10px;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+}

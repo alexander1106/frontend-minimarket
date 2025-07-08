@@ -10,6 +10,8 @@ import { DetallesVentasService } from '../../../../../service/detalles-ventas-se
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { LoginService } from '../../../../../service/login.service';
+import baseUrl from '../../../../../components/link';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-list-ventas',
@@ -22,6 +24,8 @@ export class ListVentasComponent implements OnInit {
   ventas: any[] = [];
   ventasFiltrados: any[] = [];
   filtroBusqueda: string = '';
+mostrarModalDetalleVenta = false;
+ventaSeleccionada: any = null;
 
   paginaActual: number = 1;
   elementosPorPagina: number = 5;
@@ -31,6 +35,7 @@ export class ListVentasComponent implements OnInit {
     private detallesVentasService: DetallesVentasService,
     private router: Router,
     private loginService:LoginService,
+    private http:HttpClient,
     private route: ActivatedRoute
   ) {}
 
@@ -57,17 +62,11 @@ listarVentasPorSucursal(idSucursal: number) {
     }
   });
 }
-verDetallesVenta(venta: any) {
-  Swal.fire({
-    title: 'Detalles de la Venta',
-    html: `
-      <p><strong>Cliente:</strong> ${venta.cliente?.nombre || '-'}</p>
-      <p><strong>Fecha:</strong> ${venta.fecha_venta}</p>
-      <p><strong>Documento:</strong> ${venta.tipo_comprobante} - ${venta.nro_comrprobante}</p>
-      <p><strong>Total:</strong> S/ ${venta.total_venta}</p>
-    `,
-    icon: 'info'
-  });
+
+verDetalleVenta(venta: any) {
+  this.ventaSeleccionada = venta;
+  this.mostrarModalDetalleVenta = true;
+
 }
 
 consoleLogVenta(venta: any) {
@@ -95,8 +94,14 @@ generarComprobantePdf(idVenta: number | undefined) {
 
           const doc = new jsPDF();
           const empresa = this.loginService.getEmpresa() || {};
+          const tipo = venta.tipo_comprobante?.toUpperCase() || 'FACTURA';
+          const cliente = venta.cliente || {};
+          const totalVenta = venta.total_venta || detalles.reduce(
+            (sum: number, d: any) => sum + (d.precioUnitario ?? 0) * (d.cantidad ?? 0),
+            0
+          );
 
-          // Cabecera de empresa
+          // Encabezado empresa
           doc.setFontSize(12);
           doc.setFont("helvetica", "bold");
           doc.text(empresa.razonsocial || 'EMPRESA', 10, 15);
@@ -105,36 +110,51 @@ generarComprobantePdf(idVenta: number | undefined) {
           doc.text(empresa.direccion || '-', 10, 25);
           doc.text(`${empresa.ciudad || ''}`, 10, 30);
 
-          // Rectángulo de FACTURA ELECTRÓNICA
+          // Tipo de comprobante
+          let tituloComprobante = 'COMPROBANTE DE VENTA';
+          if (tipo === 'FACTURA') {
+            tituloComprobante = 'FACTURA ELECTRÓNICA';
+          } else if (tipo === 'BOLETA') {
+            tituloComprobante = 'BOLETA ELECTRÓNICA';
+          }
+
           doc.roundedRect(145, 10, 55, 25, 2, 2);
           doc.setFontSize(11);
-          doc.text("FACTURA ELECTRÓNICA", 172, 18, { align: "center" });
+          doc.text(tituloComprobante, 172, 18, { align: "center" });
           doc.setFontSize(10);
           doc.text(`N° ${venta.nro_comrprobante || '-'}`, 172, 24, { align: "center" });
 
-          // Bloque datos del cliente
+          // Datos del cliente
           doc.setFontSize(10);
           doc.roundedRect(10, 35, 190, 20, 2, 2);
-          const cliente = venta.cliente || {};
-          doc.text(`Cliente: ${cliente.nombre || '-'}`, 12, 40);
-          doc.text(`RUC/DNI: ${cliente.documento || '-'}`, 90, 40);
-          doc.text(`Moneda: SOLES`, 150, 40);
-          doc.text(`Dirección: ${cliente.direccion || '-'}`, 12, 46);
-          doc.text(`Ciudad: ${cliente.ciudad || '-'}`, 90, 46);
-          doc.text(`Condición de Pago: ${venta.condicion_pago || 'Contado'}`, 150, 46);
 
-          // Bloque con fechas
-          doc.roundedRect(10, 58, 190, 14, 2, 2);
-          doc.text(`Fecha Emisión: ${venta.fecha || new Date().toLocaleDateString()}`, 12, 64);
-          doc.text(`Forma de Pago: ${venta.condicion_pago || 'Contado'}`, 90, 64);
-          doc.text(`Orden de Compra: ${venta.orden_compra || '-'}`, 150, 64);
+          if (tipo === 'FACTURA') {
+            doc.text(`Cliente: ${cliente.nombre || '-'}`, 12, 40);
+            doc.text(`RUC/DNI: ${cliente.documento || '-'}`, 90, 40);
+            doc.text(`Moneda: SOLES`, 150, 40);
+            doc.text(`Dirección: ${cliente.direccion || '-'}`, 12, 46);
+            doc.text(`Ciudad: ${cliente.ciudad || '-'}`, 90, 46);
+            doc.text(`Condición de Pago: ${venta.condicion_pago || 'Contado'}`, 150, 46);
+          } else {
+            doc.text(`Cliente: ${cliente.nombre || '-'}`, 12, 40);
+            doc.text(`DNI: ${cliente.documento || '-'}`, 90, 40);
+            doc.text(`Fecha: ${venta.fecha || new Date().toLocaleDateString()}`, 150, 40);
+            doc.text(`Dirección: ${cliente.direccion || '-'}`, 12, 46);
+          }
 
-          // Tabla de detalles
+          // Fechas y orden de compra solo para factura
+          if (tipo === 'FACTURA') {
+            doc.roundedRect(10, 58, 190, 14, 2, 2);
+            doc.text(`Fecha Emisión: ${venta.fecha || new Date().toLocaleDateString()}`, 12, 64);
+            doc.text(`Forma de Pago: ${venta.condicion_pago || 'Contado'}`, 90, 64);
+            doc.text(`Orden de Compra: ${venta.orden_compra || '-'}`, 150, 64);
+          }
+
+          // Tabla productos
+          const startY = tipo === 'FACTURA' ? 75 : 60;
           autoTable(doc, {
-            startY: 75,
-            head: [[
-              'CÓDIGO', 'CANT.', 'UNID.', 'DESCRIPCIÓN', 'V. UNIT.', 'DSCTO.', 'V. VENTA'
-            ]],
+            startY,
+            head: [['CÓDIGO', 'CANT.', 'UNID.', 'DESCRIPCIÓN', 'V. UNIT.', 'DSCTO.', 'V. VENTA']],
             body: detalles.map((d: any) => [
               d.producto?.codigo || '-',
               d.cantidad,
@@ -144,40 +164,17 @@ generarComprobantePdf(idVenta: number | undefined) {
               '0.00',
               ((d.precioUnitario ?? 0) * (d.cantidad ?? 0)).toFixed(2)
             ]),
-            styles: {
-              fontSize: 9,
-              cellPadding: 2
-            },
-            headStyles: {
-              fillColor: [200, 200, 200],
-              textColor: 0,
-              fontStyle: 'bold'
-            },
+            styles: { fontSize: 9, cellPadding: 2 },
+            headStyles: { fillColor: [200, 200, 200], textColor: 0, fontStyle: 'bold' },
             theme: 'grid'
           });
 
-          const finalY = (doc as any).lastAutoTable.finalY || 85;
-
-          // Observaciones
-          doc.setFontSize(10);
-          doc.text('OBSERVACIONES:', 10, finalY + 10);
+          const finalY = (doc as any).lastAutoTable.finalY || startY + 10;
 
           // Totales
-          const totalVenta = venta.total_venta || detalles.reduce(
-            (sum: number, d: any) => sum + (d.precioUnitario ?? 0) * (d.cantidad ?? 0),
-            0
-          );
-
           const totales = [
-            ['OP. GRAVADAS', totalVenta.toFixed(2)],
-            ['OP. INAFECTAS', '0.00'],
-            ['OP. EXONERADAS', '0.00'],
-            ['OP. EXPORTACIÓN', '0.00'],
-            ['TOTAL OP. GRATUITAS', '0.00'],
-            ['DSCTOS. TOTALES', '0.00'],
-            ['ANTICIPOS', '0.00'],
             ['SUB TOTAL', totalVenta.toFixed(2)],
-            ['ICBPER', '0.00'],
+            ['IGV (0%)', '0.00'],
             ['TOTAL', totalVenta.toFixed(2)]
           ];
 
@@ -190,7 +187,7 @@ generarComprobantePdf(idVenta: number | undefined) {
             yTotales += 7;
           });
 
-          doc.save(`Factura_Venta_${venta.id}.pdf`);
+          doc.save(`${tituloComprobante.replace(/ /g, "_")}_Venta_${venta.id}.pdf`);
         },
         error: (err) => {
           Swal.fire('Error', 'No se pudieron obtener los detalles de la venta.', 'error');
@@ -205,6 +202,10 @@ generarComprobantePdf(idVenta: number | undefined) {
   });
 }
 
-
+cerrarModalDetalleVenta() {
+  console.log("cerrando modal");
+  this.mostrarModalDetalleVenta = false;
+  this.ventaSeleccionada = null;
+}
 
 }

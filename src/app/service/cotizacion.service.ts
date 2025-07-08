@@ -34,6 +34,6 @@ export class CotizacionService {
     return this.http.put(`${baseUrl}/cotizaciones`, cliente);
  }
  public obtenerDetallesPorCotizacion(idCotizacion: number): Observable<any> {
-  return this.http.get(`${baseUrl}/detalles-cotizaciones/${idCotizacion}`);
+  return this.http.get(`${baseUrl}/detalles-cotizaciones/cotizacion/${idCotizacion}`);
 }
 }

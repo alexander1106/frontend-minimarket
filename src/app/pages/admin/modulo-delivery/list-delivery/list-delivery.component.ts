@@ -23,6 +23,8 @@ deliverys: any[] = [];
   filtroBusqueda: string = '';
   paginaActual: number = 1;
   elementosPorPagina: number = 5;
+editingDelivery: any = null; // Este guardará el delivery que se está editando
+nuevoEstado: string = ''; // Nuevo estado a asignar
 
   constructor(
     private deliveryService: DeliveryService,
@@ -173,4 +175,34 @@ eliminarCliente(id: number) {
   navegarYMostrarModal() {
     this.router.navigate(['admin/add-clientes']);
   }
+mostrarFormularioEditar(delivery: any) {
+  this.editingDelivery = delivery;
+  this.nuevoEstado = delivery.esttadoDelivery; // ✅ nombre correcto del campo
+}
+
+guardarEstado() {
+  const deliveryActualizado = {
+    ...this.editingDelivery,
+    estadoDelivery: this.nuevoEstado, // este debe coincidir con backend
+    idVenta: this.editingDelivery?.venta?.idventa
+  };
+
+  this.deliveryService.actualizarDelivery(this.editingDelivery.iddelivery, deliveryActualizado).subscribe({
+    next: () => {
+      Swal.fire('Actualizado', 'El estado del delivery fue actualizado', 'success');
+      this.listarDelivery(); // Recargar lista
+      this.editingDelivery = null;
+    },
+    error: (err) => {
+      console.error("Error al actualizar:", err);
+      Swal.fire('Error', 'No se pudo actualizar el estado', 'error');
+    }
+  });
+}
+
+
+cancelarEdicion() {
+  this.editingDelivery = null;
+}
+
 }

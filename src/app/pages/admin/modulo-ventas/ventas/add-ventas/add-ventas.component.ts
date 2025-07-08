@@ -48,7 +48,8 @@ import { HttpClient } from '@angular/common/http';
     productosAgregados: any[] = [];
     clientes: any[] = [];
     metodosDePago: any[] = [];
-
+mostrarModalDetalleVenta = false;
+ventaSeleccionada: any = null;
     montoPago: number = 0;
     metodoPago: string | null = null;
     requiereDelivery: boolean = false;
@@ -155,29 +156,34 @@ this.http.get(`${baseUrl}/aperturas-caja/usuario/${usuario.idUsuario}/abierta`)
   }
 
 
-  listarProductos() {
-    if (!this.idSucursal) {
-      Swal.fire("Error", "No se ha definido la sucursal", "error");
-      return;
-    }
-    this.productosService.listarProductosPorSucursal(this.idSucursal).subscribe({
-      next: (data: any) => {
-        const productosProcesados = (data || []).map((p: any) => ({
+listarProductos() {
+  if (!this.idSucursal) {
+    Swal.fire("Error", "No se ha definido la sucursal", "error");
+    return;
+  }
+
+  this.productosService.listarProductosPorSucursal(this.idSucursal).subscribe({
+    next: (data: any) => {
+      const productosProcesados = (data || [])
+        .map((p: any) => ({
           idproducto: p.producto?.idproducto || p.idproducto,
           nombre: p.producto?.nombre || p.nombre,
           costoVenta: p.producto?.costoVenta || p.costo_venta || p.costoVenta,
           imagen: p.producto?.imagen || p.imagen,
-          idcategoria: p.producto?.categoria?.idcategoria || p.idcategoria
-        }));
-        this.productos = productosProcesados;
-        this.todosLosProductosSucursal = productosProcesados; // <<-- AQUÍ guardas todo
-      },
-      error: (err) => {
-        Swal.fire("Error", "No se pudieron cargar los productos", "error");
-        console.error(err);
-      }
-    });
-  }
+          idcategoria: p.producto?.categoria?.idcategoria || p.idcategoria,
+          stock: p.producto?.stockactual || p.stockactual || 0// 👈 OK aquí
+        }))
+        .filter((p: { stock: number }) => p.stock > 0); // 👈 Solo productos con stock
+
+      this.productos = productosProcesados;
+      this.todosLosProductosSucursal = productosProcesados;
+    },
+    error: (err) => {
+      Swal.fire("Error", "No se pudieron cargar los productos", "error");
+      console.error(err);
+    }
+  });
+}
 
     agregarProducto(producto: any): void {
       const existente = this.productosAgregados.find(p => p.producto.idproducto === producto.idproducto);
@@ -289,8 +295,8 @@ confirmarPago() {
 
   this.ventasService.registrar(venta).subscribe({
     next: (ventaGuardada: any) => {
-      const idVentaCreada = ventaGuardada.idventa; // Asegúrate que el backend devuelva el ID
-
+const idVentaCreada = ventaGuardada.id_venta;
+      alert(idVentaCreada)
       if (this.requiereDelivery) {
      const delivery = {
   direccion: this.direccionEntrega,
@@ -301,7 +307,7 @@ confirmarPago() {
   observaciones: `Delivery generado desde punto de venta`,
   estado: 1,
   idCliente:this.clienteSeleccionado,
-  idVenta: 0
+  idVenta: idVentaCreada
 };
 
 
@@ -365,6 +371,22 @@ tieneCajaAbiertaPorUsuario(): boolean {
       return manana.toISOString().split('T')[0];
     }
   generarCotizacion() {
+    // ✅ Validar stock antes de continuar
+  const productosSinStock = this.productosAgregados.filter(p =>
+    p.cantidad > (p.producto.stock || 0)
+  );
+
+ if (productosSinStock.length > 0) {
+  Swal.fire({
+    icon: 'warning',
+    title: 'Stock insuficiente',
+    html: `No hay stock suficiente para los siguientes productos:<br><strong>${productosSinStock.map(p => p.producto.nombre).join(', ')}</strong>`,
+    confirmButtonText: 'Aceptar'
+  });
+  return;
+}
+
+
     if (!this.clienteSeleccionado || !this.fechaVencimiento) {
       Swal.fire("Advertencia", "Debe seleccionar cliente y fecha", "warning");
       return;
@@ -426,7 +448,6 @@ tieneCajaAbiertaPorUsuario(): boolean {
             console.error('Error guardando los detalles', err);
             Swal.fire("Error parcial", "La cotización se creó, pero algunos detalles no se guardaron correctamente.", "warning");
             this.router.navigate(['/admin/list-cotizaciones']);
-                  window.location.reload();
 
           });
       },
