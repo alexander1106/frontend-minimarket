@@ -14,17 +14,14 @@ export class VentasService {
     return this.http.get(`${baseUrl}/ventas`);
   }
 
-  // Registrar venta
   registrar(ventas: any): Observable<any> {
     return this.http.post(`${baseUrl}/ventas`, ventas);
   }
 
-  // Buscar venta por ID
   buscarVentaPorId(id: number): Observable<any> {
     return this.http.get(`${baseUrl}/ventas/${id}`);
   }
 
-  // 🔹 NUEVO: Filtrar ventas por sucursal
   buscarVentasPorSucursal(idSucursal: number): Observable<any> {
     return this.http.get(`${baseUrl}/ventas/sucursal/${idSucursal}`)}
 

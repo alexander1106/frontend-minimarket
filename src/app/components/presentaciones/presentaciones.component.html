@@ -1,0 +1,145 @@
+<div class="overlay" (click)="cerrar.emit()">
+  <div class="caja" role="dialog" aria-modal="true" aria-labelledby="pres-titulo" (click)="$event.stopPropagation()">
+    <header class="cab">
+      <span class="icono"><i class="fas fa-boxes-stacked"></i></span>
+      <div>
+        <h2 id="pres-titulo">Ficha del producto</h2>
+        <p>{{ producto?.nombre }} · unidad base: <strong>{{ unidad.nombre || '—' }}</strong>
+          <span class="codigo" *ngIf="unidad.codigo">{{ unidad.codigo }}</span>
+          <span class="etq" [class.off]="!permiteDecimales">{{ permiteDecimales ? 'Con decimales' : 'Solo enteros' }}</span>
+        </p>
+      </div>
+      <button type="button" class="cerrar" (click)="cerrar.emit()" aria-label="Cerrar"><i class="fas fa-times"></i></button>
+    </header>
+
+    <nav class="pestanas" role="tablist">
+      <button type="button" role="tab" [class.on]="pestana === 'presentaciones'" (click)="elegirPestana('presentaciones')">
+        <i class="fas fa-boxes-stacked"></i> Presentaciones
+      </button>
+      <button type="button" role="tab" [class.on]="pestana === 'lotes'" (click)="elegirPestana('lotes')">
+        <i class="fas fa-hourglass-half"></i> Lotes
+        <span class="n" *ngIf="lotesCargados && lotes.length">{{ lotes.length }}</span>
+      </button>
+    </nav>
+
+    <div class="cuerpo" *ngIf="pestana === 'presentaciones'">
+      <div class="tabla-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Presentación</th>
+              <th>Equivale a</th>
+              <th>P. venta</th>
+              <th>P. compra</th>
+              <th>Cód. barras</th>
+              <th class="der" *ngIf="puedeEscribir">Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of presentaciones" [class.editando]="p.idPresentacion === form.idPresentacion">
+              <td><strong>{{ p.nombre }}</strong></td>
+              <td>{{ p.equivalencia || ((p.factor | number:'1.0-3') + ' ' + codigoUnidad) }}</td>
+              <td>{{ p.precioVenta != null ? (p.precioVenta | currency:'S/.':'symbol':'1.2-2') : '—' }}</td>
+              <td>{{ p.precioCompra != null ? (p.precioCompra | currency:'S/.':'symbol':'1.2-2') : '—' }}</td>
+              <td class="mono">{{ p.codigoBarras || '—' }}</td>
+              <td class="der" *ngIf="puedeEscribir">
+                <button type="button" class="ico" (click)="editar(p)" title="Editar" aria-label="Editar"><i class="fas fa-pen"></i></button>
+                <button type="button" class="ico peligro" (click)="eliminar(p)" title="Eliminar" aria-label="Eliminar"><i class="fas fa-trash-alt"></i></button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="vacio" *ngIf="presentaciones.length === 0">
+          <i class="fas fa-box-open"></i>
+          <p>{{ cargando ? 'Cargando…' : 'Este producto aún no tiene presentaciones. Se vende por unidad base (' + codigoUnidad + ').' }}</p>
+        </div>
+      </div>
+
+      <form class="form" *ngIf="puedeEscribir" (ngSubmit)="guardar()" novalidate>
+        <p class="seccion">{{ form.idPresentacion ? 'Editar presentación' : 'Nueva presentación' }}</p>
+        <div class="rapidas" *ngIf="!form.idPresentacion">
+          <span>Habituales:</span>
+          <button type="button" *ngFor="let r of rapidas" (click)="aplicarRapida(r)">{{ r.nombre }}<small>{{ r.factor }}</small></button>
+        </div>
+        <p class="aviso" *ngIf="avisoForm"><i class="fas fa-circle-exclamation"></i> {{ avisoForm }}</p>
+        <div class="grid">
+          <div class="campo">
+            <label for="pnombre">Nombre *</label>
+            <input id="pnombre" name="nombre" [(ngModel)]="form.nombre" placeholder="Ej. Saco 50 kg" maxlength="80" [class.invalido]="errores['nombre']" autocomplete="off" />
+            <small class="err" *ngIf="errores['nombre']">{{ errores['nombre'] }}</small>
+          </div>
+          <div class="campo">
+            <label for="pfactor">Factor * <span class="ayuda">({{ codigoUnidad }} por presentación)</span></label>
+            <input id="pfactor" name="factor" type="number" min="0" [step]="pasoFactor" [(ngModel)]="form.factor" placeholder="Ej. 50" [class.invalido]="errores['factor']" />
+            <small class="err" *ngIf="errores['factor']">{{ errores['factor'] }}</small>
+            <small class="ayuda" *ngIf="!errores['factor']">{{ permiteDecimales ? 'Admite hasta 3 decimales.' : 'Solo números enteros.' }}</small>
+          </div>
+          <div class="campo">
+            <label for="pventa">Precio de venta</label>
+            <input id="pventa" name="precioVenta" type="number" min="0" step="0.01" [(ngModel)]="form.precioVenta" placeholder="0.00" [class.invalido]="errores['precioVenta']" />
+            <small class="err" *ngIf="errores['precioVenta']">{{ errores['precioVenta'] }}</small>
+          </div>
+          <div class="campo">
+            <label for="pcompra">Precio de compra</label>
+            <input id="pcompra" name="precioCompra" type="number" min="0" step="0.01" [(ngModel)]="form.precioCompra" placeholder="0.00" [class.invalido]="errores['precioCompra']" />
+            <small class="err" *ngIf="errores['precioCompra']">{{ errores['precioCompra'] }}</small>
+          </div>
+          <div class="campo todo">
+            <label for="pcodigo">Código de barras</label>
+            <input id="pcodigo" name="codigoBarras" [(ngModel)]="form.codigoBarras" maxlength="40" [class.invalido]="errores['codigoBarras']" autocomplete="off" />
+            <small class="err" *ngIf="errores['codigoBarras']">{{ errores['codigoBarras'] }}</small>
+          </div>
+        </div>
+        <p class="vivo" *ngIf="equivalenciaVivo"><i class="fas fa-equals"></i> {{ equivalenciaVivo }}</p>
+        <div class="acciones">
+          <button type="button" class="btn-sec" *ngIf="form.idPresentacion" (click)="cancelarEdicion()">Cancelar edición</button>
+          <button type="submit" class="btn-pri" [disabled]="guardando">
+            <i class="fas fa-spinner fa-spin" *ngIf="guardando"></i>
+            {{ guardando ? 'Guardando…' : (form.idPresentacion ? 'Guardar cambios' : 'Agregar presentación') }}
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div class="cuerpo" *ngIf="pestana === 'lotes'">
+      <p class="aviso" *ngIf="errorLotes"><i class="fas fa-circle-exclamation"></i> {{ errorLotes }}</p>
+      <p class="nota">Los lotes entran por las compras de productos perecibles. Las ventas descuentan primero el lote que vence antes (FEFO), sin que tengas que elegirlo.</p>
+
+      <div class="resumen-lotes" *ngIf="lotesCargados && lotes.length">
+        <span>{{ lotes.length }} {{ lotes.length === 1 ? 'lote' : 'lotes' }}</span>
+        <span>Disponible en lotes: <b>{{ cant(totalDisponibleLotes) }} {{ codigoUnidad }}</b></span>
+      </div>
+
+      <div class="tabla-wrap" *ngIf="lotes.length">
+        <table>
+          <thead>
+            <tr>
+              <th>Lote</th>
+              <th>Vence</th>
+              <th class="der">Inicial</th>
+              <th class="der">Disponible</th>
+              <th>Referencia</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let l of lotes" [class.sin-saldo]="!(l.cantidadDisponible > 0)">
+              <td><strong>{{ l.codigo || 'Sin código' }}</strong></td>
+              <td>
+                <span class="mono">{{ l.fechaVencimiento ? (l.fechaVencimiento | date:'dd/MM/yyyy') : '—' }}</span>
+                <span class="venc" [ngClass]="estadoLote(l)">{{ textoVence(l) }}</span>
+              </td>
+              <td class="der mono">{{ cant(l.cantidadInicial) }}</td>
+              <td class="der"><strong>{{ cant(l.cantidadDisponible) }}</strong> <small class="mono">{{ codigoUnidad }}</small></td>
+              <td class="mono">{{ l.referencia || '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="vacio" *ngIf="!lotes.length">
+        <i class="fas fa-hourglass-half"></i>
+        <p>{{ cargandoLotes ? 'Cargando…' : 'Este producto no tiene lotes registrados en tu sucursal.' }}</p>
+      </div>
+      <p class="nota" *ngIf="lotesCargados && lotes.length">El stock del producto puede ser mayor que lo disponible en lotes: parte del stock puede no tener lote.</p>
+    </div>
+  </div>
+</div>

@@ -5,152 +5,120 @@
 
   <div class="encabezado">
     <app-header></app-header>
-    <hr class="border-secondary mb-4" />
-    <div class="app-container">
-      <div class="main-content">
-        <div class="left-panel">
-          <div class="header-left">
-            <i class="fas fa-search icon"></i>
-            <input type="text" placeholder="Encuentra tu producto aqui..." class="search-input" />
+
+    <div class="pos">
+      <section class="catalogo">
+        <div class="buscador">
+          <i class="fas fa-search"></i>
+          <input type="text" [(ngModel)]="busqueda" name="busqueda" placeholder="Busca por nombre o escanea el código y presiona Enter…" (keydown.enter)="buscarPorCodigo()" autocomplete="off" aria-label="Buscar producto" />
+          <button type="button" class="btn-limpiar" *ngIf="busqueda" (click)="busqueda=''" aria-label="Limpiar búsqueda"><i class="fas fa-times"></i></button>
+        </div>
+
+        <div class="category-tabs">
+          <button type="button" class="categorias-btn" [class.active]="!categoriaSeleccionada" (click)="categoriaSeleccionada = null; listarProductos()">Todos</button>
+          <button type="button" *ngFor="let cat of categorias" (click)="seleccionarCategoria(cat)"
+                  class="categorias-btn" [class.active]="cat.idcategoria === categoriaSeleccionada?.idcategoria">
+            {{ cat.nombre }}
+          </button>
+        </div>
+
+        <div class="product-grid">
+          <article class="product-card" *ngFor="let producto of productosFiltrados" (click)="agregarProducto(producto)"
+                   tabindex="0" (keydown.enter)="agregarProducto(producto)">
+            <div class="pc-top">
+              <span class="stock" [class.low]="producto.stock <= 5">Stock: {{ producto.stock | number:'1.0-3' }} {{ producto.unidadCodigo }}</span>
+            </div>
+            <img *ngIf="producto.imagen" [src]="'assets/img/' + producto.imagen" [alt]="producto.nombre" class="product-image" />
+            <h4 class="product-name">{{ producto.nombre }}</h4>
+            <div class="pc-bottom">
+              <div><small>Precio</small><div class="product-price">S/ {{ producto.costoVenta | number:'1.2-2' }}</div></div>
+              <span class="add"><i class="fas fa-plus"></i></span>
+            </div>
+          </article>
+
+          <div class="empty" *ngIf="productosFiltrados.length === 0">
+            <i class="fas fa-box-open"></i>
+            <p>No se encontraron productos</p>
+          </div>
+        </div>
+      </section>
+
+      <aside class="ticket">
+        <div class="ticket-head">
+          <h3><i class="fas fa-receipt"></i> Ticket de venta <span class="count">{{ cantidadItems }}</span></h3>
+          <button type="button" class="link-danger" *ngIf="productosAgregados.length" (click)="cancelarVenta()"><i class="fas fa-trash-alt"></i> Limpiar</button>
+        </div>
+
+        <div class="turno" [class.alerta]="!cajaActiva">
+          <ng-container *ngIf="cajaActiva">
+            <label *ngIf="puedeElegirCaja && turnos.length" class="turno-sel">
+              <span>Cobrar en</span>
+              <select [ngModel]="turnoSeleccionado" (ngModelChange)="elegirTurno($event)" name="turno" aria-label="Caja donde cobrar">
+                <option *ngFor="let t of turnos" [ngValue]="t.idAperturaCaja">{{ t.nombreCaja }} · {{ t.cajero }}{{ t.esMia ? ' (tú)' : '' }}</option>
+              </select>
+            </label>
+            <span class="turno-fijo" *ngIf="!puedeElegirCaja || !turnos.length"><i class="fas fa-cash-register"></i> Tu caja: <strong>{{ cajaActiva.nombreCaja || 'Abierta' }}</strong></span>
+          </ng-container>
+          <ng-container *ngIf="!cajaActiva">
+            <span><i class="fas fa-triangle-exclamation"></i> {{ puedeElegirCaja ? 'No hay ninguna caja abierta.' : 'No tienes una caja abierta.' }}</span>
+            <button type="button" (click)="irAbrirCaja()">Abrir caja</button>
+          </ng-container>
+        </div>
+
+        <div class="ticket-items">
+          <div class="item" *ngFor="let item of productosAgregados">
+            <div class="item-main">
+              <strong>{{ item.producto?.nombre }}</strong>
+              <small>P.U.: S/ {{ precioUnitarioDe(item) | number:'1.2-2' }}<ng-container *ngIf="presentacionDe(item) as pres"> · {{ pres.nombre }}</ng-container><ng-container *ngIf="!presentacionDe(item) && item.producto?.unidadCodigo"> / {{ item.producto.unidadCodigo }}</ng-container></small>
+              <select class="pres-select" *ngIf="item.presentaciones?.length" [(ngModel)]="item.idPresentacion" (ngModelChange)="alCambiarPresentacion(item)" aria-label="Presentación">
+                <option [ngValue]="null">Unidad base{{ item.producto?.unidadCodigo ? ' (' + item.producto.unidadCodigo + ')' : '' }}</option>
+                <option *ngFor="let p of item.presentaciones" [ngValue]="p.idPresentacion">{{ p.nombre }}</option>
+              </select>
+              <small class="equiv" *ngIf="presentacionDe(item)">{{ equivalenciaDe(item) }}</small>
+            </div>
+            <div class="qty">
+              <button type="button" (click)="cambiarCantidad(item, -1)" aria-label="Disminuir"><i class="fas fa-minus"></i></button>
+              <input type="number" [(ngModel)]="item.cantidad" [step]="pasoCantidad(item)" [min]="item.producto?.permiteDecimales ? 0.001 : 1"
+                     (ngModelChange)="alEditarCantidad(item)" (blur)="normalizarCantidad(item)" aria-label="Cantidad" />
+              <button type="button" (click)="cambiarCantidad(item, 1)" aria-label="Aumentar"><i class="fas fa-plus"></i></button>
+            </div>
+            <div class="item-side">
+              <strong>S/ {{ subtotalItem(item) | number:'1.2-2' }}</strong>
+              <button type="button" class="quitar" (click)="quitarProducto(item)" title="Quitar" aria-label="Quitar"><i class="fas fa-trash-alt"></i></button>
+            </div>
           </div>
 
-          <div class="category-tabs">
-            <button class="btn-categoria" (click)="listarProductos()">
+          <div class="empty small" *ngIf="productosAgregados.length === 0">
+            <i class="fas fa-cart-shopping"></i>
+            <p>Agrega productos para iniciar la venta</p>
+          </div>
+        </div>
+
+        <div class="ticket-foot">
+          <div class="summary-row"><span>{{ cantidadItems }} {{ cantidadItems === 1 ? 'producto' : 'productos' }}</span><span>S/ {{ totalCompra | number:'1.2-2' }}</span></div>
+          <div class="summary-row total-compra">
+            <span>TOTAL A COBRAR</span>
+            <span class="total-amount">S/ {{ totalCompra | number:'1.2-2' }}</span>
+          </div>
+
+          <p class="nota-igv">Los precios ya incluyen IGV (18 %).</p>
+          <button type="button" class="btn-cobrar" (click)="abrirModalPago()" [disabled]="productosAgregados.length === 0">
+            <i class="fas fa-coins"></i> Cobrar S/ {{ totalCompra | number:'1.2-2' }}
+          </button>
+          <div class="ticket-actions">
+            <button type="button" class="btn-secondary" (click)="abrirModalCotizacion()" [disabled]="productosAgregados.length === 0">
+              <i class="fas fa-file-invoice-dollar"></i> Cotizar
             </button>
-         <button
-  *ngFor="let cat of categorias"
-  (click)="seleccionarCategoria(cat)"
-  class="categorias-btn"
-  [class.active]="cat.idcategoria === categoriaSeleccionada?.idcategoria"
->
-
-  {{ cat.nombre }}
-</button>
-
-
-
-          </div>
-
-          <div class="product-grid">
-            <div class="product-card" *ngFor="let producto of productos" (click)="agregarProducto(producto)">
-              <div class="product-price">${{ producto.costo_venta }}</div>
-              <img [src]="'assets/img/' + producto.imagen" [alt]="producto.nombre" class="product-image" />
-              <div class="product-name">{{ producto.nombre }}</div>
-            </div>
+            <button type="button" class="btn-secondary" (click)="cancelarVenta()" [disabled]="productosAgregados.length === 0">
+              <i class="fas fa-times-circle"></i> Cancelar
+            </button>
           </div>
         </div>
-
-        <div class="right-panel">
-          <div class="header-right">
-            <div class="user-info">ATENDIENDO</div>
-          </div>
-
-          <table class="order-table">
-            <thead>
-              <tr>
-                <th>Producto</th>
-                <th>Cant</th>
-                <th>Valor</th>
-                <th>% Desc</th>
-                <th>SubTotal</th>
-              </tr>
-            </thead>
-   <tbody>
-  <tr *ngFor="let item of productosAgregados">
-    <td>{{ item.producto?.nombre }}</td>
-    <td>
-      <input
-        type="number"
-        [(ngModel)]="item.cantidad"
-        min="1"
-        class="input-celda"
-      />
-    </td>
-    <td>
-  <input
-  type="number"
-  [(ngModel)]="item.producto.costoVenta"
-  min="0"
-  step="0.01"
-  class="input-celda"
-/>
-
-    </td>
-    <td>
-      <div class="input-contenedor">
-        <input
-          type="number"
-          [(ngModel)]="item.descuento"
-          min="0"
-          max="100"
-          class="input-celda"
-        />
-        <span class="input-sufijo">%</span>
-      </div>
-    </td>
-   <td>
-  ${{ (
-    (item?.producto?.costoVenta || 0) *
-    (item?.cantidad || 0) *
-    (1 - (item?.descuento || 0) / 100)
-  ).toFixed(2) }}
-</td>
-
-  </tr>
-  <tr *ngIf="productosAgregados.length === 0">
-    <td colspan="6" class="no-records">
-      Sin registros de productos agregados
-    </td>
-  </tr>
-</tbody>
-
-
-          </table>
-
-          <div class="summary-details">
-            <div class="summary-row">
-              <span>Total Bruto:</span>
-              <span>${{ totalCompra.toFixed(2) }}</span>
-            </div>
-            <div class="summary-row">
-              <span>Descuento:</span>
-              <span>-$0.00</span>
-            </div>
-            <div class="summary-row">
-              <span>Impuestos:</span>
-              <span>-$0.00</span>
-            </div>
-
-            <div class="summary-row total-compra">
-              <span>Total venta:</span>
-              <span class="total-amount">${{ totalCompra.toFixed(2) }}</span>
-            </div>
-              <!-- Botón de Comprar -->
-        <div class="summary-row d-flex">
-  <button class="btn btn-success" (click)="abrirModalPago()">
-    <i class="fas fa-money-bill-wave"></i> Pagar
-  </button>
-
-  <button class="btn btn-primary" (click)="abrirModalCotizacion()">
-    <i class="fas fa-file-invoice-dollar"></i> Cotizar
-  </button>
-
-  <button class="btn btn-danger">
-    <i class="fas fa-times-circle"></i> Cancelar
-  </button>
-</div>
-
-
-          </div>
-
-        </div>
-      </div>
+      </aside>
     </div>
   </div>
 </div>
 
-
-<!-- Modal Cotización -->
 <div class="modal-overlay" *ngIf="mostrarModalCotizacion">
   <div class="modal-dialog">
     <div class="modal-header">
@@ -159,7 +127,6 @@
 
     <div class="modal-body">
       <div class="unir">
-        <!-- Selector de cliente -->
       <div class="selector">
 <select id="cliente" [(ngModel)]="clienteSeleccionado" class="form-control">
   <option [ngValue]="null" disabled>Seleccione cliente</option>
@@ -168,16 +135,13 @@
   </option>
 </select>
 
-
 </div>
-        <!-- Botón crear cliente -->
         <div>
 <button class="btn btn-primary w-100 add-cliente" (click)="abrirFormularioCliente()"> + </button>
         </div>
       </div>
 
       <div class="row mt-3">
-        <!-- Fecha de vencimiento -->
         <div class="col">
           <label for="fecha" class="form-label"><strong>Fecha Vencimiento</strong></label>
 <input
@@ -188,10 +152,8 @@
   class="form-control"
 />
 
-
         </div>
 
-        <!-- Total a pagar -->
         <div class="col">
           <label class="form-label"><strong>Total a Pagar</strong></label>
           <input type="text" class="form-control text-end" [value]="'$ ' + totalPagar.toLocaleString()" readonly />
@@ -208,116 +170,147 @@
   </div>
 </div>
 
-<!-- Modal Pago Mejorado -->
-<div class="modal-overlay" *ngIf="mostrarModalPago">
-  <div class="modal-dialog">
-    <div class="modal-header">
-      <h3>Procesar Pago</h3>
-      <button class="close-btn" (click)="cerrarModales()">&times;</button>
+<div class="modal-overlay" *ngIf="mostrarModalPago" (click)="cerrarModales()">
+  <div class="modal-dialog pago" role="dialog" aria-modal="true" aria-labelledby="pago-titulo" (click)="$event.stopPropagation()">
+    <div class="pago-head">
+      <div>
+        <h3 id="pago-titulo">Procesar pago</h3>
+        <p>{{ cantidadItems }} {{ cantidadItems === 1 ? 'producto' : 'productos' }} en la venta</p>
+      </div>
+      <div class="pago-total"><small>Total a cobrar</small><strong>S/ {{ totalCompra | number:'1.2-2' }}</strong></div>
+      <button class="close-btn" (click)="cerrarModales()" aria-label="Cerrar">&times;</button>
     </div>
 
-    <div class="modal-body">
-      <!-- Cliente -->
+    <div class="pago-body">
+      <section class="pago-seccion">
+        <p class="pago-titulo-seccion"><span>1</span> Cliente</p>
+        <div class="segmento">
+          <button type="button" [class.on]="modoCliente === 'simple'" (click)="elegirModoCliente('simple')">
+            <i class="fas fa-user-slash"></i> Boleta simple
+          </button>
+          <button type="button" [class.on]="modoCliente === 'cliente'" (click)="elegirModoCliente('cliente')">
+            <i class="fas fa-user-check"></i> Con cliente
+          </button>
+        </div>
 
-      <div class="mb-3">
-        <label class="form-label"><strong>Cliente</strong></label>
-        <select class="form-control" [(ngModel)]="clienteSeleccionado">
-          <option [ngValue]="null" disabled>Seleccione cliente</option>
-          <option *ngFor="let cliente of clientes" [ngValue]="cliente.idCliente">
-            {{ cliente.nombre }}
-          </option>
-        </select>
-      </div>
+        <p class="ayuda-pago" *ngIf="modoCliente === 'simple'">Venta al público sin datos del cliente. Se registra como "Clientes varios".</p>
 
-      <!-- Monto -->
-      <div class="mb-3">
-        <label class="form-label"><strong>Monto a pagar</strong></label>
-        <input
-          type="number"
-          [(ngModel)]="montoPago"
-          class="form-control"
-          [min]="0"
-          [max]="totalCompra"
-        />
-      </div>
-<!-- Comprobante de Pago -->
-<div class="mb-3">
-  <label class="form-label"><strong>Comprobante de Pago</strong></label>
-  <select class="form-control" [(ngModel)]="comprobantePago">
-    <option [ngValue]="null" disabled>Seleccione comprobante</option>
-    <option value="BOLETA">Boleta</option>
-    <option value="FACTURA">Factura</option>
-    <option value="TICKET">Ticket</option>
-    <option value="RECIBO">Recibo</option>
-  </select>
-</div>
+        <ng-container *ngIf="modoCliente === 'cliente'">
+          <div class="cliente-fila" *ngIf="!mostrandoNuevoCliente">
+            <select [(ngModel)]="clienteSeleccionado" name="clienteSeleccionado" aria-label="Cliente">
+              <option [ngValue]="null">Selecciona un cliente</option>
+              <option *ngFor="let cliente of clientes" [ngValue]="cliente.idCliente">{{ cliente.nombre }} {{ cliente.apellidos }} · {{ cliente.documento }}</option>
+            </select>
+            <button type="button" class="btn-nuevo" (click)="abrirNuevoCliente()"><i class="fas fa-user-plus"></i> Nuevo</button>
+          </div>
 
-      <!-- Método de pago -->
-      <div class="mb-3">
-        <label class="form-label"><strong>Método de Pago</strong></label>
-    <select class="form-control" [(ngModel)]="metodoPago">
-  <option [ngValue]="null" disabled>Seleccione método</option>
-  <option *ngFor="let metodo of metodosDePago" [value]="metodo.idMetodoPago">
-    {{ metodo.nombre }}
-  </option>
-</select>
+          <div class="nuevo-cliente" *ngIf="mostrandoNuevoCliente">
+            <div class="nc-top">
+              <strong>Nuevo cliente</strong>
+              <button type="button" class="link-cerrar" (click)="cerrarNuevoCliente()">Cancelar</button>
+            </div>
+            <div class="campo-pago">
+              <label for="ncDoc">DNI o RUC</label>
+              <div class="doc-fila">
+                <input id="ncDoc" name="ncDoc" [(ngModel)]="nuevoCliente.documento" (ngModelChange)="alEscribirDocumento()" inputmode="numeric" maxlength="11" placeholder="8 dígitos (DNI) u 11 (RUC)" autocomplete="off" />
+                <button type="button" class="btn-consultar" (click)="consultarDocumento()" [disabled]="consultandoDocumento || (nuevoCliente.documento.length !== 8 && nuevoCliente.documento.length !== 11)">
+                  <i class="fas" [ngClass]="consultandoDocumento ? 'fa-spinner fa-spin' : 'fa-magnifying-glass'"></i> Buscar
+                </button>
+              </div>
+              <small class="ayuda-pago" *ngIf="avisoDocumento">{{ avisoDocumento }}</small>
+            </div>
+            <div class="nc-grid">
+              <div class="campo-pago">
+                <label for="ncNombre">{{ nuevoCliente.documento.length === 11 ? 'Razón social' : 'Nombres' }}</label>
+                <input id="ncNombre" name="ncNombre" [(ngModel)]="nuevoCliente.nombre" autocomplete="off" />
+              </div>
+              <div class="campo-pago" *ngIf="nuevoCliente.documento.length !== 11">
+                <label for="ncApe">Apellidos</label>
+                <input id="ncApe" name="ncApe" [(ngModel)]="nuevoCliente.apellidos" autocomplete="off" />
+              </div>
+              <div class="campo-pago">
+                <label for="ncTel">Teléfono (opcional)</label>
+                <input id="ncTel" name="ncTel" [(ngModel)]="nuevoCliente.telefono" inputmode="tel" autocomplete="off" />
+              </div>
+            </div>
+            <p class="error-pago" *ngIf="errorCliente"><i class="fas fa-circle-exclamation"></i> {{ errorCliente }}</p>
+            <button type="button" class="btn-guardar-cliente" (click)="guardarNuevoCliente()" [disabled]="guardandoCliente">
+              <i class="fas fa-spinner fa-spin" *ngIf="guardandoCliente"></i> Guardar y usar este cliente
+            </button>
+          </div>
+        </ng-container>
+      </section>
 
+      <section class="pago-seccion">
+        <p class="pago-titulo-seccion"><span>2</span> Comprobante</p>
+        <div class="opciones">
+          <button type="button" *ngFor="let c of comprobantes" [class.on]="comprobantePago === c.valor" (click)="elegirComprobante(c.valor)">
+            <i class="fas {{ c.icono }}"></i> {{ c.etiqueta }}
+          </button>
+        </div>
+      </section>
 
-      </div>
+      <section class="pago-seccion">
+        <p class="pago-titulo-seccion"><span>3</span> Método de pago</p>
+        <div class="opciones metodos" *ngIf="metodosDePago.length">
+          <button type="button" *ngFor="let metodo of metodosDePago" [class.on]="metodoPago === ('' + metodo.idMetodoPago)" (click)="elegirMetodo(metodo)">
+            <strong>{{ metodo.nombre }}</strong>
+            <small *ngIf="metodo.detalle">{{ metodo.detalle }}</small>
+          </button>
+        </div>
+        <p class="ayuda-pago" *ngIf="!metodosDePago.length">No tienes métodos de pago activos. Actívalos en Ventas → Métodos de pago.</p>
+      </section>
 
-      <!-- Delivery -->
-      <div class="form-check">
-        <input
-          class="form-check-input"
-          type="checkbox"
-          id="deliveryCheck"
-          [(ngModel)]="requiereDelivery"
-        />
-        <label class="form-check-label" for="deliveryCheck">
-          Requiere Delivery
+      <section class="pago-seccion">
+        <p class="pago-titulo-seccion"><span>4</span> Monto</p>
+        <div class="monto-fila">
+          <div class="campo-pago">
+            <label for="monto">Monto a pagar (S/)</label>
+            <input id="monto" type="number" [(ngModel)]="montoPago" name="montoPago" min="0" step="0.01" />
+          </div>
+          <p class="falta" *ngIf="faltaPagar > 0"><i class="fas fa-circle-info"></i> Faltan S/ {{ faltaPagar | number:'1.2-2' }}</p>
+        </div>
+      </section>
+
+      <section class="pago-seccion">
+        <label class="switch-delivery">
+          <input type="checkbox" id="deliveryCheck" [(ngModel)]="requiereDelivery" name="requiereDelivery" />
+          <span class="pista" aria-hidden="true"></span>
+          <span><strong>Requiere delivery</strong><small>Se crea un envío pendiente con la venta</small></span>
         </label>
-      </div>
+
+        <div class="delivery-campos" *ngIf="requiereDelivery">
+          <div class="campo-pago">
+            <label for="dirEntrega">Dirección de entrega</label>
+            <div class="dir-wrap">
+              <input id="dirEntrega" type="text" [(ngModel)]="direccionEntrega" (ngModelChange)="buscarDireccion($event)" (focus)="mostrarSugerencias = sugerencias.length > 0" name="direccionEntrega" placeholder="Escribe la calle o el lugar y elige una sugerencia" autocomplete="off" />
+              <i class="fas fa-spinner fa-spin dir-cargando" *ngIf="buscandoDireccion"></i>
+              <div class="dir-sugerencias" *ngIf="mostrarSugerencias && sugerencias.length">
+                <button type="button" *ngFor="let d of sugerencias" (click)="elegirDireccion(d)">
+                  <i class="fas fa-location-dot"></i>
+                  <span><strong>{{ d.principal }}</strong><small *ngIf="d.secundario">{{ d.secundario }}</small></span>
+                </button>
+              </div>
+            </div>
+            <small class="ayuda-pago" *ngIf="direccionSinResultados">No encontramos esa dirección. Puedes escribirla completa a mano.</small>
+          </div>
+          <div class="nc-grid">
+            <div class="campo-pago">
+              <label for="costoEntrega">Costo de entrega (S/)</label>
+              <input id="costoEntrega" type="number" [(ngModel)]="costoEntrega" name="costoEntrega" min="0" placeholder="0.00" />
+            </div>
+            <div class="campo-pago">
+              <label for="fechaEntrega">Fecha de entrega</label>
+              <input id="fechaEntrega" type="date" [(ngModel)]="fechaEntrega" name="fechaEntrega" [min]="minFechaManana()" />
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
-<div *ngIf="requiereDelivery" class="mt-3 border rounded p-3 bg-light">
-  <div class="mb-3">
-    <label class="form-label"><strong>Dirección de Entrega</strong></label>
-    <input
-      type="text"
-      [(ngModel)]="direccionEntrega"
-      class="form-control"
-      placeholder="Ingrese dirección completa"
-    />
-  </div>
 
-  <div class="mb-3">
-    <label class="form-label"><strong>Costo de Entrega</strong></label>
-    <input
-      type="number"
-      [(ngModel)]="costoEntrega"
-      min="0"
-      class="form-control"
-      placeholder="0.00"
-    />
-  </div>
-
-  <div class="mb-3">
-    <label class="form-label"><strong>Fecha de Entrega</strong></label>
-    <input
-      type="date"
-      [(ngModel)]="fechaEntrega"
-      class="form-control"
-      [min]="minFechaManana()"
-    />
-  </div>
-</div>
-
-    <div class="modal-footer d-flex justify-content-end mt-3">
-      <button class="btn btn-success" (click)="confirmarPago()">
-        <i class="fas fa-check-circle"></i> Confirmar Pago
-      </button>
-      <button class="btn btn-secondary" (click)="cerrarModales()">
-        Cancelar
-      </button>
+    <div class="pago-pie">
+      <button class="btn btn-secondary" (click)="cerrarModales()">Cancelar</button>
+      <button class="btn btn-success" (click)="confirmarPago()">Confirmar pago · S/ {{ totalCompra | number:'1.2-2' }}</button>
     </div>
   </div>
 </div>

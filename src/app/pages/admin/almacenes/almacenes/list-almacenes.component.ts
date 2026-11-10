@@ -7,6 +7,7 @@ import { BarraLateralComponent } from '../../../../components/barra-lateral/barr
 import { HeaderComponent } from '../../../../components/header/header.component';
 import { AlmacenesService } from '../../../../service/almacenes.service';
 import { SucursalesService } from '../../../../service/sucursales.service';
+import { PaginacionComponent } from '../../../../components/paginacion/paginacion.component';
 
 interface Almacen {
   idalmacen: number;
@@ -17,7 +18,7 @@ interface Almacen {
   estado: number;
   idsucursal: number;
   sucursalNombre?: string;
-  fechaRegistro?: string; // ✅ añadido para filtro por fecha
+  fechaRegistro?: string;
 }
 
 interface Sucursal {
@@ -28,7 +29,7 @@ interface Sucursal {
 @Component({
   selector: 'app-list-almacenes',
   standalone: true,
-  imports: [
+  imports: [PaginacionComponent, 
     CommonModule,
     FormsModule,
     HttpClientModule,
@@ -46,11 +47,14 @@ export class ListAlmacenesComponent implements OnInit {
   filtro = '';
   sucursalFiltro: number = 0;
 
-  // ✅ Filtro por rango de fechas
   fechaInicio: string = '';
   fechaFin: string = '';
 
   mostrarModal = false;
+  cargando = true;
+  guardando = false;
+  aviso = '';
+  errores: Record<string, string> = {};
 
   almacen: Almacen = {
     idalmacen: 0,
@@ -64,6 +68,7 @@ export class ListAlmacenesComponent implements OnInit {
 
   paginaActual = 1;
   elementosPorPagina = 5;
+  totalFiltrado = 0;
 
   constructor(
     private svc: AlmacenesService,
@@ -83,11 +88,15 @@ export class ListAlmacenesComponent implements OnInit {
         }));
         this.cargarAlmacenes();
       },
-      error: () => Swal.fire('Error', 'No se pudieron cargar sucursales', 'error')
+      error: () => {
+        this.cargando = false;
+        Swal.fire('Error', 'No se pudieron cargar sucursales', 'error');
+      }
     });
   }
 
   private cargarAlmacenes(): void {
+    this.cargando = true;
     this.svc.listarAlmacenes().subscribe({
       next: data => {
         this.almacenes = data.map((a: any) => {
@@ -101,12 +110,16 @@ export class ListAlmacenesComponent implements OnInit {
             estado: a.estado,
             idsucursal: sid,
             sucursalNombre: this.sucursales.find(s => s.idsucursal === sid)?.nombre ?? '—',
-            fechaRegistro: a.fechaRegistro ?? a.fechaCreacion ?? '' // 👈 asegurar que tu API mande este campo
+            fechaRegistro: a.fechaRegistro ?? a.fechaCreacion ?? ''
           } as Almacen;
         });
+        this.cargando = false;
         this.aplicarFiltro();
       },
-      error: () => Swal.fire('Error', 'No se pudieron cargar almacenes', 'error')
+      error: () => {
+        this.cargando = false;
+        Swal.fire('Error', 'No se pudieron cargar almacenes', 'error');
+      }
     });
   }
 
@@ -126,7 +139,6 @@ export class ListAlmacenesComponent implements OnInit {
       list = list.filter(a => a.idsucursal === this.sucursalFiltro);
     }
 
-    // ✅ Filtro por rango de fechas
     if (this.fechaInicio && this.fechaFin) {
       const inicio = new Date(this.fechaInicio);
       const fin = new Date(this.fechaFin);
@@ -136,15 +148,23 @@ export class ListAlmacenesComponent implements OnInit {
       });
     }
 
+    this.totalFiltrado = list.length;
+    if (this.paginaActual > 1 && (this.paginaActual - 1) * this.elementosPorPagina >= list.length) this.paginaActual = 1;
     const start = (this.paginaActual - 1) * this.elementosPorPagina;
     this.filtrados = list.slice(start, start + this.elementosPorPagina);
   }
 
   get totalPaginas(): number {
-    return Math.ceil(this.almacenes.length / this.elementosPorPagina);
+    return Math.max(1, Math.ceil(this.totalFiltrado / this.elementosPorPagina));
   }
   get paginasArray(): number[] {
     return Array.from({ length: this.totalPaginas }, (_, i) => i + 1);
+  }
+
+  cambiarFilas(n: number): void {
+    this.elementosPorPagina = n;
+    this.paginaActual = 1;
+    this.aplicarFiltro();
   }
 
   cambiarPagina(p: number): void {
@@ -152,26 +172,32 @@ export class ListAlmacenesComponent implements OnInit {
     this.aplicarFiltro();
   }
 
+  get sucursalesConAlmacen(): number {
+    return new Set(this.almacenes.map(a => a.idsucursal)).size;
+  }
+
   abrirModal(a?: Almacen): void {
+    this.errores = {};
+    this.aviso = '';
     this.almacen = a ? { ...a } : {
       idalmacen: 0, nombre: '', descripcion: '', direccion: '',
       encargado: '', estado: 1, idsucursal: 0
     };
     this.mostrarModal = true;
   }
+
   cerrarModal(): void { this.mostrarModal = false; }
 
   formSubmit(): void {
-    if (!this.almacen.nombre.trim()) {
-      Swal.fire('Atención', 'El nombre es obligatorio', 'warning'); return;
-    }
-    if (!this.almacen.idsucursal || Number(this.almacen.idsucursal) === 0) {
-      Swal.fire('Atención', 'Debes elegir una sucursal', 'warning'); return;
-    }
+    this.errores = {};
+    this.aviso = '';
+    if (!this.almacen.nombre.trim()) this.errores['nombre'] = 'El nombre es obligatorio.';
+    if (!this.almacen.idsucursal || Number(this.almacen.idsucursal) === 0) this.errores['idsucursal'] = 'Elige una sucursal.';
+    if (Object.keys(this.errores).length) return;
 
     const payload = {
       idalmacen: this.almacen.idalmacen,
-      nombre: this.almacen.nombre,
+      nombre: this.almacen.nombre.trim(),
       descripcion: this.almacen.descripcion,
       direccion: this.almacen.direccion,
       encargado: this.almacen.encargado,
@@ -179,15 +205,25 @@ export class ListAlmacenesComponent implements OnInit {
       idSucursal: Number(this.almacen.idsucursal)
     };
 
-    const pet$ = this.almacen.idalmacen > 0 ? this.svc.editar(payload)
-                                            : this.svc.registrar(payload);
-
+    const edita = this.almacen.idalmacen > 0;
+    this.guardando = true;
+    const pet$ = edita ? this.svc.editar(payload) : this.svc.registrar(payload);
     pet$.subscribe({
-      next : () => { Swal.fire('Éxito', this.almacen.idalmacen > 0 ? 'Actualizado' : 'Registrado', 'success');
-                     this.cerrarModal(); this.cargarAlmacenes(); },
-      error: err => Swal.fire(err.status === 400 ? 'Atención' : 'Error',
-                              err.error?.message || 'Error inesperado',
-                              err.status === 400 ? 'warning' : 'error')
+      next: () => {
+        this.guardando = false;
+        Swal.fire('Éxito', edita ? 'Almacén actualizado' : 'Almacén registrado', 'success');
+        this.cerrarModal();
+        this.cargarAlmacenes();
+      },
+      error: (err: any) => {
+        this.guardando = false;
+        if (err.status === 401 || err.status === 403) return;
+        const cuerpo = err.error;
+        const msg: string = (typeof cuerpo === 'string' ? cuerpo : cuerpo?.message) || 'Error inesperado';
+        const campos = cuerpo?.errors;
+        if (err.status === 400 && campos && typeof campos === 'object') this.errores = { ...campos };
+        else this.aviso = msg;
+      }
     });
   }
 

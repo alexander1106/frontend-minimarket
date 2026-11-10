@@ -1,22 +1,25 @@
-// list-productos.component.ts
 import { Component, OnInit } from '@angular/core';
 import Swal from 'sweetalert2';
 import { Observable, forkJoin, of } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { BarraLateralComponent } from '../../../../components/barra-lateral/barra-lateral.component';
 import { HeaderComponent } from '../../../../components/header/header.component';
-import { ProductosService } from '../../../../service/productos.service';
+import { LoginService } from '../../../../service/login.service';
+import { ProductosService, StockBajoItem } from '../../../../service/productos.service';
 import { CategoriasService } from '../../../../service/categorias.service';
 import { UnidadMedidaService } from '../../../../service/unidad-medida.service';
 import { TipoProductoService } from '../../../../service/tipo-producto.service';
+import { PresentacionesComponent } from '../../../../components/presentaciones/presentaciones.component';
+import { PaginacionComponent } from '../../../../components/paginacion/paginacion.component';
 
 @Component({
   selector: 'app-list-productos',
   standalone: true,
-  imports: [
+  imports: [PaginacionComponent, PresentacionesComponent, 
     CommonModule,
     FormsModule,
     HttpClientModule,
@@ -31,6 +34,13 @@ export class ListProductosComponent implements OnInit {
   filtrados: any[] = [];
   filtro = '';
   mostrarModal = false;
+  presProducto: any = null;
+  guardando = false;
+  aviso = '';
+  errores: Record<string, string> = {};
+  soloStockBajo = false;
+  private stockBajoMap = new Map<number, StockBajoItem>();
+  puedeEscribirProductos = false;
   producto: any = this.resetProducto();
   selectedFile?: File;
 
@@ -39,15 +49,52 @@ export class ListProductosComponent implements OnInit {
   tipos: any[] = [];
   paginaActual = 1;
   elementosPorPagina = 5;
+  totalFiltrado = 0;
 
   constructor(
     private prodSvc: ProductosService,
     private catSvc: CategoriasService,
     private uniSvc: UnidadMedidaService,
-    private tpSvc: TipoProductoService
+    private tpSvc: TipoProductoService,
+    private loginService: LoginService,
+    private router: Router
   ) {}
 
+  private cargarStockBajo(): void {
+    const idSucursal = this.loginService.getUser()?.sucursal?.idSucursal;
+    if (!idSucursal) return;
+    this.prodSvc.stockBajo(idSucursal).subscribe({
+      next: lista => {
+        this.stockBajoMap = new Map((Array.isArray(lista) ? lista : []).map(i => [i.idproducto, i]));
+        this.aplicarFiltro();
+      },
+      error: () => (this.stockBajoMap = new Map())
+    });
+  }
+
+  stockBajoDe(p: any): StockBajoItem | undefined {
+    return this.stockBajoMap.get(p.idproducto);
+  }
+
+  get totalStockBajo(): number {
+    return this.stockBajoMap.size;
+  }
+
+  get unidadElegida(): any {
+    return this.unidades.find(u => u.idunidadmedida === this.producto?.unidadMedida?.idunidadmedida);
+  }
+
+  verKardex(p: any): void {
+    this.router.navigate(['/admin/kardex'], { queryParams: { idProducto: p.idproducto } });
+  }
+
+  abrirPresentaciones(p: any): void {
+    this.presProducto = p;
+  }
+
   ngOnInit(): void {
+    this.puedeEscribirProductos = this.loginService.puedeEscribirModulo('Productos', ['ADMIN', 'ALMACENERO', 'EMPRESA']);
+    this.cargarStockBajo();
   forkJoin({
     prods: this.prodSvc.listarProductos(),
     cats:  this.catSvc.listarCategorias(),
@@ -56,12 +103,10 @@ export class ListProductosComponent implements OnInit {
   }).subscribe({
     next: ({ prods, cats, units, types }) => {
 
-      // guardamos los listados en las propiedades
       this.categorias = cats;
       this.unidades   = units;
       this.tipos      = types;
 
-      // enriquecemos cada producto
       this.productos = prods.map((p: any) => ({
         ...p,
         categoria:    cats .find((c: any) => c.idcategoria     === p.idcategoria)     || null,
@@ -89,6 +134,11 @@ export class ListProductosComponent implements OnInit {
       costoVenta: 0,
       costoMayor: 0,
       imagen: '',
+      codigo: '',
+      codigoBarras: '',
+      marca: '',
+      stockMinimo: 0,
+      afectoIgv: true,
       estado: 1,
       categoria: { idcategoria: 0 },
       unidadMedida: { idunidadmedida: 0 },
@@ -101,24 +151,33 @@ export class ListProductosComponent implements OnInit {
     let lista = this.productos;
     if (term) {
       lista = lista.filter(p =>
-        p.nombre.trim().toLowerCase().includes(term)
+        (p.nombre || '').trim().toLowerCase().includes(term) ||
+        (p.codigo || '').toLowerCase().includes(term) ||
+        (p.codigoBarras || '').toLowerCase().includes(term) ||
+        (p.marca || '').toLowerCase().includes(term)
       );
     }
+    if (this.soloStockBajo) {
+      lista = lista.filter(p => this.stockBajoMap.has(p.idproducto));
+    }
+    this.totalFiltrado = lista.length;
+    if (this.paginaActual > 1 && (this.paginaActual - 1) * this.elementosPorPagina >= lista.length) this.paginaActual = 1;
     const start = (this.paginaActual - 1) * this.elementosPorPagina;
     this.filtrados = lista.slice(start, start + this.elementosPorPagina);
   }
 
   get totalPaginas(): number {
-    const count = this.filtro
-      ? this.productos.filter(p =>
-          p.nombre.trim().toLowerCase().includes(this.filtro.trim().toLowerCase())
-        ).length
-      : this.productos.length;
-    return Math.ceil(count / this.elementosPorPagina);
+    return Math.max(1, Math.ceil(this.totalFiltrado / this.elementosPorPagina));
   }
 
   get paginasArray(): number[] {
     return Array.from({ length: this.totalPaginas }, (_, i) => i + 1);
+  }
+
+  cambiarFilas(n: number): void {
+    this.elementosPorPagina = n;
+    this.paginaActual = 1;
+    this.aplicarFiltro();
   }
 
   cambiarPagina(p: number): void {
@@ -129,7 +188,22 @@ export class ListProductosComponent implements OnInit {
   }
 
   abrirModal(p?: any): void {
-    this.producto = p ? { ...p } : this.resetProducto();
+    this.errores = {};
+    this.aviso = '';
+    this.producto = p
+      ? {
+          ...this.resetProducto(),
+          ...p,
+          categoria: { idcategoria: p.categoria?.idcategoria ?? p.idcategoria ?? 0 },
+          unidadMedida: { idunidadmedida: p.unidadMedida?.idunidadmedida ?? p.idunidadmedida ?? 0 },
+          tipoProducto: { idtipoproducto: p.tipoProducto?.idtipoproducto ?? p.idtipoproducto ?? 0 },
+          codigo: p.codigo ?? '',
+          codigoBarras: p.codigoBarras ?? '',
+          marca: p.marca ?? '',
+          stockMinimo: p.stockMinimo ?? 0,
+          afectoIgv: p.afectoIgv ?? true
+        }
+      : this.resetProducto();
     this.mostrarModal = true;
   }
 
@@ -147,61 +221,72 @@ export class ListProductosComponent implements OnInit {
 }
 
   formSubmit(): void {
-  // --- 1) Validaciones básicas ---
-  if (!this.producto.nombre.trim()) {
-    Swal.fire('Atención', 'El nombre es obligatorio', 'warning');
-    return;
-  }
-  if (
-    this.producto.categoria.idcategoria === 0 ||
-    this.producto.unidadMedida.idunidadmedida === 0 ||
-    this.producto.tipoProducto.idtipoproducto === 0
-  ) {
-    Swal.fire('Atención', 'Seleccione categoría, unidad y tipo', 'warning');
-    return;
-  }
-  if (this.producto.costoVenta <= 0) {
-    Swal.fire('Atención', 'El precio de venta debe ser mayor a cero', 'warning');
-    return;
-  }
-
-  const payload = {
-    idproducto:       this.producto.idproducto || undefined,
-    nombre:           this.producto.nombre,
-    descripcion:      this.producto.descripcion,
-    fechaVencimiento: this.producto.fechaVencimiento,
-    tipoImpuesto:     this.producto.tipoImpuesto,
-    costoCompra:      this.producto.costoCompra,
-    costoVenta:       this.producto.costoVenta,
-    costoMayor:       this.producto.costoMayor,
-    imagen:           this.producto.imagen,
-    idcategoria:      this.producto.categoria.idcategoria,
-    idunidadmedida:   this.producto.unidadMedida.idunidadmedida,
-    idtipoproducto:   this.producto.tipoProducto.idtipoproducto,
-    inventarioProducto: []
-  };
-
-  const pet$ = this.producto.idproducto
-    ? this.prodSvc.editar(payload)
-    : this.prodSvc.registrar(payload);
-
-  pet$.subscribe({
-    next: () => {
-      Swal.fire(
-        'Éxito',
-        this.producto.idproducto ? 'Producto actualizado' : 'Producto creado',
-        'success'
-      );
-      this.cerrarModal();
-      this.ngOnInit();
-    },
-    error: (err: any) => {
-      const msg  = err.error?.message ?? 'Error inesperado';
-      const icon = err.status === 400 ? 'warning' : 'error';
-      Swal.fire(icon === 'warning' ? 'Atención' : 'Error', msg, icon);
+    this.errores = {};
+    this.aviso = '';
+    const pr = this.producto;
+    const e = this.errores;
+    if (!(pr.nombre || '').trim()) e['nombre'] = 'El nombre es obligatorio.';
+    if (!pr.categoria?.idcategoria) e['idcategoria'] = 'Selecciona una categoría.';
+    if (!pr.tipoProducto?.idtipoproducto) e['idtipoproducto'] = 'Selecciona un tipo de producto.';
+    if (!pr.unidadMedida?.idunidadmedida) e['idunidadmedida'] = 'Selecciona la unidad base.';
+    if (!(Number(pr.costoVenta) > 0)) e['costoVenta'] = 'El precio de venta debe ser mayor a cero.';
+    if (pr.stockMinimo != null && pr.stockMinimo !== '' && Number(pr.stockMinimo) < 0) e['stockMinimo'] = 'El stock mínimo no puede ser negativo.';
+    if (Object.keys(e).length) {
+      this.aviso = 'Revisa los campos marcados.';
+      return;
     }
-  });
-}
+
+    const vacio = (v: any) => (v == null || String(v).trim() === '' ? null : String(v).trim());
+    const payload: any = {
+      idproducto:       pr.idproducto || undefined,
+      nombre:           pr.nombre.trim(),
+      descripcion:      pr.descripcion,
+      fechaVencimiento: pr.fechaVencimiento || null,
+      tipoImpuesto:     pr.tipoImpuesto,
+      codigo:           vacio(pr.codigo),
+      codigoBarras:     vacio(pr.codigoBarras),
+      marca:            vacio(pr.marca),
+      stockMinimo:      pr.stockMinimo === '' || pr.stockMinimo == null ? 0 : Number(pr.stockMinimo),
+      afectoIgv:        !!pr.afectoIgv,
+      costoCompra:      pr.costoCompra,
+      costoVenta:       pr.costoVenta,
+      costoMayor:       pr.costoMayor,
+      imagen:           pr.imagen,
+      idcategoria:      pr.categoria.idcategoria,
+      idunidadmedida:   pr.unidadMedida.idunidadmedida,
+      idtipoproducto:   pr.tipoProducto.idtipoproducto
+    };
+    if (!pr.idproducto) payload.inventarioProducto = [];
+
+    this.guardando = true;
+    const edita = !!pr.idproducto;
+    const pet$ = edita ? this.prodSvc.editar(payload) : this.prodSvc.registrar(payload);
+    pet$.subscribe({
+      next: () => {
+        this.guardando = false;
+        Swal.fire('Éxito', edita ? 'Producto actualizado' : 'Producto creado', 'success');
+        this.cerrarModal();
+        this.ngOnInit();
+      },
+      error: (err: any) => {
+        this.guardando = false;
+        if (err.status === 401 || err.status === 403) return;
+        const cuerpo = err.error;
+        const msg: string = (typeof cuerpo === 'string' ? cuerpo : cuerpo?.message) || 'Error inesperado';
+        const campos = cuerpo?.errors;
+        if (err.status === 400 && campos && typeof campos === 'object') {
+          this.errores = { ...campos };
+          this.aviso = msg;
+        } else if (err.status === 409) {
+          if (/barras/i.test(msg)) this.errores['codigoBarras'] = msg;
+          else if (/c[oó]digo|sku/i.test(msg)) this.errores['codigo'] = msg;
+          else this.aviso = msg;
+        } else {
+          this.aviso = msg;
+        }
+      }
+    });
+  }
 
   borrar(id: number): void {
     Swal.fire({

@@ -1,0 +1,157 @@
+<div class="contenedor">
+  <div class="barra"><app-barra-lateral></app-barra-lateral></div>
+
+  <div class="encabezado">
+    <app-header></app-header>
+
+    <section class="dir-head">
+      <div>
+        <h1>Compras</h1>
+        <p>Mercadería que compras a tus proveedores</p>
+      </div>
+      <button type="button" class="btn-agregar" *ngIf="puedeEscribir" (click)="nueva()">
+        <i class="fas fa-plus"></i> Nueva compra
+      </button>
+    </section>
+
+    <aside class="ayuda-caja flujo">
+      <i class="fas fa-circle-info"></i>
+      <div>
+        <p>Cada compra <strong>suma stock</strong> a la sucursal. Así encaja con el resto del sistema:</p>
+        <ol class="pasos">
+          <li>Proveedor</li>
+          <li>Producto <small>unidad base + presentaciones</small></li>
+          <li class="actual">Compra <small>suma stock</small></li>
+          <li>Inventario</li>
+          <li>Venta <small>descuenta stock</small></li>
+          <li>Devolución <small>restituye stock</small></li>
+        </ol>
+      </div>
+    </aside>
+
+    <section class="kpis">
+      <article class="kpi">
+        <span>Compras registradas</span>
+        <strong>{{ compras.length }} <em>compras</em></strong>
+      </article>
+      <article class="kpi">
+        <span>Total de la búsqueda</span>
+        <strong class="verde">S/ {{ totalGastado | number:'1.2-2' }}</strong>
+      </article>
+    </section>
+
+    <section class="filtros">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" [(ngModel)]="filtro" (ngModelChange)="aplicarFiltro()" name="filtro"
+               placeholder="Buscar por proveedor, RUC, N° o descripción…" aria-label="Buscar compra" />
+      </div>
+    </section>
+
+    <section class="dir-table">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>N°</th>
+              <th>Fecha</th>
+              <th>Proveedor</th>
+              <th>Método de pago</th>
+              <th>Descripción</th>
+              <th class="num">Total</th>
+              <th class="right">Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let c of filtradas | paginar:pagina:porPagina">
+              <td class="mono">#{{ c.idCompra }}</td>
+              <td class="mono">{{ c.fechaCompra | date:'dd/MM/yyyy HH:mm' }}</td>
+              <td>
+                <strong>{{ c.proveedor?.nombre || '—' }}</strong>
+                <small class="mono" *ngIf="c.proveedor?.ruc">RUC {{ c.proveedor.ruc }}</small>
+              </td>
+              <td>{{ c.metodoPago?.nombre || c.metodoPago?.nombreMetodo || '—' }}</td>
+              <td><span class="trunc" [attr.title]="c.descripcion">{{ c.descripcion || '—' }}</span></td>
+              <td class="num"><strong>S/ {{ c.total | number:'1.2-2' }}</strong></td>
+              <td class="right">
+                <button type="button" class="ico" (click)="ver(c)" title="Ver detalle" aria-label="Ver detalle"><i class="fas fa-eye"></i></button>
+                <button type="button" class="ico" *ngIf="puedeEscribir" (click)="editar(c)" title="Editar" aria-label="Editar"><i class="fas fa-pen"></i></button>
+                <button type="button" class="ico danger" *ngIf="puedeEscribir" (click)="anular(c)" title="Anular" aria-label="Anular"><i class="fas fa-ban"></i></button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="vacio" *ngIf="filtradas.length === 0">
+        <i class="fas fa-cart-flatbed"></i>
+        <p *ngIf="cargando">Cargando…</p>
+        <p *ngIf="!cargando && compras.length > 0">No hay compras que coincidan con la búsqueda</p>
+        <ng-container *ngIf="!cargando && compras.length === 0">
+          <p>Aún no has registrado compras</p>
+          <button type="button" class="btn-agregar" *ngIf="puedeEscribir" (click)="nueva()">
+            <i class="fas fa-plus"></i> Nueva compra
+          </button>
+        </ng-container>
+      </div>
+
+      <app-paginacion [total]="filtradas.length" [(pagina)]="pagina" [(porPagina)]="porPagina"></app-paginacion>
+    </section>
+
+    <div *ngIf="detalle" class="modal" (click)="cerrarDetalle()">
+      <div class="modal-content emp-modal ancho" role="dialog" aria-modal="true" aria-labelledby="comp-titulo" (click)="$event.stopPropagation()">
+        <header class="em-head">
+          <span class="em-icon"><i class="fas fa-cart-flatbed"></i></span>
+          <div>
+            <h2 id="comp-titulo">Compra #{{ detalle.compra.idCompra }}</h2>
+            <p>{{ detalle.compra.proveedor?.nombre }} · {{ detalle.compra.fechaCompra | date:'dd/MM/yyyy HH:mm' }}</p>
+          </div>
+          <button type="button" class="em-close" (click)="cerrarDetalle()" aria-label="Cerrar"><i class="fas fa-times"></i></button>
+        </header>
+
+        <div class="em-body">
+          <p class="descripcion" *ngIf="detalle.compra.descripcion">{{ detalle.compra.descripcion }}</p>
+          <div class="table-wrap mini">
+            <table>
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th>Cantidad</th>
+                  <th class="num">P. compra</th>
+                  <th class="num">P. venta</th>
+                  <th class="num">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let d of detalle.detalles">
+                  <td><strong>{{ d.producto?.nombre || d.nombreProducto }}</strong></td>
+                  <td>
+                    {{ cant(d.cantidad) }}<ng-container *ngIf="d.presentacion?.nombre"> × {{ d.presentacion.nombre }}</ng-container>
+                    <small class="mono" *ngIf="d.presentacion && d.cantidadBase != null">= {{ cant(d.cantidadBase) }} {{ codigoUnidad(d) }}</small>
+                    <small class="mono" *ngIf="!d.presentacion && codigoUnidad(d)">{{ codigoUnidad(d) }}</small>
+                    <small class="mono lote-info" *ngIf="d.lote || d.fechaVencimiento">
+                      <ng-container *ngIf="d.lote">Lote {{ d.lote }}</ng-container><ng-container *ngIf="d.lote && d.fechaVencimiento"> · </ng-container><ng-container *ngIf="d.fechaVencimiento">vence {{ d.fechaVencimiento | date:'dd/MM/yyyy' }}</ng-container>
+                    </small>
+                  </td>
+                  <td class="num">S/ {{ d.precioCompra | number:'1.2-2' }}</td>
+                  <td class="num">S/ {{ d.precioVenta | number:'1.2-2' }}</td>
+                  <td class="num"><strong>S/ {{ d.subTotal | number:'1.2-2' }}</strong></td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="vacio" *ngIf="detalle.detalles.length === 0">
+              <p>{{ cargandoDetalle ? 'Cargando…' : 'Esta compra no tiene líneas.' }}</p>
+            </div>
+          </div>
+          <p class="total-linea">Total <strong>S/ {{ detalle.compra.total | number:'1.2-2' }}</strong></p>
+          <p class="nota-stock"><i class="fas fa-circle-info"></i> Esta compra sumó su stock (en unidad base) al inventario de la sucursal. Si la anulas, ese stock se devuelve.</p>
+        </div>
+
+        <footer class="em-foot">
+          <button type="button" class="btn-secondary" (click)="cerrarDetalle()">Cerrar</button>
+          <button type="button" class="btn-primary" *ngIf="puedeEscribir" (click)="editar(detalle.compra)">Editar compra</button>
+        </footer>
+      </div>
+    </div>
+  </div>
+</div>

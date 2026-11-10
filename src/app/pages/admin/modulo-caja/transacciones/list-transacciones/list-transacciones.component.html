@@ -7,7 +7,6 @@
     <app-header></app-header>
     <hr class="border-secondary mb-4" />
 
-
     <div class="container">
       <div class="header d-flex justify-content-between align-items-center p-3 border rounded bg-light mb-3">
         <h2 class="mb-3">Detalles de Caja</h2>
@@ -105,24 +104,7 @@
         </tbody>
       </table>
 
-    <nav aria-label="Paginación" class="mt-3">
-  <ul class="pagination justify-content-center">
-    <li class="page-item" [class.disabled]="paginaActual === 1">
-      <a class="page-link" href="javascript:void(0)" (click)="irPaginaAnterior()">Anterior</a>
-    </li>
-    <li class="page-item disabled">
-      <a class="page-link" href="javascript:void(0)">
-        Página {{ paginaActual }} de {{ totalPaginas }}
-      </a>
-    </li>
-    <li
-      class="page-item"
-      [class.disabled]="paginaActual >= totalPaginas"
-    >
-      <a class="page-link" href="javascript:void(0)" (click)="irPaginaSiguiente()">Siguiente</a>
-    </li>
-  </ul>
-</nav>
+    <app-paginacion [total]="transacciones.length" [pagina]="paginaActual" [porPagina]="itemsPorPagina" (paginaChange)="irAPagina($event)" (porPaginaChange)="cambiarFilas($event)"></app-paginacion>
 
     </div>
   </div>
@@ -226,7 +208,6 @@
         </select>
       </div>
 
-
       <div class="mb-2">
         <label class="form-label">Monto</label>
         <input
@@ -264,42 +245,55 @@
 </div>
 
 <div *ngIf="mostrarFormularioArqueo" class="modal-overlay">
-  <div class="modal-content">
-    <h4>Arqueo de Caja</h4>
+  <div class="modal-content arqueo" role="dialog" aria-modal="true" aria-labelledby="arq-titulo">
+    <header class="arq-head">
+      <span class="arq-icon"><i class="fas fa-scale-balanced"></i></span>
+      <div>
+        <h4 id="arq-titulo">Arqueo de caja</h4>
+        <p>Cuenta el efectivo y compáralo con el sistema antes de cerrar.</p>
+      </div>
+    </header>
+
     <form (ngSubmit)="confirmarArqueo()">
-      <div class="mb-2">
-        <label class="form-label">Monto Contado</label>
-        <input
-          type="number"
-          class="form-control"
-          [(ngModel)]="montoContado"
-          name="montoContado"
-          required
-        />
+      <div class="arq-body">
+        <div class="arq-esperado">
+          <span>Efectivo según el sistema</span>
+          <strong>S/ {{ saldoEfectivoSistema | number:'1.2-2' }}</strong>
+        </div>
+
+        <div class="arq-vendedores" *ngIf="vendedoresTurno.length">
+          <span>Ventas del turno por vendedor</span>
+          <ul>
+            <li *ngFor="let v of vendedoresTurno">
+              <strong>{{ v.vendedor }}</strong>
+              <em>{{ v.ventas }} {{ v.ventas === 1 ? 'venta' : 'ventas' }}</em>
+              <b>S/ {{ v.total | number:'1.2-2' }}</b>
+            </li>
+          </ul>
+        </div>
+
+        <div class="arq-campo">
+          <label for="montoContado">Monto contado (S/)</label>
+          <input id="montoContado" type="number" min="0" step="0.01" [(ngModel)]="montoContado" name="montoContado" required />
+        </div>
+
+        <div class="arq-resultado" [class.ok]="diferenciaArqueo === 0" [class.mal]="diferenciaArqueo !== 0">
+          <i class="fas" [ngClass]="diferenciaArqueo === 0 ? 'fa-circle-check' : 'fa-triangle-exclamation'"></i>
+          <span *ngIf="diferenciaArqueo === 0">El monto coincide con el sistema.</span>
+          <span *ngIf="diferenciaArqueo > 0">Sobran S/ {{ diferenciaArqueo | number:'1.2-2' }} respecto al sistema.</span>
+          <span *ngIf="diferenciaArqueo < 0">Faltan S/ {{ -diferenciaArqueo | number:'1.2-2' }} respecto al sistema.</span>
+        </div>
+
+        <div class="arq-campo">
+          <label for="obsArqueo">Observaciones</label>
+          <textarea id="obsArqueo" rows="2" [(ngModel)]="observacionesArqueo" name="observacionesArqueo" placeholder="Opcional"></textarea>
+        </div>
       </div>
 
-      <div class="mb-2">
-        <label class="form-label">Observaciones</label>
-        <textarea
-          class="form-control"
-          [(ngModel)]="observacionesArqueo"
-          name="observacionesArqueo"
-        ></textarea>
-      </div>
-
-      <div class="d-flex gap-2 mt-2">
-        <button type="submit" class="btn btn-primary">
-          Confirmar Arqueo y Cerrar Caja
-        </button>
-        <button
-          type="button"
-          class="btn btn-secondary"
-          (click)="cancelarArqueo()"
-        >
-          Cancelar
-        </button>
-      </div>
+      <footer class="arq-foot">
+        <button type="button" class="arq-cancelar" (click)="cancelarArqueo()">Cancelar</button>
+        <button type="submit" class="arq-confirmar">Confirmar y cerrar caja</button>
+      </footer>
     </form>
   </div>
 </div>
-

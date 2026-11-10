@@ -1,123 +1,122 @@
 <div class="contenedor">
-  <div class="barra">
-    <app-barra-lateral></app-barra-lateral>
-  </div>
+  <div class="barra"><app-barra-lateral></app-barra-lateral></div>
 
   <div class="encabezado">
     <app-header></app-header>
-    <hr class="border-secondary mb-4" />
 
-    <div class="container">
-      <div class="header">
-        <div>
-          <h2>Lista de deliverys</h2>
-          <span class="subtitle">{{ deliverys.length }} Deliverys registrados</span>
-        </div>
-        <div class="search-sort">
-          <input
-            type="text"
-            placeholder="Buscar delivery"
-            class="search-input"
-            [(ngModel)]="filtroBusqueda"
-            (ngModelChange)="buscarDelivery()"
-          />
-          <button class="btn-agregar" (click)="navegarYMostrarModal()">
-            <i class="fas fa-plus"></i> Delivery
-          </button>
+    <section class="dir-head">
+      <div>
+        <h1>Delivery</h1>
+        <p>Envíos de tus ventas: estado, dirección y fechas de entrega</p>
+      </div>
+    </section>
 
-        </div>
+    <section class="kpis">
+      <article class="kpi">
+        <span>Pendientes</span>
+        <strong>{{ cuenta('PENDIENTE') }} <em>envíos</em></strong>
+      </article>
+      <article class="kpi">
+        <span>En camino</span>
+        <strong class="azul">{{ cuenta('EN CAMINO') }} <em>envíos</em></strong>
+      </article>
+      <article class="kpi">
+        <span>Entregados</span>
+        <strong class="verde">{{ cuenta('ENTREGADO') }} <em>envíos</em></strong>
+      </article>
+    </section>
+
+    <section class="filtros">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" [(ngModel)]="filtroBusqueda" (ngModelChange)="buscarDelivery()" name="filtro"
+               placeholder="Buscar por cliente, dirección u observación…" aria-label="Buscar envío" />
+      </div>
+      <label class="sel">Estado
+        <select [(ngModel)]="estadoFiltro" (ngModelChange)="buscarDelivery()" name="estadoFiltro">
+          <option value="">Todos</option>
+          <option *ngFor="let e of estados" [value]="e">{{ e }}</option>
+        </select>
+      </label>
+    </section>
+
+    <section class="dir-table">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>Dirección</th>
+              <th>Estado</th>
+              <th>Envío</th>
+              <th>Entrega</th>
+              <th>Observaciones</th>
+              <th class="right">Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let d of filtrados | paginar:pagina:porPagina">
+              <td><strong>{{ nombreCliente(d) }}</strong></td>
+              <td><span class="trunc" [attr.title]="d.direccion">{{ d.direccion || '—' }}</span></td>
+              <td><span class="estado-envio" [ngClass]="claseEstado(d)">{{ estadoDe(d) || '—' }}</span></td>
+              <td class="mono">{{ d.fechaEnvio ? (d.fechaEnvio | date:'dd/MM/yyyy') : '—' }}</td>
+              <td class="mono">{{ d.fechaEntrega ? (d.fechaEntrega | date:'dd/MM/yyyy') : '—' }}</td>
+              <td><span class="trunc" [attr.title]="d.observaciones">{{ d.observaciones || '—' }}</span></td>
+              <td class="right">
+                <button type="button" class="ico" (click)="mostrarFormularioEditar(d)" [disabled]="estadoDe(d) === 'ENTREGADO'"
+                        [attr.title]="estadoDe(d) === 'ENTREGADO' ? 'Un envío entregado no se modifica' : 'Cambiar estado'" aria-label="Cambiar estado"><i class="fas fa-pen"></i></button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
-    <!-- lo que ya tienes arriba se mantiene igual -->
+      <div class="vacio" *ngIf="filtrados.length === 0">
+        <i class="fas fa-truck"></i>
+        <p *ngIf="cargando">Cargando…</p>
+        <p *ngIf="!cargando && deliverys.length > 0">No hay envíos que coincidan con los filtros</p>
+        <p *ngIf="!cargando && deliverys.length === 0">Aún no hay envíos. Se crean al vender con "Requiere delivery" en el punto de venta.</p>
+      </div>
 
-<table class="customer-table">
-  <thead>
-    <tr>
-      <th>#</th>
-      <th>Cliente</th>
-            <th>Estado</th>
+      <app-paginacion [total]="filtrados.length" [(pagina)]="pagina" [(porPagina)]="porPagina"></app-paginacion>
+    </section>
 
-      <th>Dirección</th>
-      <th>Fecha de envío</th>
-      <th>Fecha de entrega</th>
-      <th>Observaciones</th>
-      <th>Acciones</th>
-    </tr>
-  </thead>
-  <tbody>
-<tr *ngFor="let delivery of clientesFiltrados; let i = index">
-      <td>{{ (paginaActual - 1) * elementosPorPagina + i + 1 }}</td>
-    <td>{{ delivery.venta?.cliente?.nombre }}</td>
-            <td>{{ delivery.estadoDelivery }}</td>
+    <div *ngIf="editingDelivery" class="modal" (click)="cancelarEdicion()">
+      <div class="modal-content emp-modal" role="dialog" aria-modal="true" aria-labelledby="del-titulo" (click)="$event.stopPropagation()">
+        <header class="em-head">
+          <span class="em-icon"><i class="fas fa-truck"></i></span>
+          <div>
+            <h2 id="del-titulo">Cambiar estado del envío</h2>
+            <p>{{ nombreCliente(editingDelivery) }}</p>
+          </div>
+          <button type="button" class="em-close" (click)="cancelarEdicion()" aria-label="Cerrar"><i class="fas fa-times"></i></button>
+        </header>
 
-      <td>{{ delivery.direccion }}</td>
-      <td>{{ delivery.fechaEnvio | date:'shortDate' }}</td>
-      <td>{{ delivery.fechaEntrega | date:'shortDate' }}</td>
+        <form (ngSubmit)="guardarEstado()" class="em-form" novalidate>
+          <div class="em-body">
+            <div class="em-grid">
+              <div class="field span2">
+                <label>Dirección</label>
+                <div class="solo-lectura"><i class="fas fa-location-dot"></i> {{ editingDelivery.direccion || '—' }}</div>
+              </div>
+              <div class="field span2">
+                <label for="estado">Estado *</label>
+                <select id="estado" name="estado" [(ngModel)]="nuevoEstado">
+                  <option *ngFor="let e of estados" [value]="e">{{ e }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
 
-      <td>{{ delivery.observaciones }}</td>
-
-
-      <td>
-<button class="btn-editar"
-        (click)="mostrarFormularioEditar(delivery)"
-        [disabled]="delivery.estadoDelivery === 'ENTREGADO'">
-  <i class="fas fa-edit"></i>
-</button>
-
-      </td>
-    </tr>
-  </tbody>
-</table>
-
-  <nav aria-label="Paginación" class="mt-3">
-  <ul class="pagination justify-content-center">
-    <li
-      class="page-item"
-      [class.disabled]="paginaActual === 1"
-      (click)="cambiarPagina(paginaActual - 1)">
-      <a class="page-link" href="javascript:void(0)">Anterior</a>
-    </li>
-
-    <li
-      class="page-item"
-      *ngFor="let pagina of paginasArray()"
-      [class.active]="pagina === paginaActual"
-      (click)="cambiarPagina(pagina)">
-      <a class="page-link" href="javascript:void(0)">{{ pagina }}</a>
-    </li>
-
-    <li
-      class="page-item"
-      [class.disabled]="paginaActual === totalPaginas"
-      (click)="cambiarPagina(paginaActual + 1)">
-      <a class="page-link" href="javascript:void(0)">Siguiente</a>
-    </li>
-  </ul>
-</nav>
-
-    </div>
-  </div>
-</div>
-<div *ngIf="editingDelivery" class="overlay-formulario">
-  <div class="formulario-edicion">
-    <h5 class="text-center mb-3">Editar estado del Delivery</h5>
-
-    <p><strong>Cliente:</strong> {{ editingDelivery?.venta?.cliente?.nombre }}</p>
-    <p><strong>Dirección:</strong> {{ editingDelivery?.direccion }}</p>
-
-    <div class="form-group mb-3">
-      <label for="estado" class="form-label">Estado</label>
-<select id="estado" class="form-select" [(ngModel)]="nuevoEstado" [value]="editingDelivery?.esttadoDelivery">
-        <option value="PENDIENTE">PENDIENTE</option>
-        <option value="EN CAMINO">EN CAMINO</option>
-        <option value="ENTREGADO">ENTREGADO</option>
-        <option value="CANCELADO">CANCELADO</option>
-      </select>
-    </div>
-
-    <div class="d-flex justify-content-between">
-      <button class="btn btn-primary w-45" (click)="guardarEstado()">Guardar</button>
-      <button class="btn btn-secondary w-45" (click)="cancelarEdicion()">Cancelar</button>
+          <footer class="em-foot">
+            <button type="button" class="btn-secondary" (click)="cancelarEdicion()">Cancelar</button>
+            <button type="submit" class="btn-primary" [disabled]="guardando">
+              <i class="fas fa-spinner fa-spin" *ngIf="guardando"></i>
+              {{ guardando ? 'Guardando…' : 'Guardar estado' }}
+            </button>
+          </footer>
+        </form>
+      </div>
     </div>
   </div>
 </div>

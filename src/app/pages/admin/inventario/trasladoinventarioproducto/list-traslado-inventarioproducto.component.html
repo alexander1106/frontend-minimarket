@@ -1,176 +1,138 @@
 <div class="contenedor">
-  <div class="barra">
-    <app-barra-lateral></app-barra-lateral>
-  </div>
+  <div class="barra"><app-barra-lateral></app-barra-lateral></div>
 
   <div class="encabezado">
     <app-header></app-header>
-    <hr class="border-secondary mb-4" />
 
-    <div class="container">
-      <div class="header d-flex justify-content-between align-items-center mb-3">
-        <div>
-          <h2>Traslados de Inventario</h2>
-          <span class="subtitle">{{ traslados.length }} registros</span>
-        </div>
-        <div class="search-sort d-flex align-items-center">
-          <input
-            type="text"
-            placeholder="Buscar..."
-            class="search-input me-2"
-            [(ngModel)]="filtro"
-            (ngModelChange)="aplicarFiltro()"
-          />
-          <button (click)="abrirModal()" class="btn-agregar">
-            <i class="fas fa-plus"></i> Nuevo
-          </button>
-        </div>
+    <section class="dir-head">
+      <div>
+        <h1>Traslados de inventario</h1>
+        <p>Mueve stock de un producto de un inventario a otro, en su unidad base</p>
+      </div>
+      <button type="button" class="btn-agregar" (click)="abrirModal()">
+        <i class="fas fa-plus"></i> Registrar traslado
+      </button>
+    </section>
+
+    <section class="kpis">
+      <article class="kpi">
+        <span>Traslados registrados</span>
+        <strong>{{ traslados.length }} <em>movimientos</em></strong>
+      </article>
+      <article class="kpi">
+        <span>Resultados de la búsqueda</span>
+        <strong class="verde">{{ totalFiltrado }} <em>coinciden</em></strong>
+      </article>
+    </section>
+
+    <section class="filtros">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" [(ngModel)]="filtro" (ngModelChange)="aplicarFiltro()" name="filtro"
+               placeholder="Buscar por origen, destino o motivo…" aria-label="Buscar traslado" />
+      </div>
+    </section>
+
+    <section class="dir-table">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Origen</th>
+              <th></th>
+              <th>Destino</th>
+              <th class="num">Cantidad</th>
+              <th>Motivo</th>
+              <th>Fecha</th>
+              <th class="right">Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let t of filtrados">
+              <td><strong>{{ t.origenNombre }}</strong></td>
+              <td class="flecha"><i class="fas fa-arrow-right"></i></td>
+              <td><strong>{{ t.destinoNombre }}</strong></td>
+              <td class="num">
+                <strong>{{ cant(t.cantidad) }}</strong>
+                <small class="mono">{{ codigoIp(t.origenId) }}</small>
+              </td>
+              <td>{{ t.descripcion || '—' }}</td>
+              <td class="mono">{{ t.fechaTraslado | date:'dd/MM/yyyy HH:mm' }}</td>
+              <td class="right">
+                <button type="button" class="ico" (click)="abrirModal(t)" title="Editar" aria-label="Editar"><i class="fas fa-pen"></i></button>
+                <button type="button" class="ico danger" (click)="eliminar(t.idtraslado)" title="Eliminar" aria-label="Eliminar"><i class="fas fa-trash-alt"></i></button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
-      <table class="customer-table w-100">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Origen</th>
-            <th>Destino</th>
-            <th>Cantidad</th>
-            <th>Descripción</th>
-            <th>Fecha</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let t of filtrados; let i = index">
-            <td>{{ (paginaActual - 1) * elementosPorPagina + i + 1 }}</td>
-            <td>{{ t.origenNombre }}</td>
-            <td>{{ t.destinoNombre }}</td>
-            <td>{{ t.cantidad }}</td>
-            <td>{{ t.descripcion }}</td>
-            <td>{{ t.fechaTraslado | date:'short' }}</td>
-            <td>
-              <button (click)="abrirModal(t)" class="btn-editar me-2">
-                <i class="fas fa-edit"></i>
-              </button>
-              <button (click)="eliminar(t.idtraslado)" class="btn-eliminar">
-                <i class="fas fa-trash-alt"></i>
-              </button>
-            </td>
-          </tr>
-          <tr *ngIf="filtrados.length === 0">
-            <td colspan="7" class="text-center">No hay registros</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="vacio" *ngIf="filtrados.length === 0">
+        <i class="fas fa-right-left"></i>
+        <p *ngIf="cargando">Cargando…</p>
+        <p *ngIf="!cargando && traslados.length > 0">No hay traslados que coincidan con la búsqueda</p>
+        <ng-container *ngIf="!cargando && traslados.length === 0">
+          <p>Aún no registraste traslados</p>
+          <button type="button" class="btn-agregar" (click)="abrirModal()"><i class="fas fa-plus"></i> Registrar traslado</button>
+        </ng-container>
+      </div>
 
-      <nav *ngIf="totalPaginas > 1" aria-label="Paginación" class="mt-4">
-        <ul class="pagination justify-content-center mb-0">
-          <li
-            class="page-item"
-            [class.disabled]="paginaActual === 1"
-            (click)="cambiarPagina(paginaActual - 1)"
-          >
-            <a class="page-link" href="javascript:void(0)">Anterior</a>
-          </li>
-          <li
-            class="page-item"
-            *ngFor="let pg of paginasArray"
-            [class.active]="pg === paginaActual"
-            (click)="cambiarPagina(pg)"
-          >
-            <a class="page-link" href="javascript:void(0)">{{ pg }}</a>
-          </li>
-          <li
-            class="page-item"
-            [class.disabled]="paginaActual === totalPaginas"
-            (click)="cambiarPagina(paginaActual + 1)"
-          >
-            <a class="page-link" href="javascript:void(0)">Siguiente</a>
-          </li>
-        </ul>
-      </nav>
+      <app-paginacion [total]="totalFiltrado" [pagina]="paginaActual" [porPagina]="elementosPorPagina" (paginaChange)="cambiarPagina($event)" (porPaginaChange)="cambiarFilas($event)"></app-paginacion>
+    </section>
 
-      <!-- Modal de creación/edición -->
-      <div *ngIf="mostrarModal" class="modal">
-        <div class="modal-content p-4">
-          <h2 class="mb-3">{{ isEditMode ? 'Editar' : 'Nuevo' }} Traslado</h2>
-          <form (ngSubmit)="formSubmit()" #f="ngForm">
-            <div class="mb-2">
-              <label class="form-label">Origen</label>
-              <select
-                name="origenId"
-                [(ngModel)]="modelo.origenId"
-                class="form-select"
-                [disabled]="isEditMode"
-                required
-              >
-                <option [ngValue]="0" disabled>Seleccione origen</option>
-                <option
-                  *ngFor="let ip of invProds"
-                  [ngValue]="ip.idinventarioproducto"
-                >
-                  {{ ip.productoNombre }} – {{ ip.inventarioNombre }}
-                </option>
-              </select>
+    <div *ngIf="mostrarModal" class="modal" (click)="cerrarModal()">
+      <div class="modal-content emp-modal" role="dialog" aria-modal="true" aria-labelledby="tr-titulo" (click)="$event.stopPropagation()">
+        <header class="em-head">
+          <span class="em-icon"><i class="fas fa-right-left"></i></span>
+          <div>
+            <h2 id="tr-titulo">{{ isEditMode ? 'Editar traslado' : 'Registrar traslado' }}</h2>
+            <p>{{ isEditMode ? 'Actualiza el traslado.' : 'Elige de dónde sale el stock, adónde va y cuánto.' }}</p>
+          </div>
+          <button type="button" class="em-close" (click)="cerrarModal()" aria-label="Cerrar"><i class="fas fa-times"></i></button>
+        </header>
+
+        <form (ngSubmit)="formSubmit()" class="em-form" novalidate>
+          <div class="em-body">
+            <p class="aviso" *ngIf="aviso"><i class="fas fa-circle-exclamation"></i> {{ aviso }}</p>
+            <div class="em-grid">
+              <div class="field span2">
+                <label for="origen">Origen *</label>
+                <select id="origen" name="origenId" [(ngModel)]="modelo.origenId" [disabled]="isEditMode" [class.invalid]="errores['origenId']">
+                  <option [ngValue]="0">Selecciona el origen</option>
+                  <option *ngFor="let ip of invProds" [ngValue]="ip.idinventarioproducto">{{ ip.productoNombre }} · {{ ip.inventarioNombre }}</option>
+                </select>
+                <small class="err" *ngIf="errores['origenId']">{{ errores['origenId'] }}</small>
+                <small class="ayuda" *ngIf="origenElegido as o">Stock en el origen: <b>{{ cant(o.stockactual) }} {{ codigoIp(o.idinventarioproducto) }}</b></small>
+              </div>
+              <div class="field span2">
+                <label for="destino">Destino *</label>
+                <select id="destino" name="destinoId" [(ngModel)]="modelo.destinoId" [disabled]="isEditMode" [class.invalid]="errores['destinoId']">
+                  <option [ngValue]="0">Selecciona el destino</option>
+                  <option *ngFor="let ip of invProds" [ngValue]="ip.idinventarioproducto">{{ ip.productoNombre }} · {{ ip.inventarioNombre }}</option>
+                </select>
+                <small class="err" *ngIf="errores['destinoId']">{{ errores['destinoId'] }}</small>
+              </div>
+              <div class="field">
+                <label for="cantidad">Cantidad * <span class="ayuda" *ngIf="codigoIp(modelo.origenId)">({{ codigoIp(modelo.origenId) }})</span></label>
+                <input id="cantidad" name="cantidad" type="number" [attr.min]="permiteDecimalesIp(modelo.origenId) ? 0.001 : 1"
+                       [step]="permiteDecimalesIp(modelo.origenId) ? '0.001' : '1'" [(ngModel)]="modelo.cantidad" [class.invalid]="errores['cantidad']" />
+                <small class="err" *ngIf="errores['cantidad']">{{ errores['cantidad'] }}</small>
+              </div>
+              <div class="field">
+                <label for="descripcion">Motivo</label>
+                <input id="descripcion" name="descripcion" [(ngModel)]="modelo.descripcion" placeholder="Ej. Reposición de tienda" autocomplete="off" />
+              </div>
             </div>
+          </div>
 
-            <div class="mb-2">
-              <label class="form-label">Destino</label>
-              <select
-                name="destinoId"
-                [(ngModel)]="modelo.destinoId"
-                class="form-select"
-                [disabled]="isEditMode"
-                required
-              >
-                <option [ngValue]="0" disabled>Seleccione destino</option>
-                <option
-                  *ngFor="let ip of invProds"
-                  [ngValue]="ip.idinventarioproducto"
-                >
-                  {{ ip.productoNombre }} – {{ ip.inventarioNombre }}
-                </option>
-              </select>
-            </div>
-
-            <div class="mb-2">
-              <label class="form-label">Cantidad</label>
-              <input
-                name="cantidad"
-                type="number"
-                min="1"
-                [(ngModel)]="modelo.cantidad"
-                class="form-control"
-                required
-              />
-            </div>
-
-            <div class="mb-2">
-              <label class="form-label">Descripción</label>
-              <input
-                name="descripcion"
-                [(ngModel)]="modelo.descripcion"
-                class="form-control"
-              />
-            </div>
-
-            <div class="d-flex justify-content-end mt-3">
-              <button
-                type="button"
-                class="btn btn-secondary me-2"
-                (click)="cerrarModal()"
-              >
-                Cerrar
-              </button>
-              <button
-                type="submit"
-                class="btn btn-primary"
-                [disabled]="f.invalid"
-              >
-                Guardar
-              </button>
-            </div>
-          </form>
-        </div>
+          <footer class="em-foot">
+            <button type="button" class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
+            <button type="submit" class="btn-primary" [disabled]="guardando">
+              <i class="fas fa-spinner fa-spin" *ngIf="guardando"></i>
+              {{ guardando ? 'Guardando…' : (isEditMode ? 'Guardar cambios' : 'Registrar traslado') }}
+            </button>
+          </footer>
+        </form>
       </div>
     </div>
   </div>

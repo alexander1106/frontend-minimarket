@@ -1,0 +1,107 @@
+<div class="contenedor">
+  <div class="barra"><app-barra-lateral></app-barra-lateral></div>
+
+  <div class="encabezado">
+    <app-header></app-header>
+
+    <section class="dir-head">
+      <div>
+        <h1>Kardex</h1>
+        <p>Historial de movimientos de stock de un producto, en su unidad base</p>
+      </div>
+      <button type="button" class="btn-volver" *ngIf="consultado && movimientos.length" (click)="exportar()">
+        <i class="fas fa-file-csv"></i> Exportar CSV
+      </button>
+    </section>
+
+    <section class="filtros-kardex">
+      <div class="field producto">
+        <label for="producto">Producto *</label>
+        <select id="producto" name="producto" [(ngModel)]="idProducto" (ngModelChange)="consultar()">
+          <option [ngValue]="null">Selecciona un producto</option>
+          <option *ngFor="let p of productos" [ngValue]="p.idproducto">{{ p.nombre }}{{ p.codigo ? ' · ' + p.codigo : '' }}</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="sucursal">Sucursal</label>
+        <select id="sucursal" name="sucursal" [(ngModel)]="idSucursal">
+          <option [ngValue]="null">Todas las sucursales</option>
+          <option *ngFor="let s of sucursales" [ngValue]="s.idSucursal">{{ s.nombreSucursal }}</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="desde">Desde</label>
+        <input id="desde" type="date" name="desde" [(ngModel)]="desde" />
+      </div>
+      <div class="field">
+        <label for="hasta">Hasta</label>
+        <input id="hasta" type="date" name="hasta" [(ngModel)]="hasta" />
+      </div>
+      <div class="acciones">
+        <button type="button" class="btn-primary" (click)="consultar()" [disabled]="cargando">
+          <i class="fas fa-spinner fa-spin" *ngIf="cargando"></i>
+          <i class="fas fa-magnifying-glass" *ngIf="!cargando"></i> Consultar
+        </button>
+        <button type="button" class="btn-secondary" (click)="limpiar()">Limpiar</button>
+      </div>
+    </section>
+
+    <p class="aviso" *ngIf="error"><i class="fas fa-circle-exclamation"></i> {{ error }}</p>
+
+    <section class="kpis" *ngIf="consultado">
+      <article class="kpi">
+        <span>Stock actual <small *ngIf="idSucursal">(según el último movimiento)</small></span>
+        <strong>{{ stockActual != null ? (stockActual | number:'1.0-3') : '—' }} <em>{{ codigoUnidad }}</em></strong>
+      </article>
+      <article class="kpi">
+        <span>Entradas del período</span>
+        <strong class="verde">+{{ totalEntradas | number:'1.0-3' }} <em>{{ codigoUnidad }}</em></strong>
+      </article>
+      <article class="kpi">
+        <span>Salidas del período</span>
+        <strong class="rojo">−{{ totalSalidas | number:'1.0-3' }} <em>{{ codigoUnidad }}</em></strong>
+      </article>
+    </section>
+
+    <section class="dir-table">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Tipo</th>
+              <th class="num">Cantidad</th>
+              <th class="num">Stock resultante</th>
+              <th>Referencia</th>
+              <th>Usuario</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let m of movimientos | paginar:pagina:porPagina">
+              <td class="mono">{{ m.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
+              <td><span class="tipo" [ngClass]="etiqueta(m.tipo).clase">{{ etiqueta(m.tipo).texto }}</span></td>
+              <td class="num">
+                <strong [class.mas]="m.cantidadBase > 0" [class.menos]="m.cantidadBase < 0">
+                  {{ m.cantidadBase > 0 ? '+' : '' }}{{ cant(m.cantidadBase) }}
+                </strong>
+                <small class="mono">{{ codigoUnidad }}</small>
+              </td>
+              <td class="num"><strong>{{ cant(m.stockResultante) }}</strong> <small class="mono">{{ codigoUnidad }}</small></td>
+              <td><span class="trunc" [attr.title]="m.referencia">{{ m.referencia || '—' }}</span></td>
+              <td>{{ m.usuario || '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="vacio" *ngIf="movimientos.length === 0">
+        <i class="fas fa-clipboard-list"></i>
+        <p *ngIf="cargando">Cargando…</p>
+        <p *ngIf="!cargando && !consultado">Elige un producto para ver su historial de movimientos.</p>
+        <p *ngIf="!cargando && consultado">Este producto no tiene movimientos en el período elegido.</p>
+      </div>
+
+      <app-paginacion [total]="movimientos.length" [(pagina)]="pagina" [(porPagina)]="porPagina"></app-paginacion>
+    </section>
+  </div>
+</div>

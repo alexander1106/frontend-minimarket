@@ -1,4 +1,3 @@
-// ... tus imports originales ...
 import { Component, OnInit } from '@angular/core';
 import Swal from 'sweetalert2';
 import { forkJoin } from 'rxjs';
@@ -9,8 +8,8 @@ import { BarraLateralComponent } from '../../../../components/barra-lateral/barr
 import { HeaderComponent } from '../../../../components/header/header.component';
 import { InventarioService } from '../../../../service/inventario.service';
 import { AlmacenesService } from '../../../../service/almacenes.service';
+import { PaginacionComponent } from '../../../../components/paginacion/paginacion.component';
 
-// Interfaces
 interface Inventario {
   idinventario: number;
   nombre: string;
@@ -30,7 +29,7 @@ interface InventarioConAlmacen extends Inventario {
 @Component({
   selector: 'app-list-inventario',
   standalone: true,
-  imports: [
+  imports: [PaginacionComponent, 
     CommonModule,
     FormsModule,
     HttpClientModule,
@@ -45,12 +44,17 @@ export class ListInventarioComponent implements OnInit {
   filtrados: InventarioConAlmacen[] = [];
   almacenes: Almacen[] = [];
   filtro = '';
-  almacenFiltro = 0; // 🔽 NUEVO: para seleccionar el almacén desde el combobox
+  almacenFiltro = 0;
   mostrarModal = false;
+  cargando = true;
+  guardando = false;
+  aviso = '';
+  errores: Record<string, string> = {};
 
   inventario: Inventario = this.resetInventario();
   paginaActual = 1;
   elementosPorPagina = 5;
+  totalFiltrado = 0;
 
   constructor(
     private invSvc: InventarioService,
@@ -58,6 +62,7 @@ export class ListInventarioComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.cargando = true;
     forkJoin({
       invs: this.invSvc.listarInventario(),
       alms: this.almSvc.listarAlmacenes()
@@ -68,10 +73,11 @@ export class ListInventarioComponent implements OnInit {
           ...inv,
           almacen: alms.find((a: Almacen) => a.idalmacen === inv.idalmacen) || null
         }));
+        this.cargando = false;
         this.aplicarFiltro();
       },
-      error: err => {
-        console.error('Error cargando datos:', err);
+      error: () => {
+        this.cargando = false;
         Swal.fire('Error', 'No se pudieron cargar los datos', 'error');
       }
     });
@@ -102,16 +108,24 @@ export class ListInventarioComponent implements OnInit {
       );
     }
 
+    this.totalFiltrado = lista.length;
+    if (this.paginaActual > 1 && (this.paginaActual - 1) * this.elementosPorPagina >= lista.length) this.paginaActual = 1;
     const start = (this.paginaActual - 1) * this.elementosPorPagina;
     this.filtrados = lista.slice(start, start + this.elementosPorPagina);
   }
 
   get totalPaginas(): number {
-    return Math.ceil(this.filtrados.length / this.elementosPorPagina);
+    return Math.max(1, Math.ceil(this.totalFiltrado / this.elementosPorPagina));
   }
 
   get paginasArray(): number[] {
     return Array.from({ length: this.totalPaginas }, (_, i) => i + 1);
+  }
+
+  cambiarFilas(n: number): void {
+    this.elementosPorPagina = n;
+    this.paginaActual = 1;
+    this.aplicarFiltro();
   }
 
   cambiarPagina(p: number): void {
@@ -120,7 +134,14 @@ export class ListInventarioComponent implements OnInit {
     this.aplicarFiltro();
   }
 
+  get almacenesSinInventario(): number {
+    const conInventario = new Set(this.inventarios.map(i => i.idalmacen));
+    return this.almacenes.filter(a => !conInventario.has(a.idalmacen)).length;
+  }
+
   abrirModal(inv?: InventarioConAlmacen): void {
+    this.errores = {};
+    this.aviso = '';
     this.inventario = inv
       ? { idinventario: inv.idinventario, nombre: inv.nombre, descripcion: inv.descripcion, idalmacen: inv.idalmacen }
       : this.resetInventario();
@@ -132,36 +153,30 @@ export class ListInventarioComponent implements OnInit {
   }
 
   formSubmit(): void {
-    if (!this.inventario.nombre.trim()) {
-      Swal.fire('Atención', 'El nombre es obligatorio', 'warning');
-      return;
-    }
-    if (!this.inventario.idalmacen) {
-      Swal.fire('Atención', 'Debe seleccionar un almacén', 'warning');
-      return;
-    }
+    this.errores = {};
+    this.aviso = '';
+    if (!this.inventario.nombre.trim()) this.errores['nombre'] = 'El nombre es obligatorio.';
+    if (!this.inventario.idalmacen) this.errores['idalmacen'] = 'Selecciona un almacén.';
+    if (Object.keys(this.errores).length) return;
 
     const isEdit = this.inventario.idinventario > 0;
-    const pet$ = isEdit
-      ? this.invSvc.editar(this.inventario)
-      : this.invSvc.registrar(this.inventario);
-
+    this.guardando = true;
+    const pet$ = isEdit ? this.invSvc.editar(this.inventario) : this.invSvc.registrar(this.inventario);
     pet$.subscribe({
       next: () => {
-        Swal.fire(
-          'Éxito',
-          isEdit ? 'Inventario actualizado' : 'Inventario registrado',
-          'success'
-        );
+        this.guardando = false;
+        Swal.fire('Éxito', isEdit ? 'Inventario actualizado' : 'Inventario registrado', 'success');
         this.cerrarModal();
         this.ngOnInit();
       },
       error: (err: any) => {
-        const backendMsg = err.error?.message ?? err.error ?? 'Error inesperado';
-        const title = isEdit
-          ? 'No se puede editar: tiene registros asociados'
-          : 'Ya existe un inventario para el almacén seleccionado';
-        Swal.fire(title, backendMsg, 'warning');
+        this.guardando = false;
+        if (err.status === 401 || err.status === 403) return;
+        const cuerpo = err.error;
+        const msg: string = (typeof cuerpo === 'string' ? cuerpo : cuerpo?.message || cuerpo?.Detalle) || 'Error inesperado';
+        const campos = cuerpo?.errors;
+        if (err.status === 400 && campos && typeof campos === 'object') this.errores = { ...campos };
+        else this.aviso = msg;
       }
     });
   }

@@ -3,94 +3,133 @@
 
   <div class="encabezado">
     <app-header></app-header>
-    <hr class="border-secondary mb-4" />
 
-    <div class="container">
-      <div class="header">
-        <div>
-          <h2>Unidades de Medida</h2>
-          <span class="subtitle">{{ unidades.length }} Registradas</span>
-        </div>
-        <div class="search-sort">
-          <input
-            type="text"
-            placeholder="Buscar unidad"
-            class="search-input"
-            [(ngModel)]="filtro"
-            (ngModelChange)="aplicarFiltro()"
-          />
-          <button (click)="navegarYMostrarModal()" class="btn-agregar">
-            <i class="fas fa-plus"></i> Unidad
-          </button>
-        </div>
+    <section class="dir-head">
+      <div>
+        <h1>Unidades de medida</h1>
+        <p>Catálogo global de la plataforma{{ puedeEscribir ? '' : ' · solo consulta' }}</p>
+      </div>
+      <button type="button" class="btn-agregar" *ngIf="puedeEscribir" (click)="navegarYMostrarModal()">
+        <i class="fas fa-plus"></i> Registrar unidad
+      </button>
+    </section>
+
+    <aside class="ayuda-caja">
+      <i class="fas fa-circle-info"></i>
+      <p>
+        Cada producto tiene una <strong>unidad base</strong> (unidad, kilogramo, litro, metro) y su stock siempre se maneja en ella.
+        Una <strong>presentación</strong> es una forma de comprar o vender el producto con un factor:
+        <em>Saco 50 kg</em> = 50 KG, <em>Paquete x12</em> = 12 UND. La unidad base puede admitir decimales
+        (kg y litros sí: 2.5 kg) o no (unidades enteras).
+      </p>
+    </aside>
+
+    <section class="kpis">
+      <article class="kpi">
+        <span>Total unidades</span>
+        <strong>{{ unidades.length }} <em>registradas</em></strong>
+      </article>
+      <article class="kpi">
+        <span>Resultados de la búsqueda</span>
+        <strong class="verde">{{ totalFiltrado }} <em>coinciden</em></strong>
+      </article>
+    </section>
+
+    <section class="filtros">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" [(ngModel)]="filtro" (ngModelChange)="aplicarFiltro()" name="filtro"
+               placeholder="Buscar unidad por nombre…" aria-label="Buscar unidad" />
+      </div>
+    </section>
+
+    <section class="dir-table">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Unidad de medida</th>
+              <th>Código</th>
+              <th>Admite decimales</th>
+              <th class="right" *ngIf="puedeEscribir">Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let u of unidadesFiltradas">
+              <td>
+                <div class="emp">
+                  <span class="av">{{ u.nombre.slice(0, 2).toUpperCase() }}</span>
+                  <div>
+                    <strong>{{ u.nombre }}</strong>
+                  </div>
+                </div>
+              </td>
+              <td><span class="codigo">{{ u.codigo || '—' }}</span></td>
+              <td><span class="estado" [class.off]="!u.permiteDecimales"><i></i>{{ u.permiteDecimales ? 'Sí' : 'No' }}</span></td>
+              <td class="right" *ngIf="puedeEscribir">
+                <button type="button" class="ico" (click)="cargarParaEditar(u.idunidadmedida)" title="Editar" aria-label="Editar"><i class="fas fa-pen"></i></button>
+                <button type="button" class="ico danger" (click)="eliminarUnidad(u.idunidadmedida)" title="Eliminar" aria-label="Eliminar"><i class="fas fa-trash-alt"></i></button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
-      <table class="customer-table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Nombre</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let u of unidadesFiltradas; let i = index">
-            <td>{{ (paginaActual - 1) * elementosPorPagina + i + 1 }}</td>
-            <td>{{ u.nombre }}</td>
-            <td>
-              <button (click)="cargarParaEditar(u.idunidadmedida)" class="btn-editar">
-                <i class="fas fa-edit"></i>
-              </button>
-              <button (click)="eliminarUnidad(u.idunidadmedida)" class="btn-eliminar">
-                <i class="fas fa-trash-alt"></i>
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="vacio" *ngIf="unidadesFiltradas.length === 0">
+        <i class="fas fa-ruler-combined"></i>
+        <p *ngIf="cargando">Cargando…</p>
+        <p *ngIf="!cargando && unidades.length > 0">No hay unidades de medida que coincidan con la búsqueda</p>
+        <ng-container *ngIf="!cargando && unidades.length === 0">
+          <p>No hay unidades de medida registradas</p>
+          <button type="button" class="btn-agregar" *ngIf="puedeEscribir" (click)="navegarYMostrarModal()">
+            <i class="fas fa-plus"></i> Registrar unidad
+          </button>
+        </ng-container>
+      </div>
 
-      <nav aria-label="Paginación" class="mt-3">
-        <ul class="pagination justify-content-center">
-          <li
-            class="page-item"
-            [class.disabled]="paginaActual === 1"
-            (click)="cambiarPagina(paginaActual - 1)">
-            <a class="page-link" href="javascript:void(0)">Anterior</a>
-          </li>
+      <app-paginacion [total]="totalFiltrado" [pagina]="paginaActual" [porPagina]="elementosPorPagina" (paginaChange)="cambiarPagina($event)" (porPaginaChange)="cambiarFilas($event)"></app-paginacion>
+    </section>
 
-          <li
-            class="page-item"
-            *ngFor="let pagina of paginasArray"
-            [class.active]="pagina === paginaActual"
-            (click)="cambiarPagina(pagina)">
-            <a class="page-link" href="javascript:void(0)">{{ pagina }}</a>
-          </li>
+    <div *ngIf="mostrarModal" class="modal" (click)="cerrarModal()">
+      <div class="modal-content emp-modal" role="dialog" aria-modal="true" aria-labelledby="uni-titulo" (click)="$event.stopPropagation()">
+        <header class="em-head">
+          <span class="em-icon"><i class="fas fa-ruler-combined"></i></span>
+          <div>
+            <h2 id="uni-titulo">{{ unidad.idunidadmedida ? 'Editar unidad de medida' : 'Registrar unidad de medida' }}</h2>
+            <p>{{ unidad.idunidadmedida ? 'Actualiza el nombre de la unidad.' : 'Agrega una unidad para tus productos.' }}</p>
+          </div>
+          <button type="button" class="em-close" (click)="cerrarModal()" aria-label="Cerrar"><i class="fas fa-times"></i></button>
+        </header>
 
-          <li
-            class="page-item"
-            [class.disabled]="paginaActual === totalPaginas"
-            (click)="cambiarPagina(paginaActual + 1)">
-            <a class="page-link" href="javascript:void(0)">Siguiente</a>
-          </li>
-        </ul>
-      </nav>
+        <form (ngSubmit)="formSubmit()" #formulario="ngForm" class="em-form" novalidate>
+          <div class="em-body">
+            <p class="aviso" *ngIf="avisoModal"><i class="fas fa-circle-exclamation"></i> {{ avisoModal }}</p>
+            <div class="em-grid">
+              <div class="field">
+                <label for="nombre">Nombre de la unidad *</label>
+                <input id="nombre" name="nombre" type="text" required [(ngModel)]="unidad.nombre" placeholder="Ej. Kilogramo" autocomplete="off" [class.invalid]="errores['nombre']" />
+                <small class="err" *ngIf="errores['nombre']">{{ errores['nombre'] }}</small>
+              </div>
+              <div class="field">
+                <label for="codigo">Código</label>
+                <input id="codigo" name="codigo" type="text" [(ngModel)]="unidad.codigo" placeholder="Ej. KG" maxlength="10" autocomplete="off" style="text-transform: uppercase" [class.invalid]="errores['codigo']" />
+                <small class="err" *ngIf="errores['codigo']">{{ errores['codigo'] }}</small>
+              </div>
+              <label class="switch-fila span2">
+                <span class="texto"><strong>Permite decimales</strong><small>Se podrán vender y registrar cantidades como 2.5 (kg, litros, metros).</small></span>
+                <input type="checkbox" role="switch" name="permiteDecimales" [(ngModel)]="unidad.permiteDecimales" [attr.aria-checked]="unidad.permiteDecimales" />
+                <span class="pista" aria-hidden="true"></span>
+              </label>
+            </div>
+          </div>
 
-      <!-- Modal -->
-      <div *ngIf="mostrarModal" class="modal">
-        <div class="modal-content">
-          <h2>Unidad de Medida</h2>
-          <form (ngSubmit)="formSubmit()" #formulario="ngForm">
-            <input
-              type="text"
-              [(ngModel)]="unidad.nombre"
-              name="nombre"
-              required
-              placeholder="Nombre de la unidad"
-            />
-            <button type="submit" [disabled]="formulario.invalid">Guardar</button>
-            <button type="button" (click)="cerrarModal()">Cerrar</button>
-          </form>
-        </div>
+          <footer class="em-foot">
+            <button type="button" class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
+            <button type="submit" class="btn-primary" [disabled]="!(unidad.nombre || '').trim()">
+              {{ unidad.idunidadmedida ? 'Guardar cambios' : 'Registrar unidad' }}
+            </button>
+          </footer>
+        </form>
       </div>
     </div>
   </div>

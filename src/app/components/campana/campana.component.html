@@ -1,0 +1,34 @@
+<button type="button" class="bell" (click)="alternar()" [class.on]="abierto" aria-label="Notificaciones" [attr.aria-expanded]="abierto">
+  <i class="far fa-bell"></i>
+  <span class="badge" *ngIf="noLeidas > 0">{{ contador }}</span>
+</button>
+
+<div class="panel" *ngIf="abierto" role="dialog" aria-label="Notificaciones">
+  <header>
+    <strong>Notificaciones</strong>
+    <span *ngIf="noLeidas > 0">{{ noLeidas }} sin leer</span>
+  </header>
+
+  <div class="lista">
+    <p class="vacio" *ngIf="cargando">Cargando…</p>
+    <div class="vacio" *ngIf="!cargando && !items.length">
+      <i class="far fa-bell-slash"></i>
+      <p>No tienes notificaciones</p>
+    </div>
+
+    <button type="button" class="fila" *ngFor="let n of items" [class.nueva]="!n.leida" (click)="abrir(n)">
+      <span class="ico" [attr.data-sev]="n.severidad"><i class="fas {{ iconos[n.tipo] || 'fa-circle-info' }}"></i></span>
+      <span class="txt">
+        <strong>{{ n.titulo }}</strong>
+        <small class="msg">{{ n.mensaje }}</small>
+        <small class="hora">{{ tiempo(n.fecha) }}</small>
+      </span>
+      <i class="punto" *ngIf="!n.leida" [attr.data-sev]="n.severidad"></i>
+    </button>
+  </div>
+
+  <footer>
+    <button type="button" (click)="marcarTodas()" [disabled]="noLeidas === 0">Marcar todas como leídas</button>
+    <a routerLink="/admin/notificaciones" (click)="abierto = false">Ver todas</a>
+  </footer>
+</div>

@@ -1,272 +1,179 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import Swal from 'sweetalert2';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
-
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
+import { MatDialog } from '@angular/material/dialog';
 import { HeaderComponent } from '../../../../../components/header/header.component';
 import { BarraLateralComponent } from '../../../../../components/barra-lateral/barra-lateral.component';
+import { PaginacionComponent } from '../../../../../components/paginacion/paginacion.component';
+import { PaginarPipe } from '../../../../../components/paginacion/paginar.pipe';
 import { ClientesService } from '../../../../../service/clientes.service';
-import { MatDialog } from '@angular/material/dialog';
-import { AddClienteComponent } from '../add-cliente/add-cliente.component';
 import { LoginService } from '../../../../../service/login.service';
+import { AddClienteComponent } from '../add-cliente/add-cliente.component';
 
 @Component({
   selector: 'app-list-clientes',
   standalone: true,
-  imports: [HeaderComponent, RouterModule,BarraLateralComponent, FormsModule, CommonModule, HttpClientModule],
+  imports: [PaginacionComponent, PaginarPipe, HeaderComponent, RouterModule, BarraLateralComponent, FormsModule, CommonModule, HttpClientModule],
   templateUrl: './list-clientes.component.html',
   styleUrl: './list-clientes.component.css'
 })
 export class ListClientesComponent implements OnInit {
   clientes: any[] = [];
-  clientesFiltrados: any[] = [];
-  filtroBusqueda: string = '';
-  paginaActual: number = 1;
-  elementosPorPagina: number = 5;
+  filtrados: any[] = [];
+  filtroBusqueda = '';
+  cargando = true;
+
+  pagina = 1;
+  porPagina = 5;
 
   constructor(
     private clienteService: ClientesService,
     private router: Router,
     private dialog: MatDialog,
-    private loginService:LoginService
+    private loginService: LoginService
   ) {}
-ngOnInit() {
-  this.listarClientes();
 
-  const url = this.router.url;
+  ngOnInit(): void {
+    this.listarClientes();
 
-  // Modal de agregar
-  if (url.endsWith('/add-clientes')) {
-    this.abrirModalNuevoCliente();
+    const url = this.router.url;
+    if (url.endsWith('/add-clientes')) this.abrirModalNuevoCliente();
+
+    const matchEdit = url.match(/edit-clientes\/(\d+)/);
+    if (matchEdit) this.abrirModalEditarClientePorId(Number(matchEdit[1]));
+
+    const matchView = url.match(/view-clientes\/(\d+)/);
+    if (matchView) this.abrirModalVerClientePorId(Number(matchView[1]));
   }
 
-  // Modal de editar
-  const matchEdit = url.match(/edit-clientes\/(\d+)/);
-  if (matchEdit) {
-    const idCliente = Number(matchEdit[1]);
-    this.abrirModalEditarClientePorId(idCliente);
-  }
-
-  // Modal de ver
-  const matchView = url.match(/view-clientes\/(\d+)/);
-  if (matchView) {
-    const idCliente = Number(matchView[1]);
-    this.abrirModalVerClientePorId(idCliente);
-  }
-}
-navegarYVerCliente(idCliente: number) {
-  this.router.navigate(['/admin/view-clientes', idCliente]);
-}
-
-abrirModalVerClientePorId(id: number) {
-  this.clienteService.buscarClienteId(id).subscribe({
-    next: (cliente) => {
-      const dialogRef = this.dialog.open(AddClienteComponent, {
-        width: '1200px',
-        disableClose: true,
-        data: { cliente, modo: 'ver' }
-      });
-
-      dialogRef.afterClosed().subscribe(() => {
-        // Al cerrar, volver a la lista
-        setTimeout(() => {
-          this.router.navigate(['/admin/list-clientes']);
-        }, 0);
-      });
-    },
-    error: () => {
-      Swal.fire('Error', 'No se pudo cargar el cliente', 'error');
-      this.router.navigate(['/admin/list-clientes']);
+  listarClientes(): void {
+    const idSucursal = this.loginService.getUser()?.sucursal?.idSucursal;
+    if (!idSucursal) {
+      this.cargando = false;
+      Swal.fire('Error', 'No se encontró la sucursal del usuario', 'error');
+      return;
     }
-  });
-}
-abrirModalEditarClientePorId(id: number) {
-  this.clienteService.buscarClienteId(id).subscribe({
-    next: (cliente) => {
-      const dialogRef = this.dialog.open(AddClienteComponent, {
-        width: '1200px',
-        disableClose: true,
-        data: {
-          cliente,
-          modo: 'editar'   // 🔴 Aquí le indicas que es modo edición
-        }
-      });
 
-      dialogRef.afterClosed().subscribe(result => {
-        if (result === 'guardado') {
-          this.listarClientes();
-        }
-
-        setTimeout(() => {
-          this.router.navigate(['/admin/list-clientes']);
-        }, 0);
-      });
-    },
-    error: () => {
-      Swal.fire('Error', 'No se pudo cargar el cliente', 'error');
-      this.router.navigate(['/admin/list-clientes']);
-    }
-  });
-}
-navegarYEditarCliente(idCliente: number) {
-  this.router.navigate(['/admin/edit-clientes', idCliente]);
-}
-
-  abrirModalNuevoCliente() {
-    const dialogRef = this.dialog.open(AddClienteComponent, {
-      width: '1200px',
-      disableClose: true
-    });
-
-    dialogRef.afterClosed().subscribe(result => {
-      if (result === 'guardado') {
-        this.listarClientes();
+    this.cargando = true;
+    this.clienteService.listarClientesPorSucursal(idSucursal).subscribe({
+      next: (data: any) => {
+        this.clientes = Array.isArray(data) ? data : [];
+        this.cargando = false;
+        this.buscarCliente();
+      },
+      error: (err: any) => {
+        this.cargando = false;
+        if (err.status !== 401 && err.status !== 403) Swal.fire('Error', 'No se pudieron cargar los clientes', 'error');
       }
-
-      // Asegura que el modal se cierre completamente antes de redirigir
-      setTimeout(() => {
-        this.router.navigate(['/admin/list-clientes']);
-      }, 0);
     });
   }
 
-eliminarCliente(id: number) {
-  Swal.fire({
-    title: '¿Estás seguro?',
-    text: 'Esta acción eliminará al cliente permanentemente',
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#d33',
-    cancelButtonColor: '#3085d6',
-    confirmButtonText: 'Sí, eliminar',
-    cancelButtonText: 'Cancelar'
-  }).then((result) => {
-    if (result.isConfirmed) {
+  buscarCliente(): void {
+    const t = this.filtroBusqueda.trim().toLowerCase();
+    this.filtrados = t
+      ? this.clientes.filter(c =>
+          [c.nombre, c.apellidos, c.documento, c.email, c.telefono]
+            .some(v => String(v ?? '').toLowerCase().includes(t)))
+      : [...this.clientes];
+  }
+
+  get conEmail(): number {
+    return this.clientes.filter(c => (c.email || '').trim()).length;
+  }
+
+  nombreCompleto(c: any): string {
+    return `${c.nombre || ''} ${c.apellidos || ''}`.trim();
+  }
+
+  iniciales(c: any): string {
+    return this.nombreCompleto(c).split(/\s+/).filter(Boolean).slice(0, 2).map(p => p[0]).join('').toUpperCase() || '?';
+  }
+
+  navegarYMostrarModal(): void {
+    this.router.navigate(['admin/add-clientes']);
+  }
+
+  navegarYEditarCliente(idCliente: number): void {
+    this.router.navigate(['/admin/edit-clientes', idCliente]);
+  }
+
+  navegarYVerCliente(idCliente: number): void {
+    this.router.navigate(['/admin/view-clientes', idCliente]);
+  }
+
+  private volverALaLista(): void {
+    setTimeout(() => this.router.navigate(['/admin/list-clientes']), 0);
+  }
+
+  abrirModalNuevoCliente(): void {
+    const dialogRef = this.dialog.open(AddClienteComponent, { width: '1200px', disableClose: true });
+    dialogRef.afterClosed().subscribe(result => {
+      if (result === 'guardado') this.listarClientes();
+      this.volverALaLista();
+    });
+  }
+
+  abrirModalEditarClientePorId(id: number): void {
+    this.clienteService.buscarClienteId(id).subscribe({
+      next: cliente => {
+        const dialogRef = this.dialog.open(AddClienteComponent, {
+          width: '1200px',
+          disableClose: true,
+          data: { cliente, modo: 'editar' }
+        });
+        dialogRef.afterClosed().subscribe(result => {
+          if (result === 'guardado') this.listarClientes();
+          this.volverALaLista();
+        });
+      },
+      error: () => {
+        Swal.fire('Error', 'No se pudo cargar el cliente', 'error');
+        this.volverALaLista();
+      }
+    });
+  }
+
+  abrirModalVerClientePorId(id: number): void {
+    this.clienteService.buscarClienteId(id).subscribe({
+      next: cliente => {
+        const dialogRef = this.dialog.open(AddClienteComponent, {
+          width: '1200px',
+          disableClose: true,
+          data: { cliente, modo: 'ver' }
+        });
+        dialogRef.afterClosed().subscribe(() => this.volverALaLista());
+      },
+      error: () => {
+        Swal.fire('Error', 'No se pudo cargar el cliente', 'error');
+        this.volverALaLista();
+      }
+    });
+  }
+
+  eliminarCliente(id: number): void {
+    Swal.fire({
+      title: '¿Eliminar este cliente?',
+      text: 'Esta acción no se puede deshacer.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    }).then(result => {
+      if (!result.isConfirmed) return;
       this.clienteService.eliminarCliente(id).subscribe({
         next: () => {
-          Swal.fire({
-            title: 'Eliminado',
-            text: 'El cliente ha sido eliminado',
-            icon: 'success',
-            timer: 1500,
-            showConfirmButton: false
-          }).then(() => {
-            window.location.reload(); // ✅ recarga la página completamente
-          });
+          Swal.fire('Eliminado', 'El cliente ha sido eliminado', 'success');
+          this.listarClientes();
         },
-        error: (err) => {
-          Swal.fire('Error', 'No se pudo eliminar el cliente', 'error');
-          console.error(err);
+        error: (err: any) => {
+          if (err.status === 401 || err.status === 403) return;
+          const cuerpo = err.error;
+          Swal.fire('Error', (typeof cuerpo === 'string' ? cuerpo : cuerpo?.message) || 'No se pudo eliminar el cliente', 'error');
         }
       });
-    }
-  });
-}
-
-
-listarClientes() {
-  const user = this.loginService.getUser();
-  const idSucursal = user?.sucursal?.idSucursal;
-
-  if (!idSucursal) {
-    Swal.fire('Error', 'No se encontró la sucursal del usuario', 'error');
-    return;
-  }
-
-  this.clienteService.listarClientesPorSucursal(idSucursal).subscribe({
-    next: (data: any) => {
-      this.clientes = data || [];
-      this.buscarCliente();
-    },
-    error: (err) => {
-      Swal.fire('Error', 'No se pudieron cargar los clientes', 'error');
-      console.error(err);
-    }
-  });
-}
-
-
-  buscarCliente() {
-    const filtro = this.filtroBusqueda.trim().toLowerCase();
-    this.paginaActual = 1;
-
-    let coincidencias = this.clientes;
-    if (filtro !== '') {
-      coincidencias = this.clientes.filter(m =>
-        (m?.nombre?.toLowerCase()?.includes(filtro) || false) ||
-        (m?.ruc?.toLowerCase()?.includes(filtro) || false) ||
-        (m?.id_cliente?.toString()?.includes(filtro) || false)
-      );
-    }
-
-    this.clientesFiltrados = coincidencias.slice(
-      (this.paginaActual - 1) * this.elementosPorPagina,
-      this.paginaActual * this.elementosPorPagina
-    );
-  }
-
-  cambiarPagina(pagina: number) {
-    if (pagina >= 1 && pagina <= this.totalPaginas) {
-      this.paginaActual = pagina;
-      this.actualizarPaginaFiltrada();
-    }
-  }
-
-  paginasArray(): number[] {
-    return Array(this.totalPaginas).fill(0).map((x, i) => i + 1);
-  }
-
-  actualizarPaginaFiltrada() {
-    const filtro = this.filtroBusqueda.trim().toLowerCase();
-
-    let coincidencias = this.clientes;
-    if (filtro !== '') {
-      coincidencias = this.clientes.filter(m =>
-        (m?.nombre?.toLowerCase()?.includes(filtro) || false) ||
-        (m?.descripcion?.toLowerCase()?.includes(filtro) || false) ||
-        (m?.id_metodo?.toString()?.includes(filtro) || false)
-      );
-    }
-
-    this.clientesFiltrados = coincidencias.slice(
-      (this.paginaActual - 1) * this.elementosPorPagina,
-      this.paginaActual * this.elementosPorPagina
-    );
-  }
-
-  get totalPaginas(): number {
-    const filtro = this.filtroBusqueda.trim().toLowerCase();
-
-    let coincidencias = this.clientes;
-    if (filtro !== '') {
-      coincidencias = this.clientes.filter(m =>
-        (m?.nombre?.toLowerCase()?.includes(filtro) || false) ||
-        (m?.descripcion?.toLowerCase()?.includes(filtro) || false) ||
-        (m?.id_metodo?.toString()?.includes(filtro) || false)
-      );
-    }
-
-    return Math.ceil(coincidencias.length / this.elementosPorPagina);
-  }
-
-abrirModalEditarCliente(cliente: any) {
-  const dialogRef = this.dialog.open(AddClienteComponent, {
-    width: '1200px',
-    disableClose: true,
-    data: { cliente }
-  });
-
-  dialogRef.afterClosed().subscribe(result => {
-    if (result === 'guardado') {
-      this.listarClientes();
-    }
-  });
-}
-
-  navegarYMostrarModal() {
-    this.router.navigate(['admin/add-clientes']);
+    });
   }
 }

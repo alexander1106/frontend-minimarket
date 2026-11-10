@@ -4,7 +4,6 @@
   {{ modo === 'crear' ? 'Nuevo Cliente' : (modo === 'editar' ? 'Editar Cliente' : 'Detalle del Cliente') }}
 </h2>
 
-
   <form (ngSubmit)="guardarCliente()" #clienteForm="ngForm" class="needs-validation" novalidate>
     <div class="row g-3">
 
@@ -59,7 +58,6 @@
     El número de documento es requerido y debe tener la longitud correcta
   </div>
 </div>
-
 
       <div class="col-md-12">
         <label for="direccion" class="form-label">Dirección</label>

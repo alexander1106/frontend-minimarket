@@ -1,179 +1,143 @@
 import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { HttpClientModule } from '@angular/common/http';
+import { RouterModule } from '@angular/router';
+import Swal from 'sweetalert2';
 import { HeaderComponent } from '../../../../../components/header/header.component';
 import { BarraLateralComponent } from '../../../../../components/barra-lateral/barra-lateral.component';
-import { FormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
-import { HttpClientModule } from '@angular/common/http';
+import { PaginacionComponent } from '../../../../../components/paginacion/paginacion.component';
+import { PaginarPipe } from '../../../../../components/paginacion/paginar.pipe';
 import { CotizacionService } from '../../../../../service/cotizacion.service';
-import { Router } from '@angular/router';
-import Swal from 'sweetalert2';
-import { RouterModule } from '@angular/router';
 import { LoginService } from '../../../../../service/login.service';
 
 @Component({
   selector: 'app-list-cotizaciones',
-  imports: [HeaderComponent, RouterModule,BarraLateralComponent, FormsModule, CommonModule, HttpClientModule],
+  standalone: true,
+  imports: [PaginacionComponent, PaginarPipe, HeaderComponent, RouterModule, BarraLateralComponent, FormsModule, CommonModule, HttpClientModule],
   templateUrl: './list-cotizaciones.component.html',
   styleUrl: './list-cotizaciones.component.css'
 })
 export class ListCotizacionesComponent implements OnInit {
-generarPago(arg0: any) {
-throw new Error('Method not implemented.');
-}
   cotizaciones: any[] = [];
-  cotizacionesFiltradas: any[] = [];
-  filtroBusqueda: string = '';
-  paginaActual: number = 1;
-  elementosPorPagina: number = 5;
-mostrarModalDetalle: boolean = false;
-detallesCotizacion: any[] = [];
-cotizacionSeleccionada: any = null;
+  filtradas: any[] = [];
+  filtroBusqueda = '';
+  estadoFiltro = '';
+  cargando = true;
+
+  pagina = 1;
+  porPagina = 5;
+
+  mostrarModalDetalle = false;
+  detallesCotizacion: any[] = [];
+  cotizacionSeleccionada: any = null;
 
   constructor(
     private cotizacionService: CotizacionService,
-    private router: Router,
-    private loginService:LoginService
+    private loginService: LoginService
   ) {}
 
-  ngOnInit() {
-
+  ngOnInit(): void {
     this.listarCotizaciones();
   }
 
-listarCotizaciones() {
-  const usuario = this.loginService.getUser(); // Si tienes la sucursal aquí
-  const sucursalId = usuario.sucursal?.idSucursal || 1; // Usa el ID correcto o por defecto 1
-
-  this.cotizacionService.listarCotizacionesPorSucursal(sucursalId).subscribe({
-    next: (data: any) => {
-      this.cotizaciones = data || [];
-      this.buscarCotizacion();
-    },
-    error: (err) => {
-      Swal.fire("Error", "No se pudieron cargar las cotizaciones", "error");
-      console.error(err);
-    }
-  });
-}
-verDetallesCotizacion(cotizacion: any) {
-  this.cotizacionSeleccionada = cotizacion;
-
-  this.cotizacionService.obtenerDetallesPorCotizacion(cotizacion.idCotizaciones).subscribe({
-    next: (detalles: any) => {
-      console.log('DETALLES RECIBIDOS:', detalles);
-      // Aquí lo conviertes a array
-      this.detallesCotizacion = Array.isArray(detalles) ? detalles : [detalles];
-      this.mostrarModalDetalle = true;
-    },
-    error: (err) => {
-      console.error(err);
-      Swal.fire("Error", "No se pudieron cargar los detalles de la cotización", "error");
-    }
-  });
-}
-
-
-eliminarCotizacion(cotizacionId: number) {
-  const cotizacion = this.cotizaciones.find(c => c.idCotizaciones === cotizacionId);
-
-  if (cotizacion?.estadoCotizacion?.toUpperCase() === 'PAGADA') {
-    Swal.fire('Acción no permitida', 'No puedes eliminar una cotización con estado PAGADO.', 'warning');
-    return;
+  listarCotizaciones(): void {
+    const sucursalId = this.loginService.getUser()?.sucursal?.idSucursal || 1;
+    this.cargando = true;
+    this.cotizacionService.listarCotizacionesPorSucursal(sucursalId).subscribe({
+      next: (data: any) => {
+        this.cotizaciones = (Array.isArray(data) ? data : []).sort((a: any, b: any) => String(b.fechaCotizacion).localeCompare(String(a.fechaCotizacion)));
+        this.cargando = false;
+        this.buscarCotizacion();
+      },
+      error: (err: any) => {
+        this.cargando = false;
+        if (err.status !== 401 && err.status !== 403) Swal.fire('Error', 'No se pudieron cargar las cotizaciones', 'error');
+      }
+    });
   }
 
-  Swal.fire({
-    title: '¿Estás seguro?',
-    text: 'Esta acción eliminará la cotización permanentemente',
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#d33',
-    cancelButtonColor: '#3085d6',
-    confirmButtonText: 'Sí, eliminar',
-    cancelButtonText: 'Cancelar'
-  }).then((result) => {
-    if (result.isConfirmed) {
+  estadoDe(c: any): string {
+    return String(c?.estadoCotizacion || '').toUpperCase();
+  }
+
+  claseEstado(c: any): string {
+    switch (this.estadoDe(c)) {
+      case 'PAGADA': return 'ok';
+      case 'PENDIENTE': return 'pendiente';
+      default: return 'otro';
+    }
+  }
+
+  get estados(): string[] {
+    return [...new Set(this.cotizaciones.map(c => this.estadoDe(c)).filter(Boolean))];
+  }
+
+  get pendientes(): number {
+    return this.cotizaciones.filter(c => this.estadoDe(c) === 'PENDIENTE').length;
+  }
+
+  get montoPendiente(): number {
+    return this.cotizaciones.filter(c => this.estadoDe(c) === 'PENDIENTE').reduce((s, c) => s + Number(c.totalCotizacion || 0), 0);
+  }
+
+  nombreCliente(c: any): string {
+    return `${c?.cliente?.nombre || ''} ${c?.cliente?.apellidos || ''}`.trim() || '—';
+  }
+
+  buscarCotizacion(): void {
+    const t = this.filtroBusqueda.trim().toLowerCase();
+    this.filtradas = this.cotizaciones.filter(c =>
+      (!this.estadoFiltro || this.estadoDe(c) === this.estadoFiltro) &&
+      (!t || [c.numeroCotizacion, c.cliente?.nombre, c.cliente?.apellidos, c.estadoCotizacion]
+        .some(v => String(v ?? '').toLowerCase().includes(t)))
+    );
+  }
+
+  verDetallesCotizacion(cotizacion: any): void {
+    this.cotizacionSeleccionada = cotizacion;
+    this.cotizacionService.obtenerDetallesPorCotizacion(cotizacion.idCotizaciones).subscribe({
+      next: (detalles: any) => {
+        this.detallesCotizacion = Array.isArray(detalles) ? detalles : [detalles];
+        this.mostrarModalDetalle = true;
+      },
+      error: (err: any) => {
+        if (err.status !== 401 && err.status !== 403) Swal.fire('Error', 'No se pudieron cargar los detalles de la cotización', 'error');
+      }
+    });
+  }
+
+  cerrarDetalle(): void {
+    this.mostrarModalDetalle = false;
+  }
+
+  eliminarCotizacion(cotizacionId: number): void {
+    const cotizacion = this.cotizaciones.find(c => c.idCotizaciones === cotizacionId);
+    if (this.estadoDe(cotizacion) === 'PAGADA') {
+      Swal.fire('Acción no permitida', 'No puedes eliminar una cotización pagada.', 'warning');
+      return;
+    }
+
+    Swal.fire({
+      title: '¿Eliminar esta cotización?',
+      text: 'Esta acción no se puede deshacer.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    }).then(result => {
+      if (!result.isConfirmed) return;
       this.cotizacionService.eliminarCotizaciones(cotizacionId).subscribe({
         next: () => {
-          Swal.fire({
-            title: 'Eliminado',
-            text: 'La cotización ha sido eliminada',
-            icon: 'success',
-            timer: 1500,
-            showConfirmButton: false
-          }).then(() => {
-            this.listarCotizaciones();
-          });
+          Swal.fire('Eliminada', 'La cotización ha sido eliminada', 'success');
+          this.listarCotizaciones();
         },
-        error: (err) => {
-          Swal.fire('Error', 'No se pudo eliminar la cotización', 'error');
-          console.error(err);
+        error: (err: any) => {
+          if (err.status === 401 || err.status === 403) return;
+          const cuerpo = err.error;
+          Swal.fire('Error', (typeof cuerpo === 'string' ? cuerpo : cuerpo?.message) || 'No se pudo eliminar la cotización', 'error');
         }
       });
-    }
-  });
-}
-
-
-  buscarCotizacion() {
-    const filtro = this.filtroBusqueda.trim().toLowerCase();
-    this.paginaActual = 1;
-
-    let coincidencias = this.cotizaciones;
-    if (filtro !== '') {
-      coincidencias = this.cotizaciones.filter(m =>
-        (m?.cliente?.nombre?.toLowerCase()?.includes(filtro) || false) ||
-        (m?.estado?.toLowerCase()?.includes(filtro) || false) ||
-        (m?.id?.toString()?.includes(filtro) || false)
-      );
-    }
-
-    this.cotizacionesFiltradas = coincidencias.slice(
-      (this.paginaActual - 1) * this.elementosPorPagina,
-      this.paginaActual * this.elementosPorPagina
-    );
-  }
-
-  cambiarPagina(pagina: number) {
-    if (pagina >= 1 && pagina <= this.totalPaginas) {
-      this.paginaActual = pagina;
-      this.actualizarPaginaFiltrada();
-    }
-  }
-
-  paginasArray(): number[] {
-    return Array(this.totalPaginas).fill(0).map((x, i) => i + 1);
-  }
-
-  actualizarPaginaFiltrada() {
-    const filtro = this.filtroBusqueda.trim().toLowerCase();
-
-    let coincidencias = this.cotizaciones;
-    if (filtro !== '') {
-      coincidencias = this.cotizaciones.filter(m =>
-        (m?.cliente?.nombre?.toLowerCase()?.includes(filtro) || false) ||
-        (m?.estado?.toLowerCase()?.includes(filtro) || false) ||
-        (m?.id?.toString()?.includes(filtro) || false)
-      );
-    }
-
-    this.cotizacionesFiltradas = coincidencias.slice(
-      (this.paginaActual - 1) * this.elementosPorPagina,
-      this.paginaActual * this.elementosPorPagina
-    );
-  }
-
-  get totalPaginas(): number {
-    const filtro = this.filtroBusqueda.trim().toLowerCase();
-
-    let coincidencias = this.cotizaciones;
-    if (filtro !== '') {
-      coincidencias = this.cotizaciones.filter(m =>
-        (m?.cliente?.nombre?.toLowerCase()?.includes(filtro) || false) ||
-        (m?.estado?.toLowerCase()?.includes(filtro) || false) ||
-        (m?.id?.toString()?.includes(filtro) || false)
-      );
-    }
-
-    return Math.ceil(coincidencias.length / this.elementosPorPagina);
+    });
   }
 }

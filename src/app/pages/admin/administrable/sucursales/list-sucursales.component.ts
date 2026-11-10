@@ -8,13 +8,12 @@ import { HeaderComponent }       from '../../../../components/header/header.comp
 import { SucursalesService }    from '../../../../service/sucursales.service';
 import { EmpresasService }      from '../../../../service/empresas.service';
 import { Router } from '@angular/router';
+import { PaginacionComponent } from '../../../../components/paginacion/paginacion.component';
+import { PaginarPipe } from '../../../../components/paginacion/paginar.pipe';
 
-
-// --- Interfaces inline, no ficheros adicionales ---
 interface Empresa {
   idempresa?: number;
   razonsocial: string;
-  // añade aquí otros campos si los necesitas
 }
 
 interface Sucursal {
@@ -30,27 +29,30 @@ interface Sucursal {
 @Component({
   selector: 'app-list-sucursales',
   standalone: true,
-  imports: [
+  imports: [PaginacionComponent, PaginarPipe, 
     CommonModule,
     FormsModule,
     HttpClientModule,
     BarraLateralComponent,
-
+    HeaderComponent,
   ],
   templateUrl: './list-sucursales.component.html',
   styleUrls: ['./list-sucursales.component.css']
 })
 export class ListSucursalesComponent implements OnInit {
-  // Datos
   sucursales: Sucursal[] = [];
   filtrados:   Sucursal[] = [];
   empresas:    Empresa[]  = [];
 
-  // Estado del componente
   filtro = '';
+  pagina = 1;
+  porPagina = 5;
+
+  filtroEmpresa = '';
+  cargando = true;
+  errores: Record<string, string> = {};
   mostrarModal = false;
 
-  // Objeto actual para el formulario
   sucursal: Sucursal = {
     nombreSucursal: '',
     contacto: '',
@@ -59,10 +61,6 @@ export class ListSucursalesComponent implements OnInit {
     idEmpresa: 0
   };
 
-  // Paginación
-  paginaActual = 1;
-  elementosPorPagina = 5;
-
   constructor(
     private svc: SucursalesService,
     private empSvc: EmpresasService,
@@ -70,7 +68,6 @@ export class ListSucursalesComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // Cargar primero las empresas para el dropdown
     this.empSvc.listarEmpresas().subscribe({
       next: (emp: Empresa[]) => {
         this.empresas = emp;
@@ -83,6 +80,7 @@ export class ListSucursalesComponent implements OnInit {
   private cargarSucursales(): void {
   this.svc.listarSucursales().subscribe({
     next: (data: any[]) => {
+      this.cargando = false;
       this.sucursales = data.map(s => ({
         idSucursal:     s.idSucursal,
         nombreSucursal: s.nombreSucursal,
@@ -94,39 +92,35 @@ export class ListSucursalesComponent implements OnInit {
       }));
       this.aplicarFiltro();
     },
-    error: () => Swal.fire('Error', 'No se pudieron cargar sucursales', 'error')
+    error: () => { this.cargando = false; Swal.fire('Error', 'No se pudieron cargar sucursales', 'error'); }
   });
 }
 
-
   aplicarFiltro(): void {
     const t = this.filtro.trim().toLowerCase();
-    let list = this.sucursales;
-    if (t) {
-      list = list.filter(s =>
-        s.nombreSucursal.toLowerCase().includes(t) ||
-        s.direccion.toLowerCase().includes(t) ||
-        (s.empresaNombre ?? '').toLowerCase().includes(t)
-      );
-    }
-    const start = (this.paginaActual - 1) * this.elementosPorPagina;
-    this.filtrados = list.slice(start, start + this.elementosPorPagina);
+    this.filtrados = this.sucursales.filter(s =>
+      (!this.filtroEmpresa || String(s.idEmpresa) === this.filtroEmpresa) &&
+      (!t ||
+        (s.nombreSucursal || '').toLowerCase().includes(t) ||
+        (s.direccion || '').toLowerCase().includes(t) ||
+        (s.empresaNombre ?? '').toLowerCase().includes(t))
+    );
   }
 
-  get totalPaginas(): number {
-    return Math.ceil(this.sucursales.length / this.elementosPorPagina);
+  get empresasConSucursal(): number {
+    return new Set(this.sucursales.map(s => s.idEmpresa)).size;
   }
 
-  get paginasArray(): number[] {
-    return Array.from({ length: this.totalPaginas }, (_, i) => i + 1);
+  get activas(): number {
+    return this.sucursales.filter(s => s.estado === 1).length;
   }
 
-  cambiarPagina(p: number): void {
-    this.paginaActual = p;
-    this.aplicarFiltro();
+  iniciales(nombre: string): string {
+    return (nombre || '?').split(/\s+/).filter(Boolean).slice(0, 2).map(x => x[0]).join('').toUpperCase();
   }
 
   abrirModal(s?: Sucursal): void {
+    this.errores = {};
     if (s) {
       this.sucursal = { ...s };
     } else {
@@ -146,17 +140,11 @@ export class ListSucursalesComponent implements OnInit {
   }
 
   formSubmit(): void {
-    // Validaciones básicas
-    if (!this.sucursal.nombreSucursal.trim()) {
-      Swal.fire('Atención', 'El nombre de la sucursal es obligatorio', 'warning');
-      return;
-    }
-    if (!this.sucursal.idEmpresa || this.sucursal.idEmpresa === 0) {
-      Swal.fire('Atención', 'Debes seleccionar una empresa', 'warning');
-      return;
-    }
+    this.errores = {};
+    if (!this.sucursal.nombreSucursal.trim()) this.errores['nombreSucursal'] = 'El nombre de la sucursal es obligatorio.';
+    if (!this.sucursal.idEmpresa) this.errores['idEmpresa'] = 'Debes seleccionar una empresa.';
+    if (Object.keys(this.errores).length) return;
 
-    // Construir DTO para el backend
     const dto: any = {
       idSucursal:    this.sucursal.idSucursal,
       nombreSucursal: this.sucursal.nombreSucursal,

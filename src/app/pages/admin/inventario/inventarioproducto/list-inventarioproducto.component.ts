@@ -9,6 +9,8 @@ import { HeaderComponent } from '../../../../components/header/header.component'
 import { InventarioProductoService } from '../../../../service/inventarioproducto.services';
 import { ProductosService } from '../../../../service/productos.service';
 import { InventarioService } from '../../../../service/inventario.service';
+import { PaginacionComponent } from '../../../../components/paginacion/paginacion.component';
+import { UnidadProductoService, UnidadInfo } from '../../../../service/unidad-producto.service';
 
 interface InventarioProductoDTO {
   idinventarioproducto: number;
@@ -36,7 +38,7 @@ interface InventarioProductoView extends InventarioProductoDTO {
 @Component({
   selector: 'app-list-inventarioproducto',
   standalone: true,
-  imports: [
+  imports: [PaginacionComponent, 
     CommonModule,
     FormsModule,
     HttpClientModule,
@@ -54,20 +56,38 @@ export class ListInventarioProductoComponent implements OnInit {
   isEditMode = false;
 
   filtro = '';
-  inventarioFiltro: number = 0; // ← AGREGADO para el combo
+  inventarioFiltro: number = 0;
   mostrarModal = false;
+  cargando = true;
+  guardando = false;
+  aviso = '';
+  errores: Record<string, string> = {};
   modelo: InventarioProductoDTO = this.resetModelo();
 
   paginaActual = 1;
   elementosPorPagina = 5;
+  totalFiltrado = 0;
 
   constructor(
     private ipSvc: InventarioProductoService,
     private prodSvc: ProductosService,
-    private invSvc: InventarioService
+    private invSvc: InventarioService,
+    private unidadesSvc: UnidadProductoService
   ) {}
 
+  unidades = new Map<number, UnidadInfo>();
+
+  unidadCodigo(idproducto: number): string {
+    return this.unidades.get(idproducto)?.codigo || '';
+  }
+
+  pasoStock(idproducto: number): string {
+    return this.unidades.get(idproducto)?.permiteDecimales ? '0.001' : '1';
+  }
+
   ngOnInit(): void {
+    this.cargando = true;
+    this.unidadesSvc.mapa().subscribe(m => (this.unidades = m));
     forkJoin({
       items: this.ipSvc.listarInventarioproducto(),
       prods: this.prodSvc.listarProductos(),
@@ -90,10 +110,11 @@ export class ListInventarioProductoComponent implements OnInit {
             invs.find((i: Inventario) => i.idinventario === item.idinventario)?.nombre
             || ''
         }));
+        this.cargando = false;
         this.aplicarFiltro();
       },
-      error: err => {
-        console.error(err);
+      error: () => {
+        this.cargando = false;
         Swal.fire('Error', 'No se pudieron cargar los datos', 'error');
       }
     });
@@ -119,21 +140,28 @@ export class ListInventarioProductoComponent implements OnInit {
       );
     }
 
-    // ← AGREGADO: Filtro por combo de inventario
     if (this.inventarioFiltro !== 0) {
       arr = arr.filter(x => x.idinventario === this.inventarioFiltro);
     }
 
+    this.totalFiltrado = arr.length;
+    if (this.paginaActual > 1 && (this.paginaActual - 1) * this.elementosPorPagina >= arr.length) this.paginaActual = 1;
     const start = (this.paginaActual - 1) * this.elementosPorPagina;
     this.filtrados = arr.slice(start, start + this.elementosPorPagina);
   }
 
   get totalPaginas(): number {
-    return Math.ceil(this.lista.length / this.elementosPorPagina);
+    return Math.max(1, Math.ceil(this.totalFiltrado / this.elementosPorPagina));
   }
 
   get paginasArray(): number[] {
     return Array.from({ length: this.totalPaginas }, (_, i) => i + 1);
+  }
+
+  cambiarFilas(n: number): void {
+    this.elementosPorPagina = n;
+    this.paginaActual = 1;
+    this.aplicarFiltro();
   }
 
   cambiarPagina(p: number): void {
@@ -142,7 +170,13 @@ export class ListInventarioProductoComponent implements OnInit {
     this.aplicarFiltro();
   }
 
+  get sinStock(): number {
+    return this.lista.filter(i => !(i.stockactual > 0)).length;
+  }
+
   abrirModal(item?: InventarioProductoView): void {
+    this.errores = {};
+    this.aviso = '';
     if (item) {
       this.isEditMode = true;
       this.modelo = {
@@ -164,44 +198,39 @@ export class ListInventarioProductoComponent implements OnInit {
   }
 
   formSubmit(): void {
+    this.errores = {};
+    this.aviso = '';
     if (this.modelo.idinventarioproducto > 0 && this.modelo.stockactual > 0) {
-      Swal.fire(
-        'Atención',
-        'No se puede editar este registro porque ya tiene stock.',
-        'warning'
-      );
+      this.aviso = 'No se puede editar este registro porque ya tiene stock. Usa Ajustes de inventario.';
       return;
     }
-
-    if (!this.modelo.idproducto || !this.modelo.idinventario) {
-      Swal.fire('Atención', 'Seleccione producto e inventario', 'warning');
-      return;
+    if (!this.modelo.idproducto) this.errores['idproducto'] = 'Selecciona un producto.';
+    if (!this.modelo.idinventario) this.errores['idinventario'] = 'Selecciona un inventario.';
+    const stock = Number(this.modelo.stockactual || 0);
+    if (stock < 0) this.errores['stockactual'] = 'El stock no puede ser negativo.';
+    else if (this.modelo.idproducto && this.pasoStock(this.modelo.idproducto) === '1' && !Number.isInteger(stock)) {
+      this.errores['stockactual'] = 'Esta unidad solo admite cantidades enteras.';
     }
-    if (this.modelo.stockactual < 0) {
-      Swal.fire('Atención', 'El stock debe ser ≥ 0', 'warning');
-      return;
-    }
+    if (Object.keys(this.errores).length) return;
 
-    const pet$ = this.modelo.idinventarioproducto > 0
-      ? this.ipSvc.editar(this.modelo)
-      : this.ipSvc.registrar(this.modelo);
-
+    const edita = this.modelo.idinventarioproducto > 0;
+    this.guardando = true;
+    const pet$ = edita ? this.ipSvc.editar({ ...this.modelo, stockactual: stock }) : this.ipSvc.registrar({ ...this.modelo, stockactual: stock });
     pet$.subscribe({
       next: () => {
-        Swal.fire(
-          'Éxito',
-          this.modelo.idinventarioproducto > 0
-            ? 'Registro actualizado'
-            : 'Registro creado',
-          'success'
-        );
+        this.guardando = false;
+        Swal.fire('Éxito', edita ? 'Registro actualizado' : 'Registro creado', 'success');
         this.cerrarModal();
         this.ngOnInit();
       },
       error: (err: any) => {
-        const msg = err.error?.message ?? 'Error inesperado';
-        const icon = err.status === 400 ? 'warning' : 'error';
-        Swal.fire(icon === 'warning' ? 'Atención' : 'Error', msg, icon);
+        this.guardando = false;
+        if (err.status === 401 || err.status === 403) return;
+        const cuerpo = err.error;
+        const msg: string = (typeof cuerpo === 'string' ? cuerpo : cuerpo?.message || cuerpo?.Detalle) || 'Error inesperado';
+        const campos = cuerpo?.errors;
+        if (err.status === 400 && campos && typeof campos === 'object') this.errores = { ...campos };
+        else this.aviso = msg;
       }
     });
   }

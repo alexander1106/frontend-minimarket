@@ -1,284 +1,243 @@
 <div class="contenedor">
-  <div class="barra">
-    <app-barra-lateral></app-barra-lateral>
-  </div>
+  <div class="barra"><app-barra-lateral></app-barra-lateral></div>
 
   <div class="encabezado">
     <app-header></app-header>
-    <hr class="border-secondary mb-4" />
 
-    <div class="container">
-      <div class="header d-flex justify-content-between align-items-center mb-3">
-        <div>
-          <h2>Productos</h2>
-          <span class="subtitle">{{ productos.length }} Registrados</span>
-        </div>
-        <div class="search-sort d-flex align-items-center">
-          <input
-            type="text"
-            placeholder="Buscar producto"
-            class="search-input me-2"
-            [(ngModel)]="filtro"
-            (ngModelChange)="aplicarFiltro()"
-          />
-          <button (click)="abrirModal()" class="btn-agregar">
-            <i class="fas fa-plus"></i> Producto
-          </button>
-        </div>
+    <section class="dir-head">
+      <div>
+        <h1>Productos</h1>
+        <p>Catálogo de tu minimarket: precios, unidad base y alertas de stock</p>
+      </div>
+      <button type="button" class="btn-agregar" (click)="abrirModal()">
+        <i class="fas fa-plus"></i> Registrar producto
+      </button>
+    </section>
+
+    <section class="kpis">
+      <article class="kpi">
+        <span>Total productos</span>
+        <strong>{{ productos.length }} <em>registrados</em></strong>
+      </article>
+      <article class="kpi">
+        <span>Con stock bajo</span>
+        <strong [class.rojo]="totalStockBajo > 0">{{ totalStockBajo }} <em>productos</em></strong>
+      </article>
+      <article class="kpi">
+        <span>Resultados de la búsqueda</span>
+        <strong class="verde">{{ totalFiltrado }} <em>coinciden</em></strong>
+      </article>
+    </section>
+
+    <section class="filtros">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" [(ngModel)]="filtro" (ngModelChange)="aplicarFiltro()" name="filtro"
+               placeholder="Buscar por nombre, SKU, código de barras o marca…" aria-label="Buscar producto" />
+      </div>
+      <label class="check-filtro">
+        <input type="checkbox" [(ngModel)]="soloStockBajo" (ngModelChange)="aplicarFiltro()" name="soloStockBajo" />
+        Solo stock bajo
+      </label>
+    </section>
+
+    <section class="dir-table">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>Categoría</th>
+              <th>Unidad</th>
+              <th>Tipo</th>
+              <th class="num">Precio</th>
+              <th>Stock</th>
+              <th class="right">Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of filtrados" [class.fila-baja]="stockBajoDe(p)">
+              <td>
+                <div class="emp">
+                  <span class="av">
+                    <img *ngIf="p.imagen" [src]="p.imagen" [alt]="p.nombre" />
+                    <ng-container *ngIf="!p.imagen">{{ p.nombre.slice(0, 2).toUpperCase() }}</ng-container>
+                  </span>
+                  <div>
+                    <strong>{{ p.nombre }}</strong>
+                    <small class="mono" *ngIf="p.codigo || p.marca">{{ p.codigo }}{{ p.codigo && p.marca ? ' · ' : '' }}{{ p.marca }}</small>
+                  </div>
+                </div>
+              </td>
+              <td>{{ p.categoria?.nombre || '—' }}</td>
+              <td>
+                {{ p.unidadMedida?.nombre || '—' }}
+                <small class="mono" *ngIf="p.unidadMedida?.codigo">{{ p.unidadMedida.codigo }}</small>
+              </td>
+              <td>{{ p.tipoProducto?.nombre || '—' }}</td>
+              <td class="num"><strong>{{ p.costoVenta | currency:'S/.':'symbol':'1.2-2' }}</strong></td>
+              <td>
+                <ng-container *ngIf="stockBajoDe(p) as b; else sinAlerta">
+                  <span class="alerta-stock" title="Faltan {{ b.faltante | number:'1.0-3' }} para llegar al mínimo">
+                    <i class="fas fa-triangle-exclamation"></i>
+                    {{ b.stockActual | number:'1.0-3' }} / mín. {{ b.stockMinimo | number:'1.0-3' }}
+                  </span>
+                </ng-container>
+                <ng-template #sinAlerta><span class="texto-suave">{{ p.stockMinimo ? 'Mín. ' + (p.stockMinimo | number:'1.0-3') : '—' }}</span></ng-template>
+              </td>
+              <td class="right">
+                <button type="button" class="ico" (click)="verKardex(p)" title="Kardex (movimientos de stock)" aria-label="Kardex"><i class="fas fa-clipboard-list"></i></button>
+                <button type="button" class="ico" (click)="abrirPresentaciones(p)" title="Presentaciones" aria-label="Presentaciones"><i class="fas fa-boxes-stacked"></i></button>
+                <button type="button" class="ico" (click)="abrirModal(p)" title="Editar" aria-label="Editar"><i class="fas fa-pen"></i></button>
+                <button type="button" class="ico danger" (click)="borrar(p.idproducto)" title="Eliminar" aria-label="Eliminar"><i class="fas fa-trash-alt"></i></button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
-      <table class="customer-table w-100">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Nombre</th>
-            <th>Descripción</th>
-            <th>Categoría</th>
-            <th>U. Medida</th>
-            <th>Tipo</th>
-            <th>Precio</th>
-            <th>Imagen</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let p of filtrados; let i = index">
-            <td>{{ (paginaActual - 1) * elementosPorPagina + i + 1 }}</td>
-            <td>{{ p.nombre }}</td>
-            <td>{{ p.descripcion }}</td>
-            <td>{{ p.categoria.nombre }}</td>
-            <td>{{ p.unidadMedida.nombre }}</td>
-            <td>{{ p.tipoProducto.nombre }}</td>
-            <td>
-              {{ 
-                p.costoVenta 
-                | currency:'S/.':'symbol':'1.2-2' 
-              }}
-            </td>
-            <td>
-              <img
-                *ngIf="p.imagen"
-                [src]="p.imagen"
-                alt="{{ p.nombre }}"
-                width="40"
-                height="40"
-                style="object-fit: cover; border-radius: 4px;"
-              />
-            </td>
-            <td>
-              <button (click)="abrirModal(p)" class="btn-editar me-2">
-                <i class="fas fa-edit"></i>
-              </button>
-              <button (click)="borrar(p.idproducto)" class="btn-eliminar">
-                <i class="fas fa-trash-alt"></i>
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <!-- Paginación -->
-      <nav *ngIf="totalPaginas > 1" aria-label="Paginación" class="mt-3">
-        <ul class="pagination justify-content-center mb-0">
-          <li
-            class="page-item"
-            [class.disabled]="paginaActual === 1"
-            (click)="cambiarPagina(paginaActual - 1)"
-          >
-            <a class="page-link" href="javascript:void(0)">Anterior</a>
-          </li>
-          <li
-            class="page-item"
-            *ngFor="let pg of paginasArray"
-            [class.active]="pg === paginaActual"
-            (click)="cambiarPagina(pg)"
-          >
-            <a class="page-link" href="javascript:void(0)">{{ pg }}</a>
-          </li>
-          <li
-            class="page-item"
-            [class.disabled]="paginaActual === totalPaginas"
-            (click)="cambiarPagina(paginaActual + 1)"
-          >
-            <a class="page-link" href="javascript:void(0)">Siguiente</a>
-          </li>
-        </ul>
-      </nav>
-
-      <!-- Modal para Nuevo/Editar Producto -->
-      <div *ngIf="mostrarModal" class="modal">
-        <div class="modal-content p-4">
-          <h2 class="mb-3">
-            {{ producto.idproducto ? 'Editar' : 'Nuevo' }} Producto
-          </h2>
-          <form (ngSubmit)="formSubmit()" #f="ngForm">
-            <!-- Nombre -->
-            <div class="mb-3">
-              <input
-                name="nombre"
-                required
-                [(ngModel)]="producto.nombre"
-                placeholder="Nombre"
-                class="form-control"
-              />
-            </div>
-
-            <!-- Descripción -->
-            <div class="mb-3">
-              <textarea
-                name="descripcion"
-                [(ngModel)]="producto.descripcion"
-                placeholder="Descripción"
-                class="form-control"
-              ></textarea>
-            </div>
-
-            <!-- Fecha e Impuesto -->
-            <div class="row g-2 mb-3">
-              <label class="form-label">FechaVencimiento</label>
-              <div class="col">
-                <input
-                  type="date"
-                  name="fechaVencimiento"
-                  [(ngModel)]="producto.fechaVencimiento"
-                  class="form-control"
-                />
-              </div>
-              <div class="col">
-                <input
-                  name="tipoImpuesto"
-                  [(ngModel)]="producto.tipoImpuesto"
-                  placeholder="Impuesto"
-                  class="form-control"
-                />
-              </div>
-            </div>
-
-            <!-- Costos -->
-            <div class="row g-2 mb-3">
-              <label class="form-label">Costo compra</label>
-              <div class="col">
-                <input
-                  type="number"
-                  name="costoCompra"
-                  [(ngModel)]="producto.costoCompra"
-                  placeholder="Costo compra"
-                  class="form-control"
-                />
-              </div>
-              
-              <div class="col">
-                <label class="form-label">Costo venta</label>
-                <input
-                  type="number"
-                  name="costoVenta"
-                  [(ngModel)]="producto.costoVenta"
-                  placeholder="Costo venta"
-                  class="form-control"
-                />
-              </div>
-              <div class="col">
-                <label class="form-label">Costo mayor</label>
-                <input
-                  type="number"
-                  name="costoMayor"
-                  [(ngModel)]="producto.costoMayor"
-                  placeholder="Costo mayor"
-                  class="form-control"
-                />
-              </div>
-            </div>
-
-            <!-- Selects relacionales -->
-            <div class="row g-2 mb-3">
-              <div class="col">
-                <select
-                  name="idcategoria"
-                  [(ngModel)]="producto.categoria.idcategoria"
-                  class="form-select"
-                  required
-                >
-                  <option [ngValue]="0" disabled>Seleccione categoría</option>
-                  <option *ngFor="let c of categorias" [ngValue]="c.idcategoria">
-                    {{ c.nombre }}
-                  </option>
-                </select>
-              </div>
-              <div class="col">
-                <select
-                  name="idunidadmedida"
-                  [(ngModel)]="producto.unidadMedida.idunidadmedida"
-                  class="form-select"
-                  required
-                >
-                  <option [ngValue]="0" disabled>Seleccione unidad</option>
-                  <option
-                    *ngFor="let u of unidades"
-                    [ngValue]="u.idunidadmedida"
-                  >
-                    {{ u.nombre }}
-                  </option>
-                </select>
-              </div>
-              <div class="col">
-                <select
-                  name="idtipoproducto"
-                  [(ngModel)]="producto.tipoProducto.idtipoproducto"
-                  class="form-select"
-                  required
-                >
-                  <option [ngValue]="0" disabled>Seleccione tipo</option>
-                  <option
-                    *ngFor="let t of tipos"
-                    [ngValue]="t.idtipoproducto"
-                  >
-                    {{ t.nombre }}
-                  </option>
-                </select>
-              </div>
-            </div>
-
-            <!-- Imagen -->
-            <div class="mb-3">
-              <label for="fileInput" class="form-label">Imagen</label>
-              <input
-                type="file"
-                id="fileInput"
-                accept="image/*"
-                (change)="onFileSelected($event)"
-                class="form-control"
-              />
-            </div>
-            <div *ngIf="producto.imagen" class="mb-3 text-center">
-              <img
-                [src]="producto.imagen"
-                alt="Vista previa"
-                class="img-thumbnail"
-                style="max-height: 120px;"
-              />
-            </div>
-
-            <!-- Botones -->
-            <div class="d-flex justify-content-end">
-              <button
-                type="button"
-                class="btn btn-secondary me-2"
-                (click)="cerrarModal()"
-              >
-                Cerrar
-              </button>
-              <button
-                type="submit"
-                class="btn btn-primary"
-                [disabled]="f.invalid"
-              >
-                Guardar
-              </button>
-            </div>
-          </form>
-        </div>
+      <div class="vacio" *ngIf="filtrados.length === 0">
+        <i class="fas fa-box-open"></i>
+        <p *ngIf="productos.length > 0">No hay productos que coincidan con la búsqueda</p>
+        <ng-container *ngIf="productos.length === 0">
+          <p>Aún no tienes productos registrados</p>
+          <button type="button" class="btn-agregar" (click)="abrirModal()"><i class="fas fa-plus"></i> Registrar producto</button>
+        </ng-container>
       </div>
 
+      <app-paginacion [total]="totalFiltrado" [pagina]="paginaActual" [porPagina]="elementosPorPagina" (paginaChange)="cambiarPagina($event)" (porPaginaChange)="cambiarFilas($event)"></app-paginacion>
+    </section>
+
+    <div *ngIf="mostrarModal" class="modal" (click)="cerrarModal()">
+      <div class="modal-content emp-modal" role="dialog" aria-modal="true" aria-labelledby="prod-titulo" (click)="$event.stopPropagation()">
+        <header class="em-head">
+          <span class="em-icon"><i class="fas fa-tags"></i></span>
+          <div>
+            <h2 id="prod-titulo">{{ producto.idproducto ? 'Editar producto' : 'Registrar producto' }}</h2>
+            <p>{{ producto.idproducto ? 'Actualiza los datos. El stock actual se conserva.' : 'Crea un producto con su unidad base y precios.' }}</p>
+          </div>
+          <button type="button" class="em-close" (click)="cerrarModal()" aria-label="Cerrar"><i class="fas fa-times"></i></button>
+        </header>
+
+        <form (ngSubmit)="formSubmit()" class="em-form" novalidate>
+          <div class="em-body">
+            <p class="aviso" *ngIf="aviso"><i class="fas fa-circle-exclamation"></i> {{ aviso }}</p>
+
+            <p class="em-section"><span>1</span> Identificación</p>
+            <div class="em-grid">
+              <div class="field span2">
+                <label for="nombre">Nombre *</label>
+                <input id="nombre" name="nombre" [(ngModel)]="producto.nombre" [class.invalid]="errores['nombre']" autocomplete="off" />
+                <small class="err" *ngIf="errores['nombre']">{{ errores['nombre'] }}</small>
+              </div>
+              <div class="field">
+                <label for="codigo">Código (SKU)</label>
+                <input id="codigo" name="codigo" [(ngModel)]="producto.codigo" [class.invalid]="errores['codigo']" autocomplete="off" />
+                <small class="err" *ngIf="errores['codigo']">{{ errores['codigo'] }}</small>
+              </div>
+              <div class="field">
+                <label for="codigoBarras">Código de barras</label>
+                <input id="codigoBarras" name="codigoBarras" [(ngModel)]="producto.codigoBarras" [class.invalid]="errores['codigoBarras']" autocomplete="off" />
+                <small class="err" *ngIf="errores['codigoBarras']">{{ errores['codigoBarras'] }}</small>
+              </div>
+              <div class="field">
+                <label for="marca">Marca</label>
+                <input id="marca" name="marca" [(ngModel)]="producto.marca" autocomplete="off" />
+              </div>
+              <div class="field">
+                <label for="fechaVencimiento">Fecha de vencimiento</label>
+                <input id="fechaVencimiento" type="date" name="fechaVencimiento" [(ngModel)]="producto.fechaVencimiento" />
+              </div>
+              <div class="field span2">
+                <label for="descripcion">Descripción</label>
+                <input id="descripcion" name="descripcion" [(ngModel)]="producto.descripcion" autocomplete="off" />
+              </div>
+            </div>
+
+            <p class="em-section"><span>2</span> Clasificación y unidad base</p>
+            <div class="em-grid">
+              <div class="field">
+                <label for="idcategoria">Categoría *</label>
+                <select id="idcategoria" name="idcategoria" [(ngModel)]="producto.categoria.idcategoria" [class.invalid]="errores['idcategoria']">
+                  <option [ngValue]="0">Selecciona una categoría</option>
+                  <option *ngFor="let c of categorias" [ngValue]="c.idcategoria">{{ c.nombre }}</option>
+                </select>
+                <small class="err" *ngIf="errores['idcategoria']">{{ errores['idcategoria'] }}</small>
+              </div>
+              <div class="field">
+                <label for="idtipoproducto">Tipo de producto *</label>
+                <select id="idtipoproducto" name="idtipoproducto" [(ngModel)]="producto.tipoProducto.idtipoproducto" [class.invalid]="errores['idtipoproducto']">
+                  <option [ngValue]="0">Selecciona un tipo</option>
+                  <option *ngFor="let t of tipos" [ngValue]="t.idtipoproducto">{{ t.nombre }}</option>
+                </select>
+                <small class="err" *ngIf="errores['idtipoproducto']">{{ errores['idtipoproducto'] }}</small>
+              </div>
+              <div class="field span2">
+                <label for="idunidadmedida">Unidad base *</label>
+                <select id="idunidadmedida" name="idunidadmedida" [(ngModel)]="producto.unidadMedida.idunidadmedida" [class.invalid]="errores['idunidadmedida']">
+                  <option [ngValue]="0">Selecciona una unidad</option>
+                  <option *ngFor="let u of unidades" [ngValue]="u.idunidadmedida">{{ u.nombre }}{{ u.codigo ? ' (' + u.codigo + ')' : '' }}</option>
+                </select>
+                <small class="err" *ngIf="errores['idunidadmedida']">{{ errores['idunidadmedida'] }}</small>
+                <small class="ayuda" *ngIf="unidadElegida as ue">{{ ue.permiteDecimales ? 'Esta unidad admite cantidades con decimales (ej. 2.5 ' + (ue.codigo || '') + ').' : 'Esta unidad solo admite cantidades enteras.' }}</small>
+              </div>
+            </div>
+
+            <p class="em-section"><span>3</span> Precios e impuestos</p>
+            <div class="em-grid">
+              <div class="field">
+                <label for="costoCompra">Costo de compra</label>
+                <input id="costoCompra" type="number" min="0" step="0.01" name="costoCompra" [(ngModel)]="producto.costoCompra" />
+              </div>
+              <div class="field">
+                <label for="costoVenta">Precio de venta *</label>
+                <input id="costoVenta" type="number" min="0" step="0.01" name="costoVenta" [(ngModel)]="producto.costoVenta" [class.invalid]="errores['costoVenta']" />
+                <small class="err" *ngIf="errores['costoVenta']">{{ errores['costoVenta'] }}</small>
+              </div>
+              <div class="field">
+                <label for="costoMayor">Precio por mayor</label>
+                <input id="costoMayor" type="number" min="0" step="0.01" name="costoMayor" [(ngModel)]="producto.costoMayor" />
+              </div>
+              <div class="field">
+                <label for="stockMinimo">Stock mínimo <span class="ayuda" *ngIf="unidadElegida?.codigo">({{ unidadElegida.codigo }})</span></label>
+                <input id="stockMinimo" type="number" min="0" step="0.001" name="stockMinimo" [(ngModel)]="producto.stockMinimo" [class.invalid]="errores['stockMinimo']" />
+                <small class="err" *ngIf="errores['stockMinimo']">{{ errores['stockMinimo'] }}</small>
+              </div>
+              <label class="switch-fila span2">
+                <span class="texto"><strong>Afecto a IGV</strong><small>Los precios de venta ya incluyen IGV (18 %). Si lo desmarcas, el producto es inafecto.</small></span>
+                <input type="checkbox" role="switch" name="afectoIgv" [(ngModel)]="producto.afectoIgv" />
+                <span class="pista" aria-hidden="true"></span>
+              </label>
+            </div>
+
+            <p class="em-section"><span>4</span> Imagen</p>
+            <div class="em-grid">
+              <div class="field span2">
+                <label class="em-upload" for="fileInput">
+                  <span class="em-preview">
+                    <img *ngIf="producto.imagen" [src]="producto.imagen" alt="Vista previa" />
+                    <i *ngIf="!producto.imagen" class="far fa-image"></i>
+                  </span>
+                  <span class="em-upload-text">
+                    <strong>{{ producto.imagen ? 'Cambiar imagen' : 'Subir imagen (opcional)' }}</strong>
+                    <small>PNG o JPG</small>
+                  </span>
+                </label>
+                <input id="fileInput" type="file" accept="image/*" (change)="onFileSelected($event)" hidden />
+              </div>
+            </div>
+          </div>
+
+          <footer class="em-foot">
+            <button type="button" class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
+            <button type="submit" class="btn-primary" [disabled]="guardando">
+              <i class="fas fa-spinner fa-spin" *ngIf="guardando"></i>
+              {{ guardando ? 'Guardando…' : (producto.idproducto ? 'Guardar cambios' : 'Registrar producto') }}
+            </button>
+          </footer>
+        </form>
+      </div>
     </div>
   </div>
 </div>
+<app-presentaciones *ngIf="presProducto" [producto]="presProducto" [puedeEscribir]="puedeEscribirProductos" (cerrar)="presProducto = null"></app-presentaciones>

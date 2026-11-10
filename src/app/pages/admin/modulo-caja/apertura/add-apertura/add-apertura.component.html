@@ -1,26 +1,45 @@
-<div class="cont form-container">
-  <h3>Aperturar Caja</h3>
-  <form (ngSubmit)="guardar()">
-    <div class="form-group">
-      <label>Fecha de Apertura:</label>
-      <input type="datetime-local" [(ngModel)]="fechaApertura" name="fechaApertura" required />
+<header class="em-head">
+  <span class="em-icon"><i class="fas fa-cash-register"></i></span>
+  <div>
+    <h2>Aperturar caja</h2>
+    <p>Abre un turno indicando la caja y con cuánto dinero empieza.</p>
+  </div>
+  <button type="button" class="em-close" (click)="cerrarModal()" aria-label="Cerrar"><i class="fas fa-times"></i></button>
+</header>
+
+<form (ngSubmit)="guardar()" class="em-form" novalidate>
+  <div class="em-body">
+    <p class="aviso" *ngIf="aviso"><i class="fas fa-circle-exclamation"></i> {{ aviso }}</p>
+
+    <div class="em-grid">
+      <div class="field span2">
+        <label for="caja">Caja *</label>
+        <select id="caja" [(ngModel)]="idCaja" name="idCaja" [class.invalid]="errores['idCaja']" [disabled]="!hayLibres">
+          <option [ngValue]="undefined">{{ hayLibres ? 'Selecciona una caja libre' : 'No hay cajas libres' }}</option>
+          <option *ngFor="let o of opciones" [ngValue]="o.caja.idCaja" [disabled]="o.estado !== 'libre'">{{ o.etiqueta }}</option>
+        </select>
+        <small class="err" *ngIf="errores['idCaja']">{{ errores['idCaja'] }}</small>
+        <small class="ayuda" *ngIf="!opciones.length">No hay cajas en esta sucursal. Crea una en Caja → Cajas.</small>
+        <small class="ayuda" *ngIf="opciones.length && !hayLibres">Todas las cajas están en uso: {{ resumenOcupadas }}.</small>
+      </div>
+      <div class="field">
+        <label for="monto">Monto inicial (S/) *</label>
+        <input id="monto" type="number" min="0" step="0.01" [(ngModel)]="monto" name="monto" [class.invalid]="errores['monto']" />
+        <small class="err" *ngIf="errores['monto']">{{ errores['monto'] }}</small>
+      </div>
+      <div class="field">
+        <label for="fecha">Fecha y hora de apertura *</label>
+        <input id="fecha" type="datetime-local" [(ngModel)]="fechaApertura" name="fechaApertura" [class.invalid]="errores['fechaApertura']" />
+        <small class="err" *ngIf="errores['fechaApertura']">{{ errores['fechaApertura'] }}</small>
+      </div>
     </div>
-    <div class="form-group">
-      <label>Monto Inicial:</label>
-      <input type="number" [(ngModel)]="monto" name="monto" required />
-    </div>
-    <div class="form-group">
-      <label>Caja:</label>
-      <select [(ngModel)]="idCaja" name="idCaja" required>
-        <option [ngValue]="undefined">Seleccione una caja</option>
-        <option *ngFor="let caja of cajasDisponibles" [ngValue]="caja.idCaja">
-          {{ caja.nombreCaja }}
-        </option>
-      </select>
-    </div>
-    <div class="acciones">
-      <button type="submit" class="btn btn-primary">Guardar</button>
-      <button type="button" class="btn btn-secondary" (click)="cerrarModal()">Cancelar</button>
-    </div>
-  </form>
-</div>
+  </div>
+
+  <footer class="em-foot">
+    <button type="button" class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
+    <button type="submit" class="btn-primary" [disabled]="guardando">
+      <i class="fas fa-spinner fa-spin" *ngIf="guardando"></i>
+      {{ guardando ? 'Guardando…' : 'Aperturar caja' }}
+    </button>
+  </footer>
+</form>

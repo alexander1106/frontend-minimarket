@@ -1,0 +1,110 @@
+<div class="contenedor">
+  <div class="barra">
+    <app-barra-lateral></app-barra-lateral>
+  </div>
+
+  <div class="encabezado">
+    <app-header></app-header>
+
+    <section class="banner">
+      <div>
+        <p class="eyebrow"><i class="fas fa-shield-halved"></i> Consola superadministrador</p>
+        <h1>Panel maestro de control multi-empresa</h1>
+        <p class="lead">Hola{{ nombre ? ', ' + nombre : '' }}. Supervisa las empresas clientes, sus sucursales, los usuarios y los roles de la plataforma desde un solo lugar.</p>
+      </div>
+      <div class="banner-actions">
+        <a class="btn-light" routerLink="/admin/empresas">Ver todas las empresas <i class="fas fa-arrow-right"></i></a>
+        <a class="btn-ghost" routerLink="/admin/sucursales">Sucursales</a>
+      </div>
+    </section>
+
+    <section class="kpis">
+      <article class="kpi">
+        <div class="kpi-top"><span>Total empresas</span><i class="fas fa-building"></i></div>
+        <strong>{{ empresas.length }}</strong>
+        <div class="kpi-foot"><span>{{ empresasActivas }} activas</span><span class="warn" *ngIf="empresasInactivas">{{ empresasInactivas }} inactivas</span></div>
+      </article>
+      <article class="kpi">
+        <div class="kpi-top"><span>Sucursales</span><i class="fas fa-store"></i></div>
+        <strong>{{ sucursales.length }}</strong>
+        <div class="kpi-foot"><span>{{ sucursalesActivas }} activas</span><span class="warn" *ngIf="sinSucursal">{{ sinSucursal }} empresa(s) sin sucursal</span></div>
+      </article>
+      <article class="kpi">
+        <div class="kpi-top"><span>Usuarios</span><i class="fas fa-users"></i></div>
+        <strong>{{ usuarios.length }}</strong>
+        <div class="kpi-foot"><span>{{ usuariosHabilitados }} habilitados</span></div>
+      </article>
+      <article class="kpi">
+        <div class="kpi-top"><span>Roles</span><i class="fas fa-user-shield"></i></div>
+        <strong>{{ roles.length }}</strong>
+        <div class="kpi-foot"><a routerLink="/admin/roles">Administrar roles</a></div>
+      </article>
+    </section>
+
+    <div class="grid">
+      <section class="panel">
+        <div class="panel-head">
+          <div><h3>Empresas registradas por mes</h3><small>Altas de los últimos 6 meses</small></div>
+        </div>
+        <div class="chart" role="img" aria-label="Empresas registradas por mes">
+          <div class="col" *ngFor="let m of meses" [class.actual]="m.actual">
+            <span class="val">{{ m.total }}</span>
+            <div class="track"><div class="fill" [style.height.%]="m.alto"></div></div>
+            <span class="lbl">{{ m.etiqueta }}</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div><h3>Usuarios por rol</h3><small>Distribución de la plataforma</small></div>
+        </div>
+        <div class="donut-wrap" *ngIf="usuarios.length; else sinUsuarios">
+          <div class="donut" [style.background]="donut"><div class="hole"><strong>{{ usuarios.length }}</strong><small>usuarios</small></div></div>
+          <ul class="legend">
+            <li *ngFor="let p of porciones">
+              <span class="sw" [style.background]="p.color"></span>
+              <span class="name">{{ p.rol }}</span>
+              <span class="num">{{ p.cantidad }} <small>({{ p.porcentaje }}%)</small></span>
+            </li>
+          </ul>
+        </div>
+        <ng-template #sinUsuarios><div class="empty"><i class="fas fa-users"></i><p>{{ cargando ? 'Cargando…' : 'Sin usuarios' }}</p></div></ng-template>
+      </section>
+    </div>
+
+    <section class="panel tabla">
+      <div class="panel-head">
+        <div>
+          <h3><i class="fas fa-circle-exclamation"></i> Empresas con atención prioritaria</h3>
+          <small>Empresas inactivas o sin sucursales primero; luego las más recientes.</small>
+        </div>
+        <a class="link" routerLink="/admin/empresas">Ver todas las {{ empresas.length }} empresas <i class="fas fa-arrow-right"></i></a>
+      </div>
+
+      <div class="table-wrap" *ngIf="filas.length; else sinEmpresas">
+        <table>
+          <thead>
+            <tr><th>Empresa / RUC</th><th>Contacto</th><th>Sucursales</th><th>Registro</th><th>Estado</th><th></th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let e of filas">
+              <td>
+                <div class="emp">
+                  <span class="av">{{ iniciales(e.razonsocial) }}</span>
+                  <div><strong>{{ e.razonsocial }}</strong><small class="mono">RUC: {{ e.ruc }}</small></div>
+                </div>
+              </td>
+              <td><strong>{{ e.correo || '—' }}</strong><small>{{ e.ciudad || '—' }}</small></td>
+              <td><span class="pill" [class.warn]="e.nSuc === 0">{{ e.nSuc === 0 ? 'Sin sucursales' : e.nSuc + (e.nSuc === 1 ? ' sucursal' : ' sucursales') }}</span></td>
+              <td class="mono">{{ e.fechaRegistro ? (e.fechaRegistro | date:'dd/MM/yyyy') : '—' }}</td>
+              <td><span class="estado" [class.off]="e.estado !== 1"><i></i>{{ e.estado === 1 ? 'Activa' : 'Inactiva' }}</span></td>
+              <td class="right"><a class="gestionar" routerLink="/admin/empresas">Gestionar</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <ng-template #sinEmpresas><div class="empty"><i class="fas fa-building-circle-xmark"></i><p>{{ cargando ? 'Cargando…' : 'Aún no hay empresas registradas' }}</p></div></ng-template>
+    </section>
+  </div>
+</div>

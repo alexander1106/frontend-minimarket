@@ -3,6 +3,13 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import baseUrl from '../components/link';
 
+export interface UnidadMedida {
+  idunidadmedida: number;
+  nombre: string;
+  codigo: string | null;
+  permiteDecimales: boolean;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -23,8 +30,8 @@ export class UnidadMedidaService {
     return this.http.post(`${baseUrl}/unidad_medida`, unidad );
   }
 
-  public eliminarUnidadMedida(id: number): Observable<string> {
-    return this.http.delete(`${baseUrl}/unidad_medida/${id}`,{ responseType: 'text' });
+  public eliminarUnidadMedida(id: number): Observable<{ message?: string }> {
+    return this.http.delete<{ message?: string }>(`${baseUrl}/unidad_medida/${id}`);
   }
 
   public editarUnidadMedida(unidad: any): Observable<any> {

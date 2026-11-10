@@ -1,64 +1,60 @@
-  <div class="cont">
-    <h2>Crear Caja</h2>
-
-    <form (ngSubmit)="guardarCaja()">
-      <div class="form-group">
-        <label>Nombre de la Caja</label>
-        <input
-          type="text"
-          class="form-control"
-          [(ngModel)]="caja.nombreCaja"
-          name="nombreCaja"
-          required
-        />
-      </div>
-
-    <div class="form-group">
-  <label>Sucursal</label>
-  <select
-    class="form-control"
-    [(ngModel)]="caja.sucursal"
-    name="idSucursal"
-    required
-    [disabled]="esEdicion"
-  >
-    <option *ngFor="let s of sucursales" [ngValue]="s">
-      {{ s.nombreSucursal }}
-    </option>
-  </select>
-</div>
-
-      <div class="form-group">
-        <label>Saldo Actual</label>
-        <input
-          type="number"
-          class="form-control"
-          [(ngModel)]="caja.saldoActual"
-          name="saldoActual"
-          required
-        />
-      </div>
-
-      <div class="form-group">
-        <label>Estado</label>
-        <select
-          class="form-control"
-          [(ngModel)]="caja.estadoCaja"
-          name="estadoCaja"
-          required
-        >
-          <option value="LIBRE">LIBRE</option>
-          <option value="OCUPADA">OCUPADA</option>
-          <option value="MALOGRADA">MALOGRADA</option>
-
-        </select>
-      </div>
-      <div class="cont-btn">
-  <button type="submit" class="btn btn-primary">Guardar</button>
-      <button type="button" class="btn btn-secondary" (click)="cancelar()">
-        Cancelar
-      </button>
-      </div>
-
-    </form>
+<header class="em-head">
+  <span class="em-icon"><i class="fas fa-vault"></i></span>
+  <div>
+    <h2>{{ esEdicion ? 'Editar caja' : 'Registrar caja' }}</h2>
+    <p>{{ esEdicion ? 'Actualiza los datos de la caja.' : 'Crea una caja registradora y asígnala a una sucursal.' }}</p>
   </div>
+  <button type="button" class="em-close" (click)="cancelar()" aria-label="Cerrar"><i class="fas fa-times"></i></button>
+</header>
+
+<form (ngSubmit)="guardarCaja()" class="em-form" novalidate>
+  <div class="em-body">
+    <p class="aviso" *ngIf="aviso"><i class="fas fa-circle-exclamation"></i> {{ aviso }}</p>
+
+    <p class="em-section"><span>1</span> Datos de la caja</p>
+    <div class="em-grid">
+      <div class="field span2">
+        <label for="nombreCaja">Nombre *</label>
+        <input id="nombreCaja" type="text" [(ngModel)]="caja.nombreCaja" name="nombreCaja" placeholder="Ej. Caja 1" autocomplete="off" [class.invalid]="errores['nombreCaja']" />
+        <small class="err" *ngIf="errores['nombreCaja']">{{ errores['nombreCaja'] }}</small>
+      </div>
+      <div class="field span2">
+        <label for="sucursal">Sucursal *</label>
+        <select id="sucursal" [(ngModel)]="caja.sucursal" name="idSucursal" [disabled]="esEdicion" [class.invalid]="errores['sucursal']">
+          <option [ngValue]="null">Selecciona una sucursal</option>
+          <option *ngFor="let s of sucursales" [ngValue]="s">{{ s.nombreSucursal }}</option>
+        </select>
+        <small class="err" *ngIf="errores['sucursal']">{{ errores['sucursal'] }}</small>
+        <small class="ayuda" *ngIf="esEdicion">La sucursal de una caja no se puede cambiar.</small>
+      </div>
+    </div>
+
+    <p class="em-section"><span>2</span> Saldo y estado</p>
+    <div class="em-grid">
+      <div class="field span2">
+        <label for="saldo">Saldo actual (S/) *</label>
+        <input id="saldo" type="number" min="0" step="0.01" [(ngModel)]="caja.saldoActual" name="saldoActual" [class.invalid]="errores['saldoActual']" />
+        <small class="err" *ngIf="errores['saldoActual']">{{ errores['saldoActual'] }}</small>
+      </div>
+      <div class="field span2">
+        <label>Estado *</label>
+        <div class="estados">
+          <button type="button" *ngFor="let e of estados" [class.on]="caja.estadoCaja === e.valor" [ngClass]="e.clase" [disabled]="bloqueada(e.valor)" [attr.title]="bloqueada(e.valor) ? 'Tiene una apertura abierta' : null" (click)="elegirEstado(e.valor)">
+            <i class="fas {{ e.icono }}"></i>
+            <strong>{{ e.etiqueta }}</strong>
+            <small>{{ bloqueada(e.valor) ? 'Tiene apertura abierta' : e.ayuda }}</small>
+          </button>
+        </div>
+        <small class="err" *ngIf="errores['estadoCaja']">{{ errores['estadoCaja'] }}</small>
+      </div>
+    </div>
+  </div>
+
+  <footer class="em-foot">
+    <button type="button" class="btn-secondary" (click)="cancelar()">Cancelar</button>
+    <button type="submit" class="btn-primary" [disabled]="guardando">
+      <i class="fas fa-spinner fa-spin" *ngIf="guardando"></i>
+      {{ guardando ? 'Guardando…' : (esEdicion ? 'Guardar cambios' : 'Registrar caja') }}
+    </button>
+  </footer>
+</form>

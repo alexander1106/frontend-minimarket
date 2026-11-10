@@ -1,14 +1,178 @@
-<div class="contenedor">
-   <div class="barra">
-    <app-barra-lateral></app-barra-lateral>
+<app-dashboard-superadmin *ngIf="esSuper; else operativo"></app-dashboard-superadmin>
 
+<ng-template #operativo>
+<div class="contenedor">
+  <div class="barra">
+    <app-barra-lateral></app-barra-lateral>
   </div>
 
   <div class="encabezado">
     <app-header></app-header>
-    <hr class="border-secondary mb-4" />
 
+    <section class="hero">
+      <div>
+        <p class="hero-eyebrow"><i class="far fa-calendar"></i> {{ hoy | date:'fullDate' }}</p>
+        <h2>¡Hola{{ nombre ? ', ' + nombre : '' }}! 👋</h2>
+        <p class="hero-sub">Resumen operativo de tu sucursal.</p>
+      </div>
+      <a class="hero-cta" routerLink="/admin/add-venta"><i class="fas fa-cart-shopping"></i> Nueva venta</a>
+    </section>
 
+    <section class="kpis">
+      <article class="kpi">
+        <div class="kpi-top"><span>Ventas de hoy</span><i class="fas fa-coins g"></i></div>
+        <strong>{{ montoHoy | currency:'S/ ':'symbol':'1.2-2' }}</strong>
+        <small>{{ ventasHoy }} comprobantes emitidos</small>
+        <div class="bar"><i class="g" [style.width.%]="ventasHoy ? 100 : 0"></i></div>
+      </article>
+      <article class="kpi">
+        <div class="kpi-top"><span>Ventas del mes</span><i class="fas fa-calendar-check b"></i></div>
+        <strong>{{ montoMes | currency:'S/ ':'symbol':'1.2-2' }}</strong>
+        <small>{{ ventasMes }} transacciones en el mes</small>
+        <div class="bar"><i class="b" [style.width.%]="montoMes ? 100 : 0"></i></div>
+      </article>
+      <article class="kpi">
+        <div class="kpi-top"><span>Clientes</span><i class="fas fa-users v"></i></div>
+        <strong>{{ clientes }}</strong>
+        <small>registrados en la sucursal</small>
+        <div class="bar"><i class="v" [style.width.%]="clientes ? 100 : 0"></i></div>
+      </article>
+      <article class="kpi">
+        <div class="kpi-top"><span>Catálogo activo</span><i class="fas fa-box-open a"></i></div>
+        <strong>{{ productos }} ítems</strong>
+        <small>productos en catálogo</small>
+        <div class="bar"><i class="a" [style.width.%]="productos ? 100 : 0"></i></div>
+      </article>
+      <article class="kpi kpi-stock" [class.alerta]="stockBajo.length > 0">
+        <div class="kpi-top"><span>Stock bajo</span><i class="fas fa-triangle-exclamation r"></i></div>
+        <strong>{{ stockBajo.length }} {{ stockBajo.length === 1 ? 'producto' : 'productos' }}</strong>
+        <small>{{ stockBajo.length ? 'por debajo del mínimo' : 'todo en orden' }}</small>
+        <div class="bar"><i class="r" [style.width.%]="stockBajo.length ? 100 : 0"></i></div>
+      </article>
+      <article class="kpi kpi-vence" [class.alerta]="totalVencidos > 0">
+        <div class="kpi-top"><span>Por vencer</span><i class="fas fa-hourglass-half n"></i></div>
+        <strong>{{ porVencer.length }} {{ porVencer.length === 1 ? 'lote' : 'lotes' }}</strong>
+        <small>{{ totalVencidos ? totalVencidos + ' ya vencido' + (totalVencidos === 1 ? '' : 's') : (porVencer.length ? 'vencen en 30 días' : 'sin lotes por vencer') }}</small>
+        <div class="bar"><i class="o" [style.width.%]="porVencer.length ? 100 : 0"></i></div>
+      </article>
+    </section>
+
+    <div class="grid">
+      <section class="panel">
+        <div class="panel-head">
+          <div><h3><i class="fas fa-chart-simple"></i> Ventas por día (Soles S/)</h3><small>Últimos 7 días</small></div>
+        </div>
+        <div class="chart" role="img" aria-label="Ventas de los últimos 7 días">
+          <div class="col" *ngFor="let d of dias" [class.today]="d.hoy">
+            <span class="val">{{ d.monto | number:'1.0-0' }}</span>
+            <div class="track"><div class="fill" [style.height.%]="d.alto"></div></div>
+            <span class="lbl">{{ d.etiqueta }}</span>
+          </div>
+          <div class="empty" *ngIf="!dias.length"><i class="fas fa-chart-simple"></i><p>{{ cargando ? 'Cargando…' : 'Sin datos de ventas' }}</p></div>
+        </div>
+      </section>
+
+      <section class="panel caja">
+        <div class="panel-head">
+          <h3><i class="fas fa-vault"></i> Estado de caja</h3>
+          <span class="badge" [class.off]="!caja">{{ caja ? 'ABIERTA' : (cajaCargada ? 'CERRADA' : '…') }}</span>
+        </div>
+        <ng-container *ngIf="caja; else sinCaja">
+          <ul class="caja-list">
+            <li><span>Caja</span><strong>{{ caja.caja?.nombreCaja || caja.nombreCaja || '—' }}</strong></li>
+            <li><span>Apertura (monto inicial)</span><strong>{{ caja.saldoInicial | currency:'S/ ':'symbol':'1.2-2' }}</strong></li>
+            <li *ngIf="caja.fechaApertura"><span>Hora de apertura</span><strong>{{ caja.fechaApertura | date:'dd/MM/yyyy HH:mm' }}</strong></li>
+          </ul>
+          <a class="btn-dark" [routerLink]="['/admin/list-transacciones', caja.idAperturaCaja]">Ver movimientos de caja <i class="fas fa-chevron-right"></i></a>
+        </ng-container>
+        <ng-template #sinCaja>
+          <div class="empty small"><i class="fas fa-lock"></i><p>No tienes una caja abierta</p></div>
+          <a class="btn-dark" routerLink="/admin/list-apertura">Abrir caja <i class="fas fa-chevron-right"></i></a>
+        </ng-template>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h3><i class="fas fa-receipt"></i> Ventas recientes</h3><a routerLink="/admin/list-venta">Ver todas</a></div>
+        <ul class="recent" *ngIf="recientes.length; else vacio">
+          <li *ngFor="let v of recientes">
+            <span class="dot"><i class="fas fa-receipt"></i></span>
+            <div class="r-main">
+              <strong>{{ v.nro_comrprobante || 'Venta' }}</strong>
+              <small>{{ v.cliente?.nombre || 'Cliente general' }} · {{ v.fecha_venta | date:'dd/MM/yyyy' }}</small>
+            </div>
+            <span class="r-total">{{ v.total_venta | currency:'S/ ':'symbol':'1.2-2' }}</span>
+          </li>
+        </ul>
+        <ng-template #vacio>
+          <div class="empty"><i class="fas fa-inbox"></i><p>{{ cargando ? 'Cargando…' : 'Aún no hay ventas registradas' }}</p></div>
+        </ng-template>
+      </section>
+
+      <section class="panel panel-vence">
+        <div class="panel-head">
+          <div>
+            <h3><i class="fas fa-hourglass-half"></i> Por vencer</h3>
+            <small>Lotes que vencen en 30 días o ya vencidos · los más urgentes primero</small>
+          </div>
+        </div>
+        <ul class="lista-stock" *ngIf="porVencer.length > 0">
+          <li *ngFor="let l of porVencer | slice:0:8">
+            <div class="s-nombre">
+              <strong>{{ l.producto }}</strong>
+              <small>{{ l.codigo ? 'Lote ' + l.codigo : 'Sin código de lote' }} · {{ l.fechaVencimiento | date:'dd/MM/yyyy' }}</small>
+            </div>
+            <div class="s-cifras">
+              <span class="v-badge" [ngClass]="estadoLote(l)">{{ textoVence(l) }}</span>
+              <span>disp. <b class="v-cant">{{ l.cantidadDisponible | number:'1.0-3' }}</b></span>
+            </div>
+          </li>
+        </ul>
+        <p class="s-mas" *ngIf="porVencer.length > 8">y {{ porVencer.length - 8 }} más…</p>
+        <div class="s-vacio" *ngIf="porVencer.length === 0">
+          <i class="fas fa-circle-check"></i>
+          <p>{{ porVencerCargado ? 'No hay lotes por vencer en los próximos 30 días.' : 'Cargando…' }}</p>
+        </div>
+      </section>
+
+      <section class="panel panel-stock">
+        <div class="panel-head">
+          <div>
+            <h3><i class="fas fa-triangle-exclamation"></i> Stock bajo</h3>
+            <small>Productos en o bajo su stock mínimo · primero los de menos stock</small>
+          </div>
+          <a routerLink="/admin/productos" class="ver-todos">Ver productos</a>
+        </div>
+        <ul class="lista-stock" *ngIf="stockBajo.length > 0">
+          <li *ngFor="let s of stockBajo | slice:0:8">
+            <div class="s-nombre">
+              <strong>{{ s.nombre }}</strong>
+              <small *ngIf="s.codigo">{{ s.codigo }}</small>
+            </div>
+            <div class="s-cifras">
+              <span><b>{{ s.stockActual | number:'1.0-3' }}</b> / mín. {{ s.stockMinimo | number:'1.0-3' }} <em>{{ s.unidad }}</em></span>
+              <span class="s-falta">faltan {{ s.faltante | number:'1.0-3' }}</span>
+            </div>
+          </li>
+        </ul>
+        <p class="s-mas" *ngIf="stockBajo.length > 8">y {{ stockBajo.length - 8 }} más…</p>
+        <div class="s-vacio" *ngIf="stockBajo.length === 0">
+          <i class="fas fa-circle-check"></i>
+          <p>{{ stockBajoCargado ? 'Ningún producto está por debajo de su stock mínimo.' : 'Cargando…' }}</p>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h3><i class="fas fa-bolt"></i> Accesos rápidos</h3></div>
+        <div class="quick">
+          <a *ngFor="let a of accesos" [routerLink]="a.ruta">
+            <span><i class="fas {{ a.icono }}"></i></span>
+            <div><strong>{{ a.titulo }}</strong><small>{{ a.desc }}</small></div>
+            <i class="fas fa-chevron-right arrow"></i>
+          </a>
+        </div>
+      </section>
+    </div>
   </div>
-
 </div>
+
+</ng-template>

@@ -1,0 +1,8 @@
+.recuperar-wrapper { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #f4f6f9; padding: 16px; }
+.recuperar-card { width: 100%; max-width: 380px; background: #fff; padding: 28px; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,.1); display: flex; flex-direction: column; gap: 14px; }
+.recuperar-card h2 { margin: 0; }
+.recuperar-card p { margin: 0; color: #666; font-size: 14px; }
+.recuperar-card input { padding: 10px 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; }
+.recuperar-card button { padding: 10px; border: 0; border-radius: 8px; background: #1976d2; color: #fff; font-size: 15px; cursor: pointer; }
+.recuperar-card button:disabled { opacity: .6; cursor: default; }
+.recuperar-card a { text-align: center; font-size: 13px; }

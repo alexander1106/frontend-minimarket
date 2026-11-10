@@ -1,101 +1,71 @@
+<div class="login-page">
+  <div class="hero-side">
+    <div class="hero-bg" *ngFor="let s of slides; let i = index"
+         [class.active]="currentInfoSlide === i" [style.background-image]="'url(' + s.image + ')'"></div>
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <span class="hero-badge"><i class="fa-solid fa-wand-magic-sparkles"></i> {{ slides[currentInfoSlide].badge }}</span>
+      <h2>{{ slides[currentInfoSlide].title }}</h2>
+      <h4>{{ slides[currentInfoSlide].subtitle }}</h4>
+      <p>{{ slides[currentInfoSlide].description }}</p>
 
-<!-- Contenedor principal con slider -->
-<div class="login-container-kyte">
-  <!-- Fondo con 2 bolas animadas -->
-<div class="animated-circles"></div>
-<div class="animated-circles circle2"></div>
-
-  <div #sliderWrapper class="slider-wrapper">
-    <!-- Lado izquierdo: información sobre la empresa -->
- <div class="info-side">
-  <img src="assets/img/bf503f70-42e4-4501-a58d-5057ae4d5032.png" alt="Logo Gasbacorb" style="max-width: 200px; margin-bottom: 20px;" />
-
-  <div class="carousel-content">
-    <div *ngIf="currentInfoSlide === 0">
-      <h2>Gasbacorb</h2>
-      <p class="slogan">Una solución moderna para gestionar tu negocio</p>
-      <p class="description">
-        ¿Buscas llevar el control de tu empresa al siguiente nivel? Con <strong>Gasbacorb</strong>, accede fácilmente a herramientas de venta, inventario y reportes. Todo en un solo lugar.
-      </p>
-    </div>
-    <div *ngIf="currentInfoSlide === 1">
-      <h2>Ventas</h2>
-      <p class="slogan">Optimiza tus ventas</p>
-      <p class="description">
-        Gestiona todas tus ventas de forma rápida y sencilla, con reportes en tiempo real para tomar mejores decisiones.
-      </p>
-    </div>
-    <div *ngIf="currentInfoSlide === 2">
-      <h2>Inventario</h2>
-      <p class="slogan">Control total de inventario</p>
-      <p class="description">
-        Mantén actualizado el stock de tus productos y recibe alertas automáticas cuando un artículo esté por agotarse.
-      </p>
-    </div>
-    <div *ngIf="currentInfoSlide === 3">
-      <h2>Reportes</h2>
-      <p class="slogan">Reportes detallados</p>
-      <p class="description">
-        Analiza el desempeño de tu negocio con reportes gráficos y personalizados.
-      </p>
-    </div>
-  </div>
-
-  <div class="carousel-buttons">
-    <button [class.active]="currentInfoSlide === 0" (click)="setInfoSlide(0)">1</button>
-    <button [class.active]="currentInfoSlide === 1" (click)="setInfoSlide(1)">2</button>
-    <button [class.active]="currentInfoSlide === 2" (click)="setInfoSlide(2)">3</button>
-    <button [class.active]="currentInfoSlide === 3" (click)="setInfoSlide(3)">4</button>
-  </div>
-</div>
-    <!-- Lado derecho: formulario de acceso -->
-    <div class="form-side">
-      <h3 class="fw-bold text-success text-center">BIENVENIDO A GASBACORB</h3>
-      <p class="text-muted text-center">Inicia sesión para gestionar tu sistema</p>
-
-      <form (ngSubmit)="formSubmit()">
-        <!-- Botones para entrar con Google y Facebook -->
-  <button type="button" class="btn-google">Entrar con Google</button>
-  <button type="button" class="btn-facebook">Entrar con Facebook</button>
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Usuario</mat-label>
-          <input
-            matInput
-            [(ngModel)]="loginData.username"
-            required
-            name="username"
-            placeholder="Digite su nombre de usuario"
-          />
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Contraseña</mat-label>
-          <input
-            matInput
-            [(ngModel)]="loginData.password"
-            required
-            name="password"
-            [type]="hide ? 'password' : 'text'"
-            placeholder="Digite su contraseña"
-          />
-          <button
-            type="button"
-            mat-icon-button
-            matSuffix
-            (click)="hide = !hide"
-          >
-            <mat-icon>{{ hide ? 'visibility_off' : 'visibility' }}</mat-icon>
-          </button>
-          <mat-hint><a routerLink="/enviar-correo">¿Olvidaste tu contraseña?</a></mat-hint>
-        </mat-form-field>
-          <button mat-raised-button style="margin: auto;" color="primary" type="submit">Iniciar sesión</button>
-      </form>
-
-      <div class="text-center mt-3">
-        <small class="text-muted">¿Olvidaste tu contraseña? Contacta al administrador</small>
+      <div class="hero-controls">
+        <div class="dots">
+          <button type="button" *ngFor="let s of slides; let i = index"
+                  [class.active]="currentInfoSlide === i" (click)="setInfoSlide(i)">{{ i + 1 }}</button>
+        </div>
+        <div class="arrows">
+          <button type="button" (click)="prevSlide()"><i class="fa-solid fa-chevron-left"></i></button>
+          <button type="button" (click)="nextSlide()"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
       </div>
     </div>
   </div>
 
+  <div class="form-side">
+    <div class="form-box">
+      <div class="logo"><i class="fa-solid fa-store"></i></div>
+      <h1>Bienvenido</h1>
+      <p class="subtitle">Inicia sesión para gestionar las ventas y caja de tu tienda</p>
 
+      <div class="social">
+        <button type="button" class="btn-google" (click)="proximamente('Google')">
+          <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.1 5.5c4.3-4 6.8-9.9 6.8-16.9z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.4-.8-2.9-.8-4.7s.3-3.3.8-4.7l-7.9-6.1C.9 16.4 0 20.1 0 24s.9 7.6 2.6 10.8z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.1-5.5c-2 1.4-4.6 2.3-8.8 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>
+          Google
+        </button>
+        <button type="button" class="btn-facebook" (click)="proximamente('Facebook')"><i class="fa-brands fa-facebook"></i> Facebook</button>
+      </div>
+
+      <div class="divider"><span>o ingresa con tu cuenta</span></div>
+
+      <form (ngSubmit)="formSubmit()">
+        <label for="username">USUARIO O CORREO *</label>
+        <div class="input-wrap">
+          <i class="fa-regular fa-user"></i>
+          <input id="username" name="username" [(ngModel)]="loginData.username"
+                 placeholder="Digite su usuario o correo" autocomplete="username" />
+        </div>
+
+        <label for="password">CONTRASEÑA *</label>
+        <div class="input-wrap">
+          <i class="fa-solid fa-lock"></i>
+          <input id="password" name="password" [(ngModel)]="loginData.password"
+                 [type]="hide ? 'password' : 'text'" placeholder="Digite su contraseña"
+                 autocomplete="current-password" />
+          <button type="button" class="eye" (click)="hide = !hide">
+            <i class="fa-regular" [ngClass]="hide ? 'fa-eye' : 'fa-eye-slash'"></i>
+          </button>
+        </div>
+
+        <div class="options">
+          <label class="remember"><input type="checkbox" name="remember" [(ngModel)]="remember" /> Recordarme en este equipo</label>
+          <a routerLink="/enviar-correo">¿Olvidaste tu clave?</a>
+        </div>
+
+        <button type="submit" class="btn-login">Iniciar sesión <i class="fa-solid fa-arrow-right"></i></button>
+      </form>
+
+      <p class="register">¿Aún no tienes cuenta? <a href="javascript:void(0)" (click)="registroNoDisponible()">Registra tu minimarket gratis</a></p>
+    </div>
+  </div>
 </div>

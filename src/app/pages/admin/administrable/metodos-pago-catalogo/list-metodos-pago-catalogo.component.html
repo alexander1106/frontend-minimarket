@@ -1,0 +1,136 @@
+<div class="contenedor">
+  <div class="barra"><app-barra-lateral></app-barra-lateral></div>
+
+  <div class="encabezado">
+    <app-header></app-header>
+
+    <section class="dir-head">
+      <div>
+        <h1>Métodos de pago</h1>
+        <p>Catálogo global: las empresas activan estos métodos y registran su propio número, cuenta o alias</p>
+      </div>
+      <button type="button" class="btn-agregar" (click)="abrirModal()">
+        <i class="fas fa-plus"></i> Registrar método
+      </button>
+    </section>
+
+    <aside class="ayuda-caja">
+      <i class="fas fa-circle-info"></i>
+      <p>Aquí defines <strong>qué métodos existen</strong> (Efectivo, Yape, Plin, Tarjeta…). Cada empresa elige cuáles usa y, si el método
+        <strong>pide un dato</strong>, escribe su número de Yape, su cuenta o su alias. El dato no se guarda aquí, sino en cada empresa.</p>
+    </aside>
+
+    <section class="kpis">
+      <article class="kpi">
+        <span>Métodos en el catálogo</span>
+        <strong>{{ metodos.length }} <em>registrados</em></strong>
+      </article>
+      <article class="kpi">
+        <span>Piden un dato a la empresa</span>
+        <strong class="verde">{{ pidenDato }} <em>métodos</em></strong>
+      </article>
+    </section>
+
+    <section class="filtros">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" [(ngModel)]="filtro" (ngModelChange)="aplicarFiltro()" name="filtro"
+               placeholder="Buscar método por nombre o tipo…" aria-label="Buscar método de pago" />
+      </div>
+    </section>
+
+    <section class="dir-table">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Método</th>
+              <th>Tipo</th>
+              <th>Dato de la empresa</th>
+              <th class="right">Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let m of filtrados | paginar:pagina:porPagina">
+              <td>
+                <div class="emp">
+                  <span class="av">{{ iniciales(m.nombre) }}</span>
+                  <strong>{{ m.nombre }}</strong>
+                </div>
+              </td>
+              <td><span class="tipo">{{ etiquetaTipo(m.tipo) }}</span></td>
+              <td>
+                <span class="estado" [class.off]="!m.requiereDetalle"><i></i>{{ m.requiereDetalle ? 'Obligatorio' : 'No necesita' }}</span>
+              </td>
+              <td class="right">
+                <button type="button" class="ico" (click)="abrirModal(m)" title="Editar" aria-label="Editar"><i class="fas fa-pen"></i></button>
+                <button type="button" class="ico danger" (click)="eliminar(m)" title="Eliminar" aria-label="Eliminar"><i class="fas fa-trash-alt"></i></button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="vacio" *ngIf="filtrados.length === 0">
+        <i class="fas fa-wallet"></i>
+        <p *ngIf="cargando">Cargando…</p>
+        <p *ngIf="!cargando && metodos.length > 0">No hay métodos que coincidan con la búsqueda</p>
+        <ng-container *ngIf="!cargando && metodos.length === 0">
+          <p>El catálogo está vacío</p>
+          <button type="button" class="btn-agregar" (click)="abrirModal()"><i class="fas fa-plus"></i> Registrar método</button>
+        </ng-container>
+      </div>
+
+      <app-paginacion [total]="filtrados.length" [(pagina)]="pagina" [(porPagina)]="porPagina"></app-paginacion>
+    </section>
+
+    <div *ngIf="mostrarModal" class="modal" (click)="cerrarModal()">
+      <div class="modal-content emp-modal" role="dialog" aria-modal="true" aria-labelledby="mp-titulo" (click)="$event.stopPropagation()">
+        <header class="em-head">
+          <span class="em-icon"><i class="fas fa-wallet"></i></span>
+          <div>
+            <h2 id="mp-titulo">{{ form.idCatalogo ? 'Editar método de pago' : 'Registrar método de pago' }}</h2>
+            <p>{{ form.idCatalogo ? 'Actualiza el método del catálogo.' : 'Agrégalo para que las empresas puedan activarlo.' }}</p>
+          </div>
+          <button type="button" class="em-close" (click)="cerrarModal()" aria-label="Cerrar"><i class="fas fa-times"></i></button>
+        </header>
+
+        <form (ngSubmit)="guardar()" class="em-form" novalidate>
+          <div class="em-body">
+            <p class="aviso" *ngIf="aviso"><i class="fas fa-circle-exclamation"></i> {{ aviso }}</p>
+            <div class="em-grid">
+              <div class="field">
+                <label for="nombre">Nombre *</label>
+                <input id="nombre" name="nombre" [(ngModel)]="form.nombre" placeholder="Ej. Yape" autocomplete="off" [class.invalid]="errores['nombre']" />
+                <small class="err" *ngIf="errores['nombre']">{{ errores['nombre'] }}</small>
+              </div>
+              <div class="field">
+                <label for="tipo">Tipo</label>
+                <select id="tipo" name="tipo" [(ngModel)]="form.tipo" [class.invalid]="errores['tipo']">
+                  <option *ngFor="let t of tipos" [value]="t.valor">{{ t.etiqueta }}</option>
+                </select>
+                <small class="err" *ngIf="errores['tipo']">{{ errores['tipo'] }}</small>
+              </div>
+              <label class="switch-fila span2">
+                <span class="texto">
+                  <strong>La empresa debe indicar un dato</strong>
+                  <small>Actívalo para Yape, Plin, transferencias… La empresa escribirá su número, cuenta o alias al activar el método.</small>
+                </span>
+                <input type="checkbox" role="switch" name="requiereDetalle" [(ngModel)]="form.requiereDetalle" />
+                <span class="pista" aria-hidden="true"></span>
+              </label>
+            </div>
+          </div>
+
+          <footer class="em-foot">
+            <button type="button" class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
+            <button type="submit" class="btn-primary" [disabled]="guardando">
+              <i class="fas fa-spinner fa-spin" *ngIf="guardando"></i>
+              {{ guardando ? 'Guardando…' : (form.idCatalogo ? 'Guardar cambios' : 'Registrar método') }}
+            </button>
+          </footer>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

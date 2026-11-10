@@ -1,184 +1,148 @@
 <div class="contenedor">
-  <div class="barra">
-    <app-barra-lateral></app-barra-lateral>
-  </div>
+  <div class="barra"><app-barra-lateral></app-barra-lateral></div>
 
   <div class="encabezado">
     <app-header></app-header>
-    <hr class="border-secondary mb-4" />
 
-    <div class="container">
-      <div class="header d-flex justify-content-between align-items-center mb-3">
-        <div>
-          <h2>Inventario &times; Producto</h2>
-          <span class="subtitle">{{ lista.length }} registros</span>
-        </div>
-        <div class="search-sort d-flex align-items-center">
-          <select
-            class="form-select me-2"
-            [(ngModel)]="inventarioFiltro"
-            (change)="aplicarFiltro()"
-          >
-            <option [ngValue]="0">Todos los inventarios</option>
-            <option *ngFor="let inv of inventarios" [ngValue]="inv.idinventario">
-              {{ inv.nombre }}
-            </option>
-          </select>
-          <input
-            type="text"
-            placeholder="Buscar..."
-            class="search-input me-2"
-            [(ngModel)]="filtro"
-            (ngModelChange)="aplicarFiltro()"
-          />
-          <button (click)="abrirModal()" class="btn-agregar">
-            <i class="fas fa-plus"></i> Nuevo
-          </button>
-        </div>
+    <section class="dir-head">
+      <div>
+        <h1>Inventario por producto</h1>
+        <p>Stock de cada producto en cada inventario, en su unidad base</p>
+      </div>
+      <button type="button" class="btn-agregar" (click)="abrirModal()">
+        <i class="fas fa-plus"></i> Registrar producto en inventario
+      </button>
+    </section>
+
+    <section class="kpis">
+      <article class="kpi">
+        <span>Registros</span>
+        <strong>{{ lista.length }} <em>producto × inventario</em></strong>
+      </article>
+      <article class="kpi">
+        <span>Sin stock</span>
+        <strong [class.rojo]="sinStock > 0">{{ sinStock }} <em>registros</em></strong>
+      </article>
+      <article class="kpi">
+        <span>Resultados de la búsqueda</span>
+        <strong class="verde">{{ totalFiltrado }} <em>coinciden</em></strong>
+      </article>
+    </section>
+
+    <section class="filtros">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" [(ngModel)]="filtro" (ngModelChange)="aplicarFiltro()" name="filtro"
+               placeholder="Buscar por producto o inventario…" aria-label="Buscar producto" />
+      </div>
+      <label class="sel">Inventario
+        <select [(ngModel)]="inventarioFiltro" (ngModelChange)="aplicarFiltro()" name="inventarioFiltro">
+          <option [ngValue]="0">Todos los inventarios</option>
+          <option *ngFor="let inv of inventarios" [ngValue]="inv.idinventario">{{ inv.nombre }}</option>
+        </select>
+      </label>
+    </section>
+
+    <section class="dir-table">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>Inventario</th>
+              <th class="num">Stock</th>
+              <th>Ingreso</th>
+              <th class="right">Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let it of filtrados">
+              <td>
+                <div class="emp">
+                  <span class="av">{{ it.productoNombre.slice(0, 2).toUpperCase() }}</span>
+                  <strong>{{ it.productoNombre }}</strong>
+                </div>
+              </td>
+              <td>{{ it.inventarioNombre }}</td>
+              <td class="num">
+                <strong [class.menos]="!(it.stockactual > 0)">{{ it.stockactual | number:'1.0-3' }}</strong>
+                <small class="mono">{{ unidadCodigo(it.idproducto) }}</small>
+              </td>
+              <td class="mono">{{ it.fechaingreso | date:'dd/MM/yyyy HH:mm' }}</td>
+              <td class="right">
+                <button type="button" class="ico" (click)="abrirModal(it)" [disabled]="it.stockactual > 0"
+                        [attr.title]="it.stockactual > 0 ? 'Ya tiene stock: usa Ajustes de inventario' : 'Editar'" aria-label="Editar"><i class="fas fa-pen"></i></button>
+                <button type="button" class="ico danger" (click)="eliminar(it.idinventarioproducto, it.stockactual)" [disabled]="it.stockactual > 0"
+                        [attr.title]="it.stockactual > 0 ? 'No se puede eliminar un registro con stock' : 'Eliminar'" aria-label="Eliminar"><i class="fas fa-trash-alt"></i></button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
-      <table class="customer-table w-100">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Producto</th>
-            <th>Inventario</th>
-            <th>Stock</th>
-            <th>Ingreso</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let it of filtrados; let i = index">
-            <td>{{ (paginaActual - 1) * elementosPorPagina + i + 1 }}</td>
-            <td>{{ it.productoNombre }}</td>
-            <td>{{ it.inventarioNombre }}</td>
-            <td>{{ it.stockactual }}</td>
-            <td>{{ it.fechaingreso | date:'short' }}</td>
-            <td>
-                <button (click)="abrirModal(it)" class="btn-editar me-2">
-                <i class="fas fa-edit"></i>
-                </button>
-                <button
-                    (click)="eliminar(it.idinventarioproducto, it.stockactual)"
-                    class="btn-eliminar"
-                >
-                    <i class="fas fa-trash-alt"></i>
-                </button>
-            </td>
-          <tr *ngIf="filtrados.length === 0">
-            <td colspan="6" class="text-center">No hay registros</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <nav *ngIf="totalPaginas > 1" aria-label="Paginación" class="mt-4">
-        <ul class="pagination justify-content-center mb-0">
-          <li
-            class="page-item"
-            [class.disabled]="paginaActual === 1"
-            (click)="cambiarPagina(paginaActual - 1)"
-          >
-            <a class="page-link" href="javascript:void(0)">Anterior</a>
-          </li>
-          <li
-            class="page-item"
-            *ngFor="let pg of paginasArray"
-            [class.active]="pg === paginaActual"
-            (click)="cambiarPagina(pg)"
-          >
-            <a class="page-link" href="javascript:void(0)">{{ pg }}</a>
-          </li>
-          <li
-            class="page-item"
-            [class.disabled]="paginaActual === totalPaginas"
-            (click)="cambiarPagina(paginaActual + 1)"
-          >
-            <a class="page-link" href="javascript:void(0)">Siguiente</a>
-          </li>
-        </ul>
-      </nav>
-
-      <!-- Modal -->
-      <div *ngIf="mostrarModal" class="modal">
-        <div class="modal-content p-4">
-          <h2 class="mb-3">
-            {{ modelo.idinventarioproducto ? 'Editar' : 'Nuevo' }}
-            Inventario×Producto
-          </h2>
-          <form (ngSubmit)="formSubmit()" #f="ngForm">
-            <div class="mb-2">
-              <label class="form-label">Producto</label>
-              <select
-                name="idproducto"
-                [(ngModel)]="modelo.idproducto"
-                class="form-select"
-                required
-              >
-                <option [ngValue]="0" disabled>Seleccione</option>
-                <option
-                  *ngFor="let p of productos"
-                  [ngValue]="p.idproducto"
-                >
-                  {{ p.nombre }}
-                </option>
-              </select>
-            </div>
-
-            <div class="mb-2">
-              <label class="form-label">Inventario</label>
-              <select
-                name="idinventario"
-                [(ngModel)]="modelo.idinventario"
-                class="form-select"
-                required
-              >
-                <option [ngValue]="0" disabled>Seleccione</option>
-                <option
-                  *ngFor="let inv of inventarios"
-                  [ngValue]="inv.idinventario"
-                >
-                  {{ inv.nombre }}
-                </option>
-              </select>
-            </div>
-
-            <div class="mb-2">
-            <label class="form-label">Stock</label>
-            <input
-                name="stockactual"
-                type="number"
-                min="0"
-                [(ngModel)]="modelo.stockactual"
-                class="form-control"
-                [disabled]="isEditMode"
-                required
-            />
-            <small *ngIf="isEditMode" class="text-muted">
-                No puedes editar el stock aquí; usa Ajuste de Inventario.
-            </small>
-            </div>
-
-            <div class="d-flex justify-content-end mt-3">
-              <button
-                type="button"
-                class="btn btn-secondary me-2"
-                (click)="cerrarModal()"
-              >
-                Cerrar
-              </button>
-              <button
-                type="submit"
-                class="btn btn-primary"
-                [disabled]="f.invalid"
-              >
-                Guardar
-              </button>
-            </div>
-          </form>
-        </div>
+      <div class="vacio" *ngIf="filtrados.length === 0">
+        <i class="fas fa-box-open"></i>
+        <p *ngIf="cargando">Cargando…</p>
+        <p *ngIf="!cargando && lista.length > 0">No hay registros que coincidan con la búsqueda</p>
+        <ng-container *ngIf="!cargando && lista.length === 0">
+          <p>Aún no hay productos en inventario</p>
+          <button type="button" class="btn-agregar" (click)="abrirModal()"><i class="fas fa-plus"></i> Registrar producto en inventario</button>
+        </ng-container>
       </div>
 
+      <app-paginacion [total]="totalFiltrado" [pagina]="paginaActual" [porPagina]="elementosPorPagina" (paginaChange)="cambiarPagina($event)" (porPaginaChange)="cambiarFilas($event)"></app-paginacion>
+    </section>
+
+    <div *ngIf="mostrarModal" class="modal" (click)="cerrarModal()">
+      <div class="modal-content emp-modal" role="dialog" aria-modal="true" aria-labelledby="ip-titulo" (click)="$event.stopPropagation()">
+        <header class="em-head">
+          <span class="em-icon"><i class="fas fa-box-open"></i></span>
+          <div>
+            <h2 id="ip-titulo">{{ modelo.idinventarioproducto ? 'Editar registro' : 'Registrar producto en inventario' }}</h2>
+            <p>Define dónde se guarda el producto y con cuánto stock empieza.</p>
+          </div>
+          <button type="button" class="em-close" (click)="cerrarModal()" aria-label="Cerrar"><i class="fas fa-times"></i></button>
+        </header>
+
+        <form (ngSubmit)="formSubmit()" class="em-form" novalidate>
+          <div class="em-body">
+            <p class="aviso" *ngIf="aviso"><i class="fas fa-circle-exclamation"></i> {{ aviso }}</p>
+            <div class="em-grid">
+              <div class="field span2">
+                <label for="producto">Producto *</label>
+                <select id="producto" name="idproducto" [(ngModel)]="modelo.idproducto" [class.invalid]="errores['idproducto']">
+                  <option [ngValue]="0">Selecciona un producto</option>
+                  <option *ngFor="let p of productos" [ngValue]="p.idproducto">{{ p.nombre }}</option>
+                </select>
+                <small class="err" *ngIf="errores['idproducto']">{{ errores['idproducto'] }}</small>
+              </div>
+              <div class="field span2">
+                <label for="inventario">Inventario *</label>
+                <select id="inventario" name="idinventario" [(ngModel)]="modelo.idinventario" [class.invalid]="errores['idinventario']">
+                  <option [ngValue]="0">Selecciona un inventario</option>
+                  <option *ngFor="let inv of inventarios" [ngValue]="inv.idinventario">{{ inv.nombre }}</option>
+                </select>
+                <small class="err" *ngIf="errores['idinventario']">{{ errores['idinventario'] }}</small>
+              </div>
+              <div class="field span2">
+                <label for="stock">Stock inicial <span class="ayuda" *ngIf="unidadCodigo(modelo.idproducto)">({{ unidadCodigo(modelo.idproducto) }})</span></label>
+                <input id="stock" name="stockactual" type="number" min="0" [step]="pasoStock(modelo.idproducto)" [(ngModel)]="modelo.stockactual"
+                       [disabled]="isEditMode" [class.invalid]="errores['stockactual']" />
+                <small class="err" *ngIf="errores['stockactual']">{{ errores['stockactual'] }}</small>
+                <small class="ayuda" *ngIf="isEditMode">El stock no se edita aquí: usa Ajustes de inventario.</small>
+              </div>
+            </div>
+          </div>
+
+          <footer class="em-foot">
+            <button type="button" class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
+            <button type="submit" class="btn-primary" [disabled]="guardando">
+              <i class="fas fa-spinner fa-spin" *ngIf="guardando"></i>
+              {{ guardando ? 'Guardando…' : (modelo.idinventarioproducto ? 'Guardar cambios' : 'Registrar') }}
+            </button>
+          </footer>
+        </form>
+      </div>
     </div>
   </div>
 </div>

@@ -10,11 +10,9 @@ export class SucursalesService {
 
   constructor(private http:HttpClient) { }
 
-  // Obtener todos los permisos
   public listarSucursales(): Observable<any> {
     return this.http.get(`${baseUrl}/sucursales`);
   }
-
 
   public listarSucursalesPorEmpresas(id:any){
     return this.http.get(`${baseUrl}/empresas/${id}/sucursales`);
@@ -30,7 +28,6 @@ public listarProductosPorSucursal(idSucursal: number): Observable<any> {
 public obtenerEmpresPorSucursal(idSucursal: number): Observable<any> {
   return this.http.get(`${baseUrl}/sucursales/${idSucursal}/empresa`);
 }
-
 
 public listarUsuariosPorSUcursales(idSucursal: number): Observable<any> {
   return this.http.get(`${baseUrl}/sucursales/${idSucursal}/usuarios`);

@@ -25,6 +25,18 @@ export class RolesService {
     return this.http.put(`${baseUrl}/roles`, rol);
   }
 
+  asignables(): Observable<any> {
+    return this.http.get(`${baseUrl}/roles/asignables`);
+  }
+
+  listarModulos(): Observable<any> {
+    return this.http.get(`${baseUrl}/modulos`);
+  }
+
+  guardarModulos(id: number, modulos: number[]): Observable<any> {
+    return this.http.put(`${baseUrl}/roles/${id}/modulos`, { modulos });
+  }
+
   eliminar(id: number): Observable<string> {
     return this.http.delete(`${baseUrl}/roles/${id}`, { responseType: 'text' });
   }

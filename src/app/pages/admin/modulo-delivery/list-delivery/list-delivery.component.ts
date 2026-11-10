@@ -1,208 +1,121 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { HttpClientModule } from '@angular/common/http';
+import Swal from 'sweetalert2';
 import { HeaderComponent } from '../../../../components/header/header.component';
 import { BarraLateralComponent } from '../../../../components/barra-lateral/barra-lateral.component';
-import { FormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
-import { HttpClientModule } from '@angular/common/http';
-import { AddClienteComponent } from '../../modulo-ventas/clientes/add-cliente/add-cliente.component';
-import { ClientesService } from '../../../../service/clientes.service';
-import { Router } from '@angular/router';
-import { MatDialog } from '@angular/material/dialog';
-import Swal from 'sweetalert2';
+import { PaginacionComponent } from '../../../../components/paginacion/paginacion.component';
+import { PaginarPipe } from '../../../../components/paginacion/paginar.pipe';
 import { DeliveryService } from '../../../../service/delivery.service';
+
+const ESTADOS = ['PENDIENTE', 'EN CAMINO', 'ENTREGADO', 'CANCELADO'];
 
 @Component({
   selector: 'app-list-delivery',
-  imports: [HeaderComponent, BarraLateralComponent, FormsModule, CommonModule, HttpClientModule],
+  standalone: true,
+  imports: [PaginacionComponent, PaginarPipe, HeaderComponent, BarraLateralComponent, FormsModule, CommonModule, HttpClientModule],
   templateUrl: './list-delivery.component.html',
   styleUrl: './list-delivery.component.css'
 })
-export class ListDeliveryComponent {
-deliverys: any[] = [];
-  clientesFiltrados: any[] = [];
-  filtroBusqueda: string = '';
-  paginaActual: number = 1;
-  elementosPorPagina: number = 5;
-editingDelivery: any = null; // Este guardará el delivery que se está editando
-nuevoEstado: string = ''; // Nuevo estado a asignar
+export class ListDeliveryComponent implements OnInit {
+  deliverys: any[] = [];
+  filtrados: any[] = [];
+  filtroBusqueda = '';
+  estadoFiltro = '';
+  cargando = true;
 
-  constructor(
-    private deliveryService: DeliveryService,
-    private router: Router,
-    private dialog: MatDialog
-  ) {}
+  pagina = 1;
+  porPagina = 5;
 
-  ngOnInit() {
+  readonly estados = ESTADOS;
+
+  editingDelivery: any = null;
+  nuevoEstado = '';
+  guardando = false;
+
+  constructor(private deliveryService: DeliveryService) {}
+
+  ngOnInit(): void {
     this.listarDelivery();
-
-    // Abrir modal si entramos directamente a /admin/add-clientes
-    if (this.router.url.endsWith('/add-clientes')) {
-      this.abrirModalNuevoCliente();
-    }
-    console.log("sd" +this.listarDelivery)
   }
 
-  abrirModalNuevoCliente() {
-    const dialogRef = this.dialog.open(AddClienteComponent, {
-      width: '1200px',
-      disableClose: true
-    });
-
-    dialogRef.afterClosed().subscribe(result => {
-      if (result === 'guardado') {
-        this.listarDelivery();
-      }
-
-      // Asegura que el modal se cierre completamente antes de redirigir
-      setTimeout(() => {
-        this.router.navigate(['/admin/list-clientes']);
-      }, 0);
-    });
-  }
-
-eliminarCliente(id: number) {
-  Swal.fire({
-    title: '¿Estás seguro?',
-    text: 'Esta acción eliminará al cliente permanentemente',
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#d33',
-    cancelButtonColor: '#3085d6',
-    confirmButtonText: 'Sí, eliminar',
-    cancelButtonText: 'Cancelar'
-  }).then((result) => {
-    if (result.isConfirmed) {
-      this.deliveryService.eliminarDelivery(id).subscribe({
-        next: () => {
-          Swal.fire({
-            title: 'Eliminado',
-            text: 'El delivery a sido eliminado ha sido eliminado',
-            icon: 'success',
-            timer: 1500,
-            showConfirmButton: false
-          }).then(() => {
-            window.location.reload(); // ✅ recarga la página completamente
-          });
-        },
-        error: (err) => {
-          Swal.fire('Error', 'No se pudo eliminar el cliente', 'error');
-          console.error(err);
-        }
-      });
-    }
-  });
-}
-
-
-  listarDelivery() {
+  listarDelivery(): void {
+    this.cargando = true;
     this.deliveryService.listarDelivery().subscribe({
       next: (data: any) => {
-        this.deliverys = data || [];
+        this.deliverys = (Array.isArray(data) ? data : []).sort((a: any, b: any) => String(b.fechaEnvio).localeCompare(String(a.fechaEnvio)));
+        this.cargando = false;
         this.buscarDelivery();
       },
-      error: (err) => {
-        Swal.fire("Error", "No se pudieron cargar los clientes", "error");
-        console.error(err);
+      error: (err: any) => {
+        this.cargando = false;
+        if (err.status !== 401 && err.status !== 403) Swal.fire('Error', 'No se pudieron cargar los envíos', 'error');
       }
     });
   }
 
-  buscarDelivery() {
-    const filtro = this.filtroBusqueda.trim().toLowerCase();
-    this.paginaActual = 1;
+  estadoDe(d: any): string {
+    return String(d?.estadoDelivery || '').toUpperCase();
+  }
 
-    let coincidencias = this.deliverys;
-    if (filtro !== '') {
-      coincidencias = this.deliverys.filter(m =>
-        (m?.nombre?.toLowerCase()?.includes(filtro) || false) ||
-        (m?.ruc?.toLowerCase()?.includes(filtro) || false) ||
-        (m?.id_cliente?.toString()?.includes(filtro) || false)
-      );
+  claseEstado(d: any): string {
+    switch (this.estadoDe(d)) {
+      case 'ENTREGADO': return 'ok';
+      case 'EN CAMINO': return 'camino';
+      case 'CANCELADO': return 'cancelado';
+      default: return 'pendiente';
     }
+  }
 
-    this.clientesFiltrados = coincidencias.slice(
-      (this.paginaActual - 1) * this.elementosPorPagina,
-      this.paginaActual * this.elementosPorPagina
+  cuenta(estado: string): number {
+    return this.deliverys.filter(d => this.estadoDe(d) === estado).length;
+  }
+
+  buscarDelivery(): void {
+    const t = this.filtroBusqueda.trim().toLowerCase();
+    this.filtrados = this.deliverys.filter(d =>
+      (!this.estadoFiltro || this.estadoDe(d) === this.estadoFiltro) &&
+      (!t || [d.venta?.cliente?.nombre, d.venta?.cliente?.apellidos, d.direccion, d.observaciones, d.encargado]
+        .some(v => String(v ?? '').toLowerCase().includes(t)))
     );
   }
 
-  cambiarPagina(pagina: number) {
-    if (pagina >= 1 && pagina <= this.totalPaginas) {
-      this.paginaActual = pagina;
-      this.actualizarPaginaFiltrada();
-    }
+  nombreCliente(d: any): string {
+    const c = d.venta?.cliente;
+    return c ? `${c.nombre || ''} ${c.apellidos || ''}`.trim() || '—' : '—';
   }
 
-  paginasArray(): number[] {
-    return Array(this.totalPaginas).fill(0).map((x, i) => i + 1);
+  mostrarFormularioEditar(delivery: any): void {
+    this.editingDelivery = delivery;
+    this.nuevoEstado = this.estadoDe(delivery) || 'PENDIENTE';
   }
 
-  actualizarPaginaFiltrada() {
-    const filtro = this.filtroBusqueda.trim().toLowerCase();
-
-    let coincidencias = this.deliverys;
-    if (filtro !== '') {
-      coincidencias = this.deliverys.filter(m =>
-        (m?.nombre?.toLowerCase()?.includes(filtro) || false) ||
-        (m?.descripcion?.toLowerCase()?.includes(filtro) || false) ||
-        (m?.id_metodo?.toString()?.includes(filtro) || false)
-      );
-    }
-
-    this.clientesFiltrados = coincidencias.slice(
-      (this.paginaActual - 1) * this.elementosPorPagina,
-      this.paginaActual * this.elementosPorPagina
-    );
+  cancelarEdicion(): void {
+    this.editingDelivery = null;
   }
 
-  get totalPaginas(): number {
-    const filtro = this.filtroBusqueda.trim().toLowerCase();
+  guardarEstado(): void {
+    const actualizado = {
+      ...this.editingDelivery,
+      estadoDelivery: this.nuevoEstado,
+      idVenta: this.editingDelivery?.venta?.idventa
+    };
 
-    let coincidencias = this.deliverys;
-    if (filtro !== '') {
-      coincidencias = this.deliverys.filter(m =>
-        (m?.nombre?.toLowerCase()?.includes(filtro) || false) ||
-        (m?.descripcion?.toLowerCase()?.includes(filtro) || false) ||
-        (m?.id_metodo?.toString()?.includes(filtro) || false)
-      );
-    }
-
-    return Math.ceil(coincidencias.length / this.elementosPorPagina);
+    this.guardando = true;
+    this.deliveryService.actualizarDelivery(this.editingDelivery.iddelivery, actualizado).subscribe({
+      next: () => {
+        this.guardando = false;
+        Swal.fire('Actualizado', 'El estado del envío fue actualizado', 'success');
+        this.editingDelivery = null;
+        this.listarDelivery();
+      },
+      error: (err: any) => {
+        this.guardando = false;
+        if (err.status === 401 || err.status === 403) return;
+        const cuerpo = err.error;
+        Swal.fire('Error', (typeof cuerpo === 'string' ? cuerpo : cuerpo?.message) || 'No se pudo actualizar el estado', 'error');
+      }
+    });
   }
-
-
-
-  navegarYMostrarModal() {
-    this.router.navigate(['admin/add-clientes']);
-  }
-mostrarFormularioEditar(delivery: any) {
-  this.editingDelivery = delivery;
-  this.nuevoEstado = delivery.esttadoDelivery; // ✅ nombre correcto del campo
-}
-
-guardarEstado() {
-  const deliveryActualizado = {
-    ...this.editingDelivery,
-    estadoDelivery: this.nuevoEstado, // este debe coincidir con backend
-    idVenta: this.editingDelivery?.venta?.idventa
-  };
-
-  this.deliveryService.actualizarDelivery(this.editingDelivery.iddelivery, deliveryActualizado).subscribe({
-    next: () => {
-      Swal.fire('Actualizado', 'El estado del delivery fue actualizado', 'success');
-      this.listarDelivery(); // Recargar lista
-      this.editingDelivery = null;
-    },
-    error: (err) => {
-      console.error("Error al actualizar:", err);
-      Swal.fire('Error', 'No se pudo actualizar el estado', 'error');
-    }
-  });
-}
-
-
-cancelarEdicion() {
-  this.editingDelivery = null;
-}
-
 }

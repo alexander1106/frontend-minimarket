@@ -1,91 +1,90 @@
-.header-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 18px 24px;
-  border-radius: 12px;
-  background-color: #ffffff;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  margin: 10px 16px;
+:host { display: block; }
+
+.topbar {
+  display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  padding: 12px 20px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, .06);
 }
 
-.left-section h1 {
-  font-size: 24px;
-  font-weight: 600;
-  color: #111827; /* Dark gray */
-  margin: 0;
+.company { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.company-icon {
+  width: 40px; height: 40px; flex: none; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  background: #ecfdf5; color: #059669; border: 1px solid #d1fae5;
 }
-
-.right {
-  display: flex;
-  align-items: center;
-  gap: 24px;
+.company-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.company-line strong { font-size: 15px; color: #111827; }
+.chip {
+  padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600;
+  background: #f3f4f6; color: #4b5563; border: 1px solid #e5e7eb; font-family: ui-monospace, Consolas, monospace;
 }
+.company small { color: #059669; font-size: 12px; }
+.company small i { margin-right: 4px; }
 
-.right-section {
-  display: flex;
-  align-items: center;
-  gap: 20px;
+.right-section { display: flex; align-items: center; gap: 16px; }
+
+.caja-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 7px 14px; border-radius: 999px;
+  background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0;
+  font-size: 13px; font-weight: 600; text-decoration: none;
 }
+.caja-pill.off { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+.pulse { width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 0 rgba(16,185,129,.6); animation: pulso 1.8s infinite; }
+.caja-pill.off .pulse { background: #ef4444; animation: none; }
+@keyframes pulso { 70% { box-shadow: 0 0 0 7px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
 
-.bell-icon {
-  font-size: 20px;
-  color: #4b5563;
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 50%;
-  transition: background-color 0.2s ease, color 0.2s ease;
+.user-info { display: flex; align-items: center; gap: 10px; }
+.avatar {
+  width: 38px; height: 38px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: #059669; color: #fff; font-weight: 700; font-size: 13px;
 }
-
-.bell-icon:hover {
-  background-color: #f3f4f6;
-  color: #111827;
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-  background-color: #f9fafb;
-  border-radius: 9999px;
-  padding: 6px 16px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.user-info:hover {
-  background-color: #f3f4f6;
-}
-
-.user-info img {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.user-details {
-  margin-left: 20px !important;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  margin-right: 6px;
-}
-
-.user-name {
-  font-weight: 600;
-  color: #111827;
-  font-size: 15px;
-  margin: 0;
-}
-
+.user-details { display: flex; flex-direction: column; line-height: 1.2; }
+.user-name { font-size: 14px; font-weight: 600; color: #111827; }
 .user-role {
-  color: #6b7280;
-  font-size: 12px;
-  margin: 0;
+  align-self: flex-start; margin-top: 2px; padding: 1px 6px; border-radius: 4px;
+  font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  background: #ecfdf5; color: #047857;
 }
 
-.dropdown-arrow {
-  font-size: 12px;
-  color: #6b7280;
+@media (max-width: 768px) {
+  .user-details, .company small { display: none; }
+  .caja-pill { padding: 6px 10px; font-size: 12px; }
 }
+
+.topbar.super { gap: 20px; }
+.crumbs { display: flex; align-items: center; gap: 10px; white-space: nowrap; color: var(--ink-500); }
+.crumbs a { color: var(--ink-500); text-decoration: none; font-weight: 500; }
+.crumbs a:hover { color: var(--ink-900); }
+.crumbs span { color: var(--ink-400); }
+.crumbs strong { font-size: 18px; font-weight: 800; color: var(--ink-900); }
+
+.super-search { position: relative; flex: 1; max-width: 560px; margin: 0; }
+.super-search i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--ink-400); }
+.super-search input {
+  width: 100%; height: 40px; padding: 0 14px 0 40px;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--surface-alt); outline: none; font-size: 14px;
+}
+.super-search input:focus { border-color: var(--brand-500); background: #fff; box-shadow: 0 0 0 3px rgba(16,185,129,.18); }
+
+.moneda { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 10px; background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; font-size: 13px; font-weight: 600; white-space: nowrap; }
+.btn-registrar { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 18px; border: 0; border-radius: 10px; background: linear-gradient(90deg, #059669, #10b981); color: #fff; font-weight: 700; cursor: pointer; white-space: nowrap; box-shadow: 0 4px 10px rgba(5,150,105,.25); }
+.btn-registrar:hover { filter: brightness(1.06); }
+
+@media (max-width: 1100px) { .moneda { display: none; } }
+@media (max-width: 800px) { .super-search { display: none; } .crumbs a, .crumbs span { display: none; } }
+
+.page-crumbs { display: flex; align-items: center; gap: 8px; white-space: nowrap; color: #6b7280; font-size: 13px; }
+.page-crumbs a { color: #6b7280; text-decoration: none; font-weight: 500; }
+.page-crumbs a:hover { color: #111827; }
+.page-crumbs span { color: #9ca3af; }
+.page-crumbs strong { font-size: 18px; font-weight: 800; color: #111827; letter-spacing: -.01em; }
+.company .company-line { margin-top: 1px; gap: 10px; }
+.fecha { display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 10px; background: #f9fafb; color: #4b5563; border: 1px solid #e5e7eb; font-size: 13px; font-weight: 500; text-transform: capitalize; white-space: nowrap; }
+.fecha i { color: #059669; }
+.topbar { padding: 14px 22px; }
+@media (max-width: 1100px) { .fecha { display: none; } }

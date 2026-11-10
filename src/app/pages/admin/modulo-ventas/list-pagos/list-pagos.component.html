@@ -1,119 +1,156 @@
 <div class="contenedor">
-  <div class="barra">
-    <app-barra-lateral></app-barra-lateral>
-  </div>
+  <div class="barra"><app-barra-lateral></app-barra-lateral></div>
 
   <div class="encabezado">
     <app-header></app-header>
-    <hr class="border-secondary mb-4" />
 
-    <div class="container">
-      <div class="header">
-        <div>
-          <h2>Pagos</h2>
-          <span class="subtitle">{{pagos.length}} Pagos registrados</span>
-        </div>
-        <div class="search-sort">
-          <input
-            type="text"
-            placeholder="Buscar por observaciones o referencia"
-            class="search-input"
-          />
-          <button class="btn-agregar" (click)="mostrarFormularioPago()">
-            <i class="fas fa-plus"></i> Añadir Pago
-          </button>
-        </div>
+    <section class="dir-head">
+      <div>
+        <h1>Pagos</h1>
+        <p>Cobros registrados en tu caja y las cotizaciones que se pagaron</p>
+      </div>
+      <button type="button" class="btn-agregar" (click)="mostrarFormularioPago()">
+        <i class="fas fa-plus"></i> Registrar pago
+      </button>
+    </section>
+
+    <section class="kpis">
+      <article class="kpi">
+        <span>Pagos registrados</span>
+        <strong>{{ pagos.length }} <em>pagos</em></strong>
+      </article>
+      <article class="kpi">
+        <span>Total cobrado</span>
+        <strong class="verde">S/ {{ totalCobrado | number:'1.2-2' }}</strong>
+      </article>
+      <article class="kpi">
+        <span>Pagos de hoy</span>
+        <strong>{{ pagosHoy }} <em>pagos</em></strong>
+      </article>
+    </section>
+
+    <section class="filtros">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" [(ngModel)]="filtro" (ngModelChange)="buscar()" name="filtro"
+               placeholder="Buscar por observación, estado o comprobante…" aria-label="Buscar pago" />
+      </div>
+    </section>
+
+    <section class="dir-table">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Observaciones</th>
+              <th class="num">Monto</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let pago of filtrados | paginar:pagina:porPagina">
+              <td class="mono">{{ pago.fechaPago | date:'dd/MM/yyyy' }}</td>
+              <td>{{ pago.observaciones || '—' }}</td>
+              <td class="num"><strong>S/ {{ pago.montoPagado | number:'1.2-2' }}</strong></td>
+              <td><span class="estado-pago" [ngClass]="claseEstado(pago)">{{ pago.estadoPago || '—' }}</span></td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
-      <!-- Tabla de pagos -->
-      <table class="customer-table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Observaciones</th>
-            <th>Fecha</th>
-            <th>Monto</th>
-            <th>Estado</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let pago of pagos; let i = index">
-            <td>{{ i + 1 }}</td>
-            <td>{{ pago.observaciones || '---' }}</td>
-            <td>{{ pago.fechaPago | date: 'short' }}</td>
-            <td>{{ pago.montoPagado | currency }}</td>
-            <td>{{ pago.estadoPago }}</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <!-- Formulario nuevo pago -->
-    <!-- Formulario nuevo pago en overlay -->
-<div *ngIf="mostrandoFormulario" class="overlay-form">
-  <div class="formulario-nuevo-pago">
-    <h3>Registrar Nuevo Pago</h3>
-
-    <form (ngSubmit)="guardarPago()">
-      <div class="form-group">
-        <label>Cotización</label>
-      <select
-  [ngModel]="nuevoPago.cotizacionId"
-  (ngModelChange)="onCotizacionSeleccionada($event)"
-  name="cotizacionId"
->
-  <option value="">Seleccione una cotización</option>
-  <option *ngFor="let c of cotizaciones" [value]="c.idCotizaciones">
-    {{ c.numeroCotizacion }}: {{ c.cliente?.nombre }}
-  </option>
-</select>
-
+      <div class="vacio" *ngIf="filtrados.length === 0">
+        <i class="fas fa-money-bill-wave"></i>
+        <p *ngIf="cargando">Cargando…</p>
+        <p *ngIf="!cargando && pagos.length > 0">No hay pagos que coincidan con la búsqueda</p>
+        <ng-container *ngIf="!cargando && pagos.length === 0">
+          <p>Aún no hay pagos registrados</p>
+          <button type="button" class="btn-agregar" (click)="mostrarFormularioPago()"><i class="fas fa-plus"></i> Registrar pago</button>
+        </ng-container>
       </div>
 
-      <div class="form-group">
-        <label>Observaciones</label>
-        <input [(ngModel)]="nuevoPago.observaciones" name="observaciones" />
+      <app-paginacion [total]="filtrados.length" [(pagina)]="pagina" [(porPagina)]="porPagina"></app-paginacion>
+    </section>
+
+    <div *ngIf="mostrandoFormulario" class="modal" (click)="cerrarFormulario()">
+      <div class="modal-content emp-modal" role="dialog" aria-modal="true" aria-labelledby="pago-titulo" (click)="$event.stopPropagation()">
+        <header class="em-head">
+          <span class="em-icon"><i class="fas fa-money-bill-wave"></i></span>
+          <div>
+            <h2 id="pago-titulo">Registrar pago</h2>
+            <p>Cobra una cotización pendiente y regístralo en tu caja.</p>
+          </div>
+          <button type="button" class="em-close" (click)="cerrarFormulario()" aria-label="Cerrar"><i class="fas fa-times"></i></button>
+        </header>
+
+        <form (ngSubmit)="guardarPago()" class="em-form" novalidate>
+          <div class="em-body">
+            <p class="aviso" *ngIf="aviso"><i class="fas fa-circle-exclamation"></i> {{ aviso }}</p>
+
+            <p class="em-section"><span>1</span> Cotización</p>
+            <div class="em-grid">
+              <div class="field span2">
+                <label for="cotizacion">Cotización pendiente *</label>
+                <select id="cotizacion" name="cotizacionId" [ngModel]="nuevoPago.cotizacionId" (ngModelChange)="onCotizacionSeleccionada($event)" [class.invalid]="errores['cotizacionId']">
+                  <option [ngValue]="null">Selecciona una cotización</option>
+                  <option *ngFor="let c of cotizaciones" [ngValue]="c.idCotizaciones">{{ c.numeroCotizacion }} · {{ c.cliente?.nombre }} · S/ {{ c.totalCotizacion | number:'1.2-2' }}</option>
+                </select>
+                <small class="err" *ngIf="errores['cotizacionId']">{{ errores['cotizacionId'] }}</small>
+                <small class="ayuda" *ngIf="!cotizaciones.length">No hay cotizaciones pendientes de pago.</small>
+              </div>
+            </div>
+
+            <p class="em-section"><span>2</span> Monto y fecha</p>
+            <div class="em-grid">
+              <div class="field">
+                <label for="monto">Monto pagado (S/) *</label>
+                <input id="monto" type="number" min="0" step="0.01" name="montoPagado" [(ngModel)]="nuevoPago.montoPagado" [class.invalid]="errores['montoPagado']" />
+                <small class="err" *ngIf="errores['montoPagado']">{{ errores['montoPagado'] }}</small>
+              </div>
+              <div class="field">
+                <label for="fecha">Fecha de pago *</label>
+                <input id="fecha" type="date" name="fechaPago" [(ngModel)]="nuevoPago.fechaPago" [class.invalid]="errores['fechaPago']" />
+                <small class="err" *ngIf="errores['fechaPago']">{{ errores['fechaPago'] }}</small>
+              </div>
+              <div class="field span2">
+                <label for="obs">Observaciones</label>
+                <input id="obs" name="observaciones" [(ngModel)]="nuevoPago.observaciones" autocomplete="off" />
+              </div>
+            </div>
+
+            <p class="em-section"><span>3</span> Método y comprobante</p>
+            <div class="em-grid">
+              <div class="field span2">
+                <label>Método de pago *</label>
+                <div class="opciones metodos" *ngIf="metodosPago.length">
+                  <button type="button" *ngFor="let m of metodosPago" [class.on]="nuevoPago.metodoPagoId === m.idMetodoPago" (click)="elegirMetodo(m)">
+                    <strong>{{ m.nombre }}</strong>
+                    <small *ngIf="m.detalle">{{ m.detalle }}</small>
+                  </button>
+                </div>
+                <small class="err" *ngIf="errores['metodoPagoId']">{{ errores['metodoPagoId'] }}</small>
+                <small class="ayuda" *ngIf="!metodosPago.length">No tienes métodos de pago activos. Actívalos en Ventas → Métodos de pago.</small>
+              </div>
+              <div class="field span2">
+                <label>Comprobante</label>
+                <div class="opciones">
+                  <button type="button" *ngFor="let c of comprobantes" [class.on]="nuevoPago.comprobantePago === c.valor" (click)="nuevoPago.comprobantePago = c.valor">
+                    <i class="fas {{ c.icono }}"></i> {{ c.etiqueta }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <footer class="em-foot">
+            <button type="button" class="btn-secondary" (click)="cerrarFormulario()">Cancelar</button>
+            <button type="submit" class="btn-primary" [disabled]="guardando">
+              <i class="fas fa-spinner fa-spin" *ngIf="guardando"></i>
+              {{ guardando ? 'Guardando…' : 'Registrar pago' }}
+            </button>
+          </footer>
+        </form>
       </div>
-
-      <div class="form-group">
-        <label>Fecha de Pago</label>
-        <input type="date" [(ngModel)]="nuevoPago.fechaPago" name="fechaPago" />
-      </div>
-
-      <div class="form-group">
-        <label>Monto Pagado</label>
-<input
-  type="number"
-  [(ngModel)]="nuevoPago.montoPagado"
-  name="montoPagado"
-/>
-</div>
-<div class="form-group">
-  <label>Método de Pago</label>
-  <select [(ngModel)]="nuevoPago.metodoPagoId" name="metodoPagoId" required>
-    <option value="">Seleccione un método</option>
-    <option *ngFor="let m of metodosPago" [value]="m.idMetodoPago">
-      {{ m.nombre }}
-    </option>
-  </select>
-</div>
-<div class="form-group">
-  <label>Tipo de Comprobante</label>
-  <select [(ngModel)]="nuevoPago.comprobantePago" name="comprobantePago" required>
-    <option value="">Seleccione</option>
-    <option value="BOLETA">Boleta</option>
-    <option value="FACTURA">Factura</option>
-  </select>
-</div>
-
-
-      <div class="form-buttons">
-        <button type="submit" class="btn-guardar">Guardar Pago</button>
-        <button type="button" class="btn-cancelar" (click)="mostrandoFormulario=false">Cancelar</button>
-      </div>
-    </form>
-  </div>
-</div>
-
     </div>
   </div>
 </div>

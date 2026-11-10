@@ -1,190 +1,221 @@
 <div
   class="d-flex flex-column p-4 text-white custom-sidebar shadow-lg"
-  [ngStyle]="{'background-color': empresaColor}"
+  [ngStyle]="empresaColor ? {'background-color': empresaColor} : null"
 >
 
-  <!-- Menú principal -->
   <ul class="nav nav-pills flex-column gap-2">
-    <li class="nav-item" *ngIf="tieneRolesPermitidos(['CAJERO'])">
-
-    <div class="info">
-
-  <div class="mb-5 d-block align-items-center gap-3">
-  <img
-    *ngIf="empresa?.logo"
-  [src]="'assets/img/' + empresa.logo"
-    alt="Logo Empresa"
-    style="height:100px;width:auto;"
-  />
-  </div>
-
-    </div>
+    <li class="nav-item" *ngIf="!tieneRol('SUPERADMIN') && nombreEmpresa">
+      <div class="empresa-brand">
+        <span class="brand-tile empresa-logo">
+          <img *ngIf="logoSrc" [src]="logoSrc" [alt]="'Logo de ' + nombreEmpresa" />
+          <span *ngIf="!logoSrc" class="logo-iniciales">{{ inicialesEmpresa }}</span>
+        </span>
+        <div>
+          <div class="empresa-name">{{ nombreEmpresa }}</div>
+          <span class="empresa-sub">Panel de gestión</span>
+        </div>
+      </div>
     </li>
   <hr class="border-secondary mb-4" />
 
-        <!-- ADMINISTRABLE (solo ADMIN) -->
-    <li class="nav-item" *ngIf="tieneRolesPermitidos(['SUPERADMIN'])">
-  <div class="mb-5 d-flex align-items-center gap-3">
-    <i class="fas fa-cog fs-4 text-primary"></i>
-    <span class="fs-5 fw-bold">GADBACORP</span>
-  </div>
-    <hr class="border-secondary mb-4" />
+    <ng-container *ngIf="puedeVer('Administrable')">
+      <li class="nav-item">
+        <div class="console-brand">
+          <span class="brand-tile"><i class="fas fa-store"></i></span>
+          <div>
+            <div class="console-name">GASBACORB <span class="saas">SaaS</span></div>
+            <small>Consola Superadmin</small>
+          </div>
+        </div>
+        <div class="master-card">
+          <div class="master-fila">
+            <span class="master-icon"><i class="fas fa-shield-halved"></i></span>
+            <strong class="master-nombre">Modo Maestro</strong>
+            <span class="master-chip" title="Acceso global a toda la plataforma">ROOT</span>
+          </div>
+          <div class="master-total">
+            <b>{{ totalEmpresas }}</b>
+            <span>{{ totalEmpresas === 1 ? 'empresa cliente' : 'empresas clientes' }}</span>
+          </div>
+        </div>
+      </li>
 
-      <a class="nav-link custom-link d-flex justify-content-between align-items-center"
-         (click)="toggleSubmenu('admin')">
-        <span><i class="fas fa-cogs me-2"></i> Administrable</span>
-        <i class="{{ activeMenu === 'admin' ? 'fas fa-chevron-up' : 'fas fa-chevron-down' }}"></i>
-      </a>
-      <ul class="nav flex-column ms-4 mt-2" *ngIf="activeMenu === 'admin'">
-        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/empresas']">Empresas</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/sucursales']">Sucursales</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/roles']">Roles</a></li>
+      <li class="nav-item"><p class="nav-label nav-group">Plataforma</p></li>
+      <li class="nav-item">
+        <a class="nav-link custom-link" routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+          <i class="fas fa-chart-line"></i> Dashboard
+        </a>
+      </li>
 
-      </ul>
-    </li>
-    <!-- DASHBOARD (ADMIN y SUPERVISOR) -->
-    <li class="nav-item" *ngIf="tieneRolesPermitidos(['ADMIN', 'SUPERVISOR'])">
-      <a class="nav-link custom-link d-flex align-items-center gap-2" href="#">
+      <li class="nav-item"><p class="nav-label nav-group">Clientes</p></li>
+      <li class="nav-item">
+        <a class="nav-link custom-link" routerLinkActive="active" [routerLink]="['/admin/empresas']">
+          <i class="fas fa-building"></i> Empresas
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link custom-link" routerLinkActive="active" [routerLink]="['/admin/sucursales']">
+          <i class="fas fa-store"></i> Sucursales
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link custom-link" routerLinkActive="active" [routerLink]="['/admin/planes']">
+          <i class="fas fa-layer-group"></i> Planes
+        </a>
+      </li>
+
+      <li class="nav-item"><p class="nav-label nav-group">Catálogos</p></li>
+      <li class="nav-item">
+        <a class="nav-link custom-link" routerLinkActive="active" [routerLink]="['/admin/unidades-medida']">
+          <i class="fas fa-ruler-combined"></i> Unidades de medida
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link custom-link" routerLinkActive="active" [routerLink]="['/admin/categorias']">
+          <i class="fas fa-tags"></i> Categorías
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link custom-link" routerLinkActive="active" [routerLink]="['/admin/tipoproducto']">
+          <i class="fas fa-layer-group"></i> Tipos de producto
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link custom-link" routerLinkActive="active" [routerLink]="['/admin/metodos-pago-catalogo']">
+          <i class="fas fa-wallet"></i> Métodos de pago
+        </a>
+      </li>
+
+      <li class="nav-item"><p class="nav-label nav-group">Accesos</p></li>
+      <li class="nav-item">
+        <a class="nav-link custom-link" routerLinkActive="active" [routerLink]="['/admin/usuarios']">
+          <i class="fas fa-users"></i> Propietarios y usuarios
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link custom-link" routerLinkActive="active" [routerLink]="['/admin/roles']">
+          <i class="fas fa-user-shield"></i> Roles y permisos
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link custom-link" routerLinkActive="active" [routerLink]="['/admin/auditoria']">
+          <i class="fas fa-clipboard-list"></i> Auditoría
+        </a>
+      </li>
+    </ng-container>
+    <li class="nav-item" *ngIf="grupoVisible(['Dashboard'])"><p class="nav-label nav-group">Principal</p></li>
+
+    <li class="nav-item" *ngIf="puedeVer('Dashboard')">
+      <a class="nav-link custom-link d-flex align-items-center gap-2" routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
         <i class="fas fa-chart-line"></i> Dashboard
       </a>
     </li>
 
-    <!-- SEGURIDAD (solo ADMIN) -->
-    <li class="nav-item" *ngIf="tieneRol('ADMIN')">
-      <a class="nav-link custom-link d-flex justify-content-between align-items-center"
-         (click)="toggleSubmenu('seguridad')" href="#">
-        <span><i class="fas fa-shield-alt me-2"></i> Seguridad</span>
-        <i class="{{ activeMenu === 'seguridad' ? 'fas fa-chevron-up' : 'fas fa-chevron-down' }}"></i>
+    <li class="nav-item" *ngIf="grupoVisible(['Seguridad'])"><p class="nav-label nav-group">Equipo</p></li>
+
+    <li class="nav-item" *ngIf="puedeVer('Seguridad') && !puedeVer('Administrable')">
+      <a class="nav-link custom-link d-flex align-items-center gap-2" routerLinkActive="active" [routerLink]="['/admin/usuarios']">
+        <i class="fas fa-users"></i> Usuarios
       </a>
-      <ul class="nav flex-column ms-4 mt-2" *ngIf="activeMenu === 'seguridad'">
-        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/usuarios']">Usuarios</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Roles</a></li>
-      </ul>
     </li>
 
-    <!-- INVENTARIO (ADMIN y ALMACENERO) -->
-    <li class="nav-item" *ngIf="tieneRolesPermitidos(['ADMIN', 'ALMACENERO'])">
+    <li class="nav-item" *ngIf="grupoVisible(['Inventario', 'Almacenes', 'Productos', 'Compras'])"><p class="nav-label nav-group">Logística</p></li>
+
+    <li class="nav-item" *ngIf="puedeVer('Inventario')">
       <a class="nav-link custom-link d-flex justify-content-between align-items-center"
-         (click)="toggleSubmenu('inventario')">
+         (click)="toggleSubmenu('inventario')" (keydown.enter)="toggleSubmenu('inventario')" tabindex="0" role="button">
         <span><i class="fas fa-boxes me-2"></i> Inventario</span>
         <i class="{{ activeMenu === 'inventario' ? 'fas fa-chevron-up' : 'fas fa-chevron-down' }}"></i>
       </a>
       <ul class="nav flex-column ms-4 mt-2" *ngIf="activeMenu === 'inventario'">
-        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/inventario']">Inventario</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/inventarioproducto']">Inventario por Producto</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/ajuste-inventario']">Movimientos de Inventario</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/traslado-inventario-producto']">Traslado de inventario</a></li>
+        <li class="nav-item"><a class="nav-link sub-link" routerLinkActive="active" [routerLink]="['/admin/inventario']">Inventario</a></li>
+        <li class="nav-item"><a class="nav-link sub-link" routerLinkActive="active" [routerLink]="['/admin/inventarioproducto']">Inventario por Producto</a></li>
+        <li class="nav-item"><a class="nav-link sub-link" routerLinkActive="active" [routerLink]="['/admin/ajuste-inventario']">Ajustes de inventario</a></li>
+        <li class="nav-item"><a class="nav-link sub-link" routerLinkActive="active" [routerLink]="['/admin/traslado-inventario-producto']">Traslado de inventario</a></li>
+        <li class="nav-item"><a class="nav-link sub-link" routerLinkActive="active" [routerLink]="['/admin/kardex']">Kardex</a></li>
       </ul>
     </li>
 
-    <!-- ALMACENES (ADMIN y ALMACENERO) -->
-    <li class="nav-item" *ngIf="tieneRolesPermitidos(['ADMIN', 'ALMACENERO'])">
-      <a class="nav-link custom-link d-flex justify-content-between align-items-center"
-         (click)="toggleSubmenu('almacenes')">
-        <span><i class="fas fa-warehouse me-2"></i> Almacenes</span>
-        <i class="{{ activeMenu === 'almacenes' ? 'fas fa-chevron-up' : 'fas fa-chevron-down' }}"></i>
+    <li class="nav-item" *ngIf="puedeVer('Almacenes')">
+      <a class="nav-link custom-link d-flex align-items-center gap-2" routerLinkActive="active" [routerLink]="['/admin/almacenes']">
+        <i class="fas fa-warehouse"></i> Almacenes
       </a>
-      <ul class="nav flex-column ms-4 mt-2" *ngIf="activeMenu === 'almacenes'">
-        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/almacenes']">Almacenes</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Ajustes de inventario</a></li>
-      </ul>
     </li>
 
-    <!-- PRODUCTOS (ADMIN y ALMACENERO) -->
-    <li class="nav-item" *ngIf="tieneRolesPermitidos(['ADMIN', 'ALMACENERO'])">
-      <a class="nav-link custom-link d-flex justify-content-between align-items-center"
-         (click)="toggleSubmenu('productos')" href="#">
-        <span><i class="fas fa-tags me-2"></i> Productos</span>
-        <i class="{{ activeMenu === 'productos' ? 'fas fa-chevron-up' : 'fas fa-chevron-down' }}"></i>
+    <li class="nav-item" *ngIf="puedeVer('Productos')">
+      <a class="nav-link custom-link d-flex align-items-center gap-2" routerLinkActive="active" [routerLink]="['/admin/productos']">
+        <i class="fas fa-tags"></i> Productos
       </a>
-      <ul class="nav flex-column ms-4 mt-2" *ngIf="activeMenu === 'productos'">
-        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/unidades-medida']" > Unidad de Medida</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small"[routerLink]="['/admin/tipoproducto']">Tipo de producto</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/categorias']">Categorías</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/productos']">Productos</a></li>
-      </ul>
     </li>
 
-    <!-- COMPRAS (ADMIN y ALMACENERO) -->
-    <li class="nav-item" *ngIf="tieneRolesPermitidos(['ADMIN', 'ALMACENERO'])">
+    <li class="nav-item" *ngIf="puedeVer('Compras')">
       <a class="nav-link custom-link d-flex justify-content-between align-items-center"
-         (click)="toggleSubmenu('compras')">
+         (click)="toggleSubmenu('compras')" (keydown.enter)="toggleSubmenu('compras')" tabindex="0" role="button">
         <span><i class="fas fa-shopping-cart me-2"></i> Compras</span>
         <i class="{{ activeMenu === 'compras' ? 'fas fa-chevron-up' : 'fas fa-chevron-down' }}"></i>
       </a>
       <ul class="nav flex-column ms-4 mt-2" *ngIf="activeMenu === 'compras'">
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Compras</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Detalles compras</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Proveedores</a></li>
+        <li class="nav-item"><a class="nav-link sub-link" routerLinkActive="active" [routerLink]="['/admin/compras']">Compras</a></li>
+        <li class="nav-item"><a class="nav-link sub-link" routerLinkActive="active" [routerLink]="['/admin/proveedores']">Proveedores</a></li>
       </ul>
     </li>
 
-    <!-- VENTAS (ADMIN y CAJERO) -->
-    <li class="nav-item" *ngIf="tieneRolesPermitidos(['ADMIN', 'CAJERO','EMPRESA'])">
+    <li class="nav-item" *ngIf="grupoVisible(['Ventas', 'Delivery', 'Caja'])"><p class="nav-label nav-group">Comercial</p></li>
+
+    <li class="nav-item" *ngIf="puedeVer('Ventas')">
       <a class="nav-link custom-link d-flex justify-content-between align-items-center"
-         (click)="toggleSubmenu('ventas')">
+         (click)="toggleSubmenu('ventas')" (keydown.enter)="toggleSubmenu('ventas')" tabindex="0" role="button">
         <span><i class="fas fa-cash-register me-2"></i> Ventas</span>
         <i class="{{ activeMenu === 'ventas' ? 'fas fa-chevron-up' : 'fas fa-chevron-down' }}"></i>
       </a>
       <ul class="nav flex-column ms-4 mt-2" *ngIf="activeMenu === 'ventas'">
-        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/list-venta']">Ventas</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/list-cotizaciones']">Cotizaciones</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/list-clientes']">Clientes</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/metodos-pago']">Métodos de pago</a></li>
+        <li class="nav-item"><a class="nav-link sub-link" routerLinkActive="active" [routerLink]="['/admin/list-venta']">Ventas</a></li>
+        <li class="nav-item"><a class="nav-link sub-link" routerLinkActive="active" [routerLink]="['/admin/list-cotizaciones']">Cotizaciones</a></li>
+        <li class="nav-item"><a class="nav-link sub-link" routerLinkActive="active" [routerLink]="['/admin/list-clientes']">Clientes</a></li>
+        <li class="nav-item"><a class="nav-link sub-link" routerLinkActive="active" [routerLink]="['/admin/metodos-pago']">Métodos de pago</a></li>
       </ul>
     </li>
 
-    <!-- DELIVERY (ADMIN, SUPERVISOR y CAJERO) -->
-    <li class="nav-item" *ngIf="tieneRolesPermitidos(['ADMIN', 'SUPERVISOR', 'CAJERO'])">
-      <a class="nav-link custom-link d-flex justify-content-between align-items-center"
-         (click)="toggleSubmenu('delivery')">
-        <span><i class="fas fa-truck me-2"></i> Delivery</span>
-        <i class="{{ activeMenu === 'delivery' ? 'fas fa-chevron-up' : 'fas fa-chevron-down' }}"></i>
+    <li class="nav-item" *ngIf="puedeVer('Delivery')">
+      <a class="nav-link custom-link d-flex align-items-center gap-2" routerLinkActive="active" [routerLink]="['/admin/list-delivery']">
+        <i class="fas fa-truck"></i> Delivery
       </a>
-      <ul class="nav flex-column ms-4 mt-2" *ngIf="activeMenu === 'delivery'">
-        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/list-delivery']">Delivery</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" href="#">Movimientos</a></li>
-      </ul>
     </li>
 
-    <!-- CAJA (ADMIN y CAJERO) -->
-    <li class="nav-item" *ngIf="tieneRolesPermitidos(['ADMIN', 'CAJERO'])">
+    <li class="nav-item" *ngIf="puedeVer('Caja')">
       <a class="nav-link custom-link d-flex justify-content-between align-items-center"
-         (click)="toggleSubmenu('caja')">
+         (click)="toggleSubmenu('caja')" (keydown.enter)="toggleSubmenu('caja')" tabindex="0" role="button">
         <span><i class="fas fa-cash-register me-2"></i> Caja</span>
         <i class="{{ activeMenu === 'caja' ? 'fas fa-chevron-up' : 'fas fa-chevron-down' }}"></i>
       </a>
       <ul class="nav flex-column ms-4 mt-2" *ngIf="activeMenu === 'caja'">
-        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/list-cajas']">Cajas</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/list-apertura']">Apertura</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/pagos']">Pagos</a></li>
+        <li class="nav-item"><a class="nav-link sub-link" routerLinkActive="active" [routerLink]="['/admin/list-cajas']">Cajas</a></li>
+        <li class="nav-item"><a class="nav-link sub-link" routerLinkActive="active" [routerLink]="['/admin/list-apertura']">Apertura</a></li>
+        <li class="nav-item"><a class="nav-link sub-link" routerLinkActive="active" [routerLink]="['/admin/pagos']">Pagos</a></li>
 
       </ul>
     </li>
 
-    <!-- REPORTES (ADMIN y CAJERO) -->
-    <li class="nav-item" *ngIf="tieneRolesPermitidos(['ADMIN', 'CAJERO'])">
+    <li class="nav-item" *ngIf="grupoVisible(['Reportes'])"><p class="nav-label nav-group">Análisis</p></li>
+
+    <li class="nav-item" *ngIf="puedeVer('Reportes')">
       <a class="nav-link custom-link d-flex justify-content-between align-items-center"
-         (click)="toggleSubmenu('reportes')">
+         (click)="toggleSubmenu('reportes')" (keydown.enter)="toggleSubmenu('reportes')" tabindex="0" role="button">
         <span><i class="fas fa-chart-bar me-2"></i> Reportes</span>
         <i class="{{ activeMenu === 'reportes' ? 'fas fa-chevron-up' : 'fas fa-chevron-down' }}"></i>
       </a>
       <ul class="nav flex-column ms-4 mt-2" *ngIf="activeMenu === 'reportes'">
-        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/reporte-ventas']">Reporte de Ventas</a></li>
-        <li class="nav-item"><a class="nav-link text-white-50 small" [routerLink]="['/admin/reporte-almacenes']">Reporte de Almacenes</a></li>
-        <!-- Aquí podrías agregar más reportes si querés -->
+        <li class="nav-item"><a class="nav-link sub-link" routerLinkActive="active" [routerLink]="['/admin/reporte-ventas']">Reporte de Ventas</a></li>
+        <li class="nav-item"><a class="nav-link sub-link" routerLinkActive="active" [routerLink]="['/admin/reporte-almacenes']">Reporte de Almacenes</a></li>
       </ul>
     </li>
 
-
-
   </ul>
 
-  <!-- Logout -->
   <div class="mt-auto pt-4">
-    <button class="btn btn-outline-light w-100 d-flex align-items-center justify-content-center gap-2 shadow-sm"
+    <button class="btn-logout"
             (click)="cerrarSesion()">
-      <i class="fas fa-sign-out-alt"></i> Logout
+      <i class="fas fa-sign-out-alt"></i> Cerrar sesión
     </button>
   </div>
 </div>

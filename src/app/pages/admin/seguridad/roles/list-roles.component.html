@@ -1,138 +1,138 @@
 <div class="contenedor">
-  <div class="barra">
-    <app-barra-lateral></app-barra-lateral>
-  </div>
+  <div class="barra"><app-barra-lateral></app-barra-lateral></div>
+
   <div class="encabezado">
-    <!-- Header superior -->
-<div class="modulo-admin">
-  Modulo administrable
-</div>    <hr class="border-secondary mb-4" />
+    <app-header></app-header>
 
+    <section class="dir-head">
+      <div>
+        <h1>Roles y permisos</h1>
+        <p>Define qué módulos puede usar cada rol. Los cambios aplican de inmediato.</p>
+      </div>
+      <button type="button" class="btn-agregar" (click)="abrirModal()">
+        <i class="fas fa-plus"></i> Registrar rol
+      </button>
+    </section>
 
-    <div class="container">
-      <div class="header d-flex justify-content-between align-items-center mb-3">
-        <div>
-          <h2>Roles</h2>
-          <span class="subtitle">{{ roles.length }} Registrados</span>
-        </div>
-        <div class="search-sort d-flex align-items-center">
-          <input
-            type="text"
-            placeholder="Buscar rol"
-            class="search-input me-2"
-            [(ngModel)]="filtro"
-            (ngModelChange)="aplicarFiltro()"
-          />
-          <button (click)="abrirModal()" class="btn-agregar">
-            <i class="fas fa-plus"></i> Rol
-          </button>
-        </div>
+    <section class="kpis">
+      <article class="kpi">
+        <span>Total roles</span>
+        <strong>{{ roles.length }} <em>perfiles</em></strong>
+      </article>
+      <article class="kpi">
+        <span>Roles del sistema</span>
+        <strong>{{ totalSistema }} <em>protegidos</em></strong>
+      </article>
+      <article class="kpi">
+        <span>Roles personalizados</span>
+        <strong class="verde">{{ totalPersonalizados }} <em>creados</em></strong>
+      </article>
+    </section>
+
+    <section class="filtros">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" [(ngModel)]="filtro" (ngModelChange)="aplicarFiltro()" name="filtro"
+               placeholder="Buscar rol por nombre…" aria-label="Buscar rol" />
+      </div>
+    </section>
+
+    <section class="dir-table">
+      <div class="table-wrap">
+        <table class="matriz">
+          <thead>
+            <tr>
+              <th class="col-rol">Rol</th>
+              <th class="chk" *ngFor="let m of modulos"><span>{{ m.nombre }}</span></th>
+              <th class="right">Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of filtrados | paginar:pagina:porPagina" [class.sucio]="cambiado(r)">
+              <td class="col-rol">
+                <div class="emp">
+                  <div>
+                    <strong>{{ r.nombre }} <span class="insignia" *ngIf="r.sistema">Sistema</span></strong>
+                    <small class="mono">{{ r.cantidadUsuarios || 0 }} {{ r.cantidadUsuarios === 1 ? 'usuario' : 'usuarios' }} · {{ cantidadModulos(r) }} módulos</small>
+                  </div>
+                </div>
+              </td>
+              <td class="chk" *ngFor="let m of modulos">
+                <label class="cb" [class.lock]="bloqueado(r, m)" [attr.title]="bloqueado(r, m) ? 'No editable para este rol' : null">
+                  <input type="checkbox" [checked]="marcado(r, m)" [disabled]="bloqueado(r, m)" (change)="alternar(r, m)"
+                         [attr.aria-label]="m.nombre + ' para ' + r.nombre" />
+                  <i></i>
+                </label>
+              </td>
+              <td class="right acciones">
+                <ng-container *ngIf="cambiado(r); else fijas">
+                  <button type="button" class="btn-estado" (click)="guardarFila(r)" [disabled]="guardandoId === r.id">
+                    <i class="fas fa-spinner fa-spin" *ngIf="guardandoId === r.id"></i> Guardar
+                  </button>
+                  <button type="button" class="ico" (click)="descartarFila(r)" title="Descartar cambios" aria-label="Descartar"><i class="fas fa-rotate-left"></i></button>
+                </ng-container>
+                <ng-template #fijas>
+                  <button type="button" class="ico" *ngIf="!r.sistema" (click)="abrirModal(r)" title="Renombrar" aria-label="Renombrar"><i class="fas fa-pen"></i></button>
+                  <button type="button" class="ico danger" [disabled]="!puedeEliminar(r)" (click)="eliminar(r)"
+                          [attr.title]="motivoNoEliminar(r)" aria-label="Eliminar"><i class="fas fa-trash-alt"></i></button>
+                </ng-template>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
-      <table class="customer-table w-100">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Nombre</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let r of filtrados; let i = index">
-            <td>{{ (paginaActual - 1) * elementosPorPagina + i + 1 }}</td>
-            <td>{{ r.nombre }}</td>
-            <td>{{ r.estado === 1 ? 'Activo' : 'Inactivo' }}</td>
-            <td>
-              <button (click)="abrirModal(r)" class="btn-editar me-2">
-                <i class="fas fa-edit"></i>
-              </button>
-              <button (click)="eliminar(r.id)" class="btn-eliminar">
-                <i class="fas fa-trash-alt"></i>
-              </button>
-            </td>
-          </tr>
-          <tr *ngIf="filtrados.length === 0">
-            <td colspan="4" class="text-center">No hay registros</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="vacio" *ngIf="filtrados.length === 0">
+        <i class="fas fa-user-shield"></i>
+        <p>{{ cargando ? 'Cargando…' : (roles.length ? 'No hay roles que coincidan con la búsqueda' : 'Aún no hay roles registrados') }}</p>
+      </div>
+      <app-paginacion [total]="filtrados.length" [(pagina)]="pagina" [(porPagina)]="porPagina"></app-paginacion>
+    </section>
 
-      <nav *ngIf="totalPaginas > 1" aria-label="Paginación" class="mt-3">
-        <ul class="pagination justify-content-center mb-0">
-          <li
-            class="page-item"
-            [class.disabled]="paginaActual === 1"
-            (click)="cambiarPagina(paginaActual - 1)"
-          >
-            <a class="page-link" href="javascript:void(0)">Anterior</a>
-          </li>
-          <li
-            class="page-item"
-            *ngFor="let pg of paginasArray"
-            [class.active]="pg === paginaActual"
-            (click)="cambiarPagina(pg)"
-          >
-            <a class="page-link" href="javascript:void(0)">{{ pg }}</a>
-          </li>
-          <li
-            class="page-item"
-            [class.disabled]="paginaActual === totalPaginas"
-            (click)="cambiarPagina(paginaActual + 1)"
-          >
-            <a class="page-link" href="javascript:void(0)">Siguiente</a>
-          </li>
-        </ul>
-      </nav>
+    <div *ngIf="mostrarModal" class="modal" (click)="cerrarModal()">
+      <div class="modal-content emp-modal" role="dialog" aria-modal="true" aria-labelledby="rol-titulo" (click)="$event.stopPropagation()">
+        <header class="em-head">
+          <span class="em-icon"><i class="fas fa-user-shield"></i></span>
+          <div>
+            <h2 id="rol-titulo">{{ rol.id ? 'Renombrar rol' : 'Registrar rol' }}</h2>
+            <p>{{ rol.id ? 'Cambia el nombre del rol.' : 'Crea un perfil de acceso y elige sus módulos.' }}</p>
+          </div>
+          <button type="button" class="em-close" (click)="cerrarModal()" aria-label="Cerrar"><i class="fas fa-times"></i></button>
+        </header>
 
-      <!-- Modal -->
-      <div *ngIf="mostrarModal" class="modal">
-        <div class="modal-content p-4">
-          <h2 class="mb-3">
-            {{ rol.id ? 'Editar' : 'Nuevo' }} Rol
-          </h2>
-          <form (ngSubmit)="formSubmit()" #f="ngForm">
-            <div class="mb-3">
-              <label class="form-label">Nombre</label>
-              <input
-                name="nombre"
-                required
-                [(ngModel)]="rol.nombre"
-                placeholder="Nombre"
-                class="form-control"
-              />
+        <form (ngSubmit)="formSubmit()" class="em-form" novalidate>
+          <div class="em-body">
+            <p class="aviso" *ngIf="avisoModal"><i class="fas fa-circle-exclamation"></i> {{ avisoModal }}</p>
+
+            <p class="em-section"><span>1</span> Nombre</p>
+            <div class="field">
+              <label for="nombre">Nombre del rol *</label>
+              <input id="nombre" name="nombre" [(ngModel)]="rol.nombre" placeholder="Ej. Jefe de tienda" maxlength="30"
+                     [disabled]="rol.sistema" [class.invalid]="errores['nombre']" />
+              <small class="err" *ngIf="errores['nombre']">{{ errores['nombre'] }}</small>
+              <small class="ayuda">Se guarda en mayúsculas, sin tildes y con guion bajo (JEFE_DE_TIENDA).</small>
             </div>
 
-            <div class="mb-3">
-              <label class="form-label">Estado</label>
-              <select
-                name="estado"
-                [(ngModel)]="rol.estado"
-                class="form-select"
-              >
-                <option [ngValue]="1">Activo</option>
-                <option [ngValue]="0">Inactivo</option>
-              </select>
-            </div>
+            <ng-container *ngIf="!rol.id">
+              <p class="em-section"><span>2</span> Módulos con acceso</p>
+              <div class="mod-grid">
+                <label class="mod" *ngFor="let m of modulos" [class.on]="modalModulos.has(m.idModulo)">
+                  <input type="checkbox" [checked]="modalModulos.has(m.idModulo)" (change)="alternarModal(m)" />
+                  {{ m.nombre }}
+                </label>
+              </div>
+              <small class="err" *ngIf="errores['modulos']">{{ errores['modulos'] }}</small>
+            </ng-container>
+          </div>
 
-            <div class="text-end mt-3">
-              <button
-                type="button"
-                class="btn btn-secondary me-2"
-                (click)="cerrarModal()"
-              >
-                Cerrar
-              </button>
-              <button
-                type="submit"
-                class="btn btn-primary"
-                [disabled]="f.invalid"
-              >
-                Guardar
-              </button>
-            </div>
-          </form>
-        </div>
+          <footer class="em-foot">
+            <button type="button" class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
+            <button type="submit" class="btn-primary" [disabled]="guardando">
+              <i class="fas fa-spinner fa-spin" *ngIf="guardando"></i>
+              {{ guardando ? 'Guardando…' : (rol.id ? 'Guardar cambios' : 'Registrar rol') }}
+            </button>
+          </footer>
+        </form>
       </div>
     </div>
   </div>

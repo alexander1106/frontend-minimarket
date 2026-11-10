@@ -1,0 +1,155 @@
+<div class="contenedor">
+  <div class="barra"><app-barra-lateral></app-barra-lateral></div>
+
+  <div class="encabezado">
+    <app-header></app-header>
+
+    <section class="dir-head">
+      <div>
+        <h1>Planes</h1>
+        <p>Precio y límites de cada suscripción que contratan las empresas</p>
+      </div>
+      <button type="button" class="btn-agregar" (click)="abrirModal()">
+        <i class="fas fa-plus"></i> Registrar plan
+      </button>
+    </section>
+
+    <section class="kpis">
+      <article class="kpi">
+        <span>Total de planes</span>
+        <strong>{{ planes.length }} <em>registrados</em></strong>
+      </article>
+      <article class="kpi">
+        <span>Planes activos</span>
+        <strong class="verde">{{ activos }} <em>a la venta</em></strong>
+      </article>
+      <article class="kpi">
+        <span>Empresas suscritas</span>
+        <strong>{{ empresasSuscritas }} <em>empresas</em></strong>
+      </article>
+    </section>
+
+    <section class="filtros">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" [(ngModel)]="filtro" (ngModelChange)="aplicarFiltro()" name="filtro"
+               placeholder="Buscar plan por nombre…" aria-label="Buscar plan" />
+      </div>
+    </section>
+
+    <section class="dir-table">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Plan</th>
+              <th class="num">Precio mensual</th>
+              <th class="num">Máx. usuarios</th>
+              <th class="num">Máx. sucursales</th>
+              <th class="num">Empresas</th>
+              <th>Estado</th>
+              <th class="right">Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of filtrados | paginar:pagina:porPagina" [class.inactivo]="p.estado !== 1">
+              <td>
+                <div class="emp">
+                  <span class="av">{{ p.nombre.slice(0, 2).toUpperCase() }}</span>
+                  <strong>{{ p.nombre }}</strong>
+                </div>
+              </td>
+              <td class="num">
+                <strong *ngIf="p.precioMensual > 0; else gratis">S/ {{ p.precioMensual | number:'1.2-2' }}</strong>
+                <ng-template #gratis><strong class="gratis">Gratis</strong></ng-template>
+              </td>
+              <td class="num"><span [class.ilimitado]="p.maxUsuarios == null">{{ limite(p.maxUsuarios) }}</span></td>
+              <td class="num"><span [class.ilimitado]="p.maxSucursales == null">{{ limite(p.maxSucursales) }}</span></td>
+              <td class="num">{{ p.totalEmpresas }}</td>
+              <td><span class="estado" [class.off]="p.estado !== 1"><i></i>{{ p.estado === 1 ? 'Activo' : 'Desactivado' }}</span></td>
+              <td class="right">
+                <button type="button" class="ico" (click)="abrirModal(p)" title="Editar" aria-label="Editar"><i class="fas fa-pen"></i></button>
+                <button type="button" class="ico danger" (click)="desactivar(p)" [disabled]="!puedeDesactivar(p)"
+                        [attr.title]="motivoNoDesactivar(p)" aria-label="Desactivar"><i class="fas fa-ban"></i></button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="vacio" *ngIf="filtrados.length === 0">
+        <i class="fas fa-layer-group"></i>
+        <p *ngIf="cargando">Cargando…</p>
+        <p *ngIf="!cargando && planes.length > 0">No hay planes que coincidan con la búsqueda</p>
+        <ng-container *ngIf="!cargando && planes.length === 0">
+          <p>Aún no hay planes registrados</p>
+          <button type="button" class="btn-agregar" (click)="abrirModal()"><i class="fas fa-plus"></i> Registrar plan</button>
+        </ng-container>
+      </div>
+
+      <app-paginacion [total]="filtrados.length" [(pagina)]="pagina" [(porPagina)]="porPagina"></app-paginacion>
+    </section>
+
+    <div *ngIf="mostrarModal" class="modal" (click)="cerrarModal()">
+      <div class="modal-content emp-modal" role="dialog" aria-modal="true" aria-labelledby="plan-titulo" (click)="$event.stopPropagation()">
+        <header class="em-head">
+          <span class="em-icon"><i class="fas fa-layer-group"></i></span>
+          <div>
+            <h2 id="plan-titulo">{{ form.idPlan ? 'Editar plan' : 'Registrar plan' }}</h2>
+            <p>{{ form.idPlan ? 'Actualiza el precio, los límites o el estado.' : 'Define el precio y los límites del plan.' }}</p>
+          </div>
+          <button type="button" class="em-close" (click)="cerrarModal()" aria-label="Cerrar"><i class="fas fa-times"></i></button>
+        </header>
+
+        <form (ngSubmit)="guardar()" class="em-form" novalidate>
+          <div class="em-body">
+            <p class="aviso" *ngIf="aviso"><i class="fas fa-circle-exclamation"></i> {{ aviso }}</p>
+            <p class="impacto" *ngIf="form.idPlan && empresasDelPlan > 0">
+              <i class="fas fa-triangle-exclamation"></i>
+              Cambiar el precio o los límites afecta de inmediato a {{ empresasDelPlan }} {{ empresasDelPlan === 1 ? 'empresa que usa' : 'empresas que usan' }} este plan.
+            </p>
+
+            <div class="em-grid">
+              <div class="field">
+                <label for="nombre">Nombre *</label>
+                <input id="nombre" name="nombre" [(ngModel)]="form.nombre" placeholder="Ej. Premium" autocomplete="off" [class.invalid]="errores['nombre']" />
+                <small class="err" *ngIf="errores['nombre']">{{ errores['nombre'] }}</small>
+              </div>
+              <div class="field">
+                <label for="precio">Precio mensual (S/) *</label>
+                <input id="precio" type="number" min="0" step="0.01" name="precioMensual" [(ngModel)]="form.precioMensual" placeholder="0.00" [class.invalid]="errores['precioMensual']" />
+                <small class="err" *ngIf="errores['precioMensual']">{{ errores['precioMensual'] }}</small>
+                <small class="ayuda" *ngIf="!errores['precioMensual']">0 = plan gratuito.</small>
+              </div>
+              <div class="field">
+                <label for="usuarios">Máximo de usuarios</label>
+                <input id="usuarios" type="number" min="1" step="1" name="maxUsuarios" [(ngModel)]="form.maxUsuarios" placeholder="Ilimitado" [class.invalid]="errores['maxUsuarios']" />
+                <small class="err" *ngIf="errores['maxUsuarios']">{{ errores['maxUsuarios'] }}</small>
+                <small class="ayuda" *ngIf="!errores['maxUsuarios']">Vacío = sin límite.</small>
+              </div>
+              <div class="field">
+                <label for="sucursales">Máximo de sucursales</label>
+                <input id="sucursales" type="number" min="1" step="1" name="maxSucursales" [(ngModel)]="form.maxSucursales" placeholder="Ilimitado" [class.invalid]="errores['maxSucursales']" />
+                <small class="err" *ngIf="errores['maxSucursales']">{{ errores['maxSucursales'] }}</small>
+                <small class="ayuda" *ngIf="!errores['maxSucursales']">Vacío = sin límite.</small>
+              </div>
+              <label class="switch-fila span2" *ngIf="form.idPlan">
+                <span class="texto"><strong>Plan activo</strong><small>Un plan desactivado no se ofrece a empresas nuevas. Actívalo para volver a ofrecerlo.</small></span>
+                <input type="checkbox" role="switch" name="activo" [(ngModel)]="form.activo" />
+                <span class="pista" aria-hidden="true"></span>
+              </label>
+            </div>
+          </div>
+
+          <footer class="em-foot">
+            <button type="button" class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
+            <button type="submit" class="btn-primary" [disabled]="guardando">
+              <i class="fas fa-spinner fa-spin" *ngIf="guardando"></i>
+              {{ guardando ? 'Guardando…' : (form.idPlan ? 'Guardar cambios' : 'Registrar plan') }}
+            </button>
+          </footer>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

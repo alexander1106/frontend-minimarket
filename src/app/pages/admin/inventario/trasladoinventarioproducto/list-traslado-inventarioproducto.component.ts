@@ -10,6 +10,8 @@ import { TrasladoInventarioProductoService } from '../../../../service/traslado-
 import { InventarioProductoService } from '../../../../service/inventarioproducto.services';
 import { ProductosService } from '../../../../service/productos.service';
 import { InventarioService } from '../../../../service/inventario.service';
+import { PaginacionComponent } from '../../../../components/paginacion/paginacion.component';
+import { UnidadProductoService, UnidadInfo } from '../../../../service/unidad-producto.service';
 
 interface TrasladoDTO {
   idtraslado: number;
@@ -24,6 +26,7 @@ interface InventarioProductoDTO {
   idinventarioproducto: number;
   idproducto: number;
   idinventario: number;
+  stockactual?: number;
 }
 
 interface Producto {
@@ -49,7 +52,7 @@ interface TrasladoView extends TrasladoDTO {
 @Component({
   selector: 'app-list-traslado-inventario-producto',
   standalone: true,
-  imports: [
+  imports: [PaginacionComponent, 
     CommonModule,
     FormsModule,
     HttpClientModule,
@@ -66,19 +69,42 @@ export class ListTrasladoInventarioProductoComponent implements OnInit {
   filtro = '';
   mostrarModal = false;
   isEditMode = false;
+  cargando = true;
+  guardando = false;
+  aviso = '';
+  errores: Record<string, string> = {};
   modelo: TrasladoDTO = this.resetModelo();
 
   paginaActual = 1;
   elementosPorPagina = 5;
+  totalFiltrado = 0;
 
   constructor(
     private traslado: TrasladoInventarioProductoService,
     private ipSvc: InventarioProductoService,
     private prodSvc: ProductosService,
-    private invSvc: InventarioService
+    private invSvc: InventarioService,
+    private unidadesSvc: UnidadProductoService
   ) {}
 
+  unidades = new Map<number, UnidadInfo>();
+
+  private unidadDeIp(idip: number): UnidadInfo | undefined {
+    const ip = this.invProds.find(v => v.idinventarioproducto === idip);
+    return ip ? this.unidades.get(ip.idproducto) : undefined;
+  }
+
+  codigoIp(idip: number): string {
+    return this.unidadDeIp(idip)?.codigo || '';
+  }
+
+  permiteDecimalesIp(idip: number): boolean {
+    return !!this.unidadDeIp(idip)?.permiteDecimales;
+  }
+
   ngOnInit(): void {
+    this.cargando = true;
+    this.unidadesSvc.mapa().subscribe(m => (this.unidades = m));
     forkJoin({
       traslados: this.traslado.listarTraslados(),
       ipList: this.ipSvc.listarInventarioproducto(),
@@ -91,26 +117,23 @@ export class ListTrasladoInventarioProductoComponent implements OnInit {
         prods: Producto[];
         invs: Inventario[];
       }) => {
-        // 1) Prepara la lista de Inventario×Producto con nombres
         this.invProds = ipList.map(ip => ({
           ...ip,
           productoNombre: prods.find((p: Producto) => p.idproducto === ip.idproducto)?.nombre || '',
           inventarioNombre: invs.find((i: Inventario) => i.idinventario === ip.idinventario)?.nombre || ''
         }));
-        // 2) Construye la vista de traslados
-        this.traslados = traslados.map(t => {
-          const orig = this.invProds.find(ip => ip.idinventarioproducto === t.origenId)!;
-          const dest = this.invProds.find(ip => ip.idinventarioproducto === t.destinoId)!;
-          return {
-            ...t,
-            origenNombre: `${orig.productoNombre} – ${orig.inventarioNombre}`,
-            destinoNombre: `${dest.productoNombre} – ${dest.inventarioNombre}`
-          };
-        });
+        const nombre = (idip: number) => {
+          const ip = this.invProds.find(v => v.idinventarioproducto === idip);
+          return ip ? `${ip.productoNombre} · ${ip.inventarioNombre}` : '—';
+        };
+        this.traslados = traslados
+          .map(t => ({ ...t, origenNombre: nombre(t.origenId), destinoNombre: nombre(t.destinoId) }))
+          .sort((a, b) => String(b.fechaTraslado).localeCompare(String(a.fechaTraslado)));
+        this.cargando = false;
         this.aplicarFiltro();
       },
-      error: err => {
-        console.error(err);
+      error: () => {
+        this.cargando = false;
         Swal.fire('Error', 'No se pudieron cargar los datos', 'error');
       }
     });
@@ -137,16 +160,24 @@ export class ListTrasladoInventarioProductoComponent implements OnInit {
         x.descripcion.toLowerCase().includes(term)
       );
     }
+    this.totalFiltrado = arr.length;
+    if (this.paginaActual > 1 && (this.paginaActual - 1) * this.elementosPorPagina >= arr.length) this.paginaActual = 1;
     const start = (this.paginaActual - 1) * this.elementosPorPagina;
     this.filtrados = arr.slice(start, start + this.elementosPorPagina);
   }
 
   get totalPaginas(): number {
-    return Math.ceil(this.traslados.length / this.elementosPorPagina);
+    return Math.max(1, Math.ceil(this.totalFiltrado / this.elementosPorPagina));
   }
 
   get paginasArray(): number[] {
     return Array.from({ length: this.totalPaginas }, (_, i) => i + 1);
+  }
+
+  cambiarFilas(n: number): void {
+    this.elementosPorPagina = n;
+    this.paginaActual = 1;
+    this.aplicarFiltro();
   }
 
   cambiarPagina(p: number): void {
@@ -155,7 +186,17 @@ export class ListTrasladoInventarioProductoComponent implements OnInit {
     this.aplicarFiltro();
   }
 
+  get origenElegido(): InventarioProductoView | undefined {
+    return this.invProds.find(ip => ip.idinventarioproducto === this.modelo.origenId);
+  }
+
+  cant(n: any): string {
+    return String(Number(Number(n || 0).toFixed(3)));
+  }
+
   abrirModal(t?: TrasladoView): void {
+    this.errores = {};
+    this.aviso = '';
     if (t) {
       this.isEditMode = true;
       this.modelo = {
@@ -178,58 +219,49 @@ export class ListTrasladoInventarioProductoComponent implements OnInit {
   }
 
   formSubmit(): void {
-  // 1) Validaciones UI
-  if (!this.modelo.origenId || !this.modelo.destinoId) {
-    Swal.fire('Atención', 'Seleccione origen y destino', 'warning');
-    return;
-  }
-  if (this.modelo.origenId === this.modelo.destinoId) {
-    Swal.fire('Atención', 'Origen y destino no pueden ser iguales', 'warning');
-    return;
-  }
-  if (this.modelo.cantidad <= 0) {
-    Swal.fire('Atención', 'Cantidad debe ser mayor a cero', 'warning');
-    return;
-  }
-
-  // 2) Construir payload sin fechaTraslado vacía
-  const dto: any = {
-    origenId: this.modelo.origenId,
-    destinoId: this.modelo.destinoId,
-    cantidad: this.modelo.cantidad,
-    descripcion: this.modelo.descripcion
-  };
-  // Si estamos editando, incluimos el ID y solo la fecha si realmente existe
-  if (this.isEditMode) {
-    dto.idtraslado = this.modelo.idtraslado;
-    if (this.modelo.fechaTraslado) {
-      dto.fechaTraslado = this.modelo.fechaTraslado;
+    this.errores = {};
+    this.aviso = '';
+    if (!this.modelo.origenId) this.errores['origenId'] = 'Selecciona el origen.';
+    if (!this.modelo.destinoId) this.errores['destinoId'] = 'Selecciona el destino.';
+    else if (this.modelo.origenId === this.modelo.destinoId) this.errores['destinoId'] = 'El origen y el destino no pueden ser iguales.';
+    const cantidad = Number(this.modelo.cantidad);
+    if (!(cantidad > 0)) this.errores['cantidad'] = 'La cantidad debe ser mayor a cero.';
+    else if (this.modelo.origenId && !this.permiteDecimalesIp(this.modelo.origenId) && !Number.isInteger(cantidad)) {
+      this.errores['cantidad'] = 'Esta unidad solo admite cantidades enteras.';
     }
-  }
+    if (Object.keys(this.errores).length) return;
 
-  // 3) Llamada al servicio
-  const pet$ = this.isEditMode
-    ? this.traslado.editar(dto)
-    : this.traslado.registrar(dto);
-
-  pet$.subscribe({
-    next: () => {
-      Swal.fire(
-        'Éxito',
-        this.isEditMode ? 'Traslado actualizado' : 'Traslado creado',
-        'success'
-      );
-      this.cerrarModal();
-      this.ngOnInit();
-    },
-    error: (err: any) => {
-      const msg = err.error?.message ?? 'Error inesperado';
-      const icon = err.status === 400 ? 'warning' : 'error';
-      Swal.fire(icon === 'warning' ? 'Atención' : 'Error', msg, icon);
+    const dto: any = {
+      origenId: this.modelo.origenId,
+      destinoId: this.modelo.destinoId,
+      cantidad,
+      descripcion: this.modelo.descripcion
+    };
+    if (this.isEditMode) {
+      dto.idtraslado = this.modelo.idtraslado;
+      if (this.modelo.fechaTraslado) dto.fechaTraslado = this.modelo.fechaTraslado;
     }
-  });
-}
 
+    this.guardando = true;
+    const pet$ = this.isEditMode ? this.traslado.editar(dto) : this.traslado.registrar(dto);
+    pet$.subscribe({
+      next: () => {
+        this.guardando = false;
+        Swal.fire('Éxito', this.isEditMode ? 'Traslado actualizado' : 'Traslado creado', 'success');
+        this.cerrarModal();
+        this.ngOnInit();
+      },
+      error: (err: any) => {
+        this.guardando = false;
+        if (err.status === 401 || err.status === 403) return;
+        const cuerpo = err.error;
+        const msg: string = (typeof cuerpo === 'string' ? cuerpo : cuerpo?.message || cuerpo?.Detalle) || 'Error inesperado';
+        const campos = cuerpo?.errors;
+        if (err.status === 400 && campos && typeof campos === 'object') this.errores = { ...campos };
+        else this.aviso = msg;
+      }
+    });
+  }
 
   eliminar(id: number): void {
     Swal.fire({

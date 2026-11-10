@@ -1,114 +1,119 @@
 <div class="contenedor">
-  <div class="barra">
-    <app-barra-lateral></app-barra-lateral>
-  </div>
+  <div class="barra"><app-barra-lateral></app-barra-lateral></div>
 
   <div class="encabezado">
     <app-header></app-header>
-    <hr class="border-secondary mb-4" />
 
-    <div class="container">
-      <div class="header d-flex justify-content-between align-items-center mb-3">
-        <div>
-          <h2>Reporte de Ventas</h2>
-          <span class="subtitle">Ventas registradas</span>
-        </div>
-        <div class="search-sort d-flex gap-2">
-          <input
-            type="text"
-            placeholder="Buscar por cliente"
-            class="form-control"
-            [(ngModel)]="filtroCliente"
-            (input)="aplicarFiltros()"
-          />
-          <input
-            type="text"
-            placeholder="Buscar por fecha (YYYY-MM-DD)"
-            class="form-control"
-            [(ngModel)]="filtroFecha"
-            (input)="aplicarFiltros()"
-          />
-          <button class="btn btn-secondary" (click)="limpiarFiltros()">
-            <i class="fas fa-eraser"></i> Limpiar
-          </button>
-        </div>
+    <section class="dir-head">
+      <div>
+        <h1>Reporte de ventas</h1>
+        <p>Filtra por cliente, comprobante y fechas, y exporta el resultado</p>
+      </div>
+      <div class="acciones-reporte">
+        <button type="button" class="btn-volver" (click)="imprimir()"><i class="fas fa-print"></i> Imprimir</button>
+        <button type="button" class="btn-volver" (click)="exportarCSV()" [disabled]="!ventasFiltradas.length"><i class="fas fa-file-csv"></i> Exportar CSV</button>
+      </div>
+    </section>
+
+    <section class="kpis">
+      <article class="kpi">
+        <span>Ventas del período</span>
+        <strong>{{ ventasFiltradas.length }} <em>ventas</em></strong>
+      </article>
+      <article class="kpi">
+        <span>Total vendido</span>
+        <strong class="verde">S/ {{ totalVendido | number:'1.2-2' }}</strong>
+      </article>
+      <article class="kpi">
+        <span>Venta promedio</span>
+        <strong>S/ {{ promedio | number:'1.2-2' }}</strong>
+      </article>
+    </section>
+
+    <section class="filtros">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" [(ngModel)]="filtroCliente" (ngModelChange)="aplicarFiltros()" name="filtro"
+               placeholder="Buscar por cliente o número…" aria-label="Buscar venta" />
+      </div>
+      <label class="sel">Comprobante
+        <select [(ngModel)]="tipoFiltro" (ngModelChange)="aplicarFiltros()" name="tipoFiltro">
+          <option value="">Todos</option>
+          <option *ngFor="let t of tipos" [value]="t">{{ t }}</option>
+        </select>
+      </label>
+      <label class="sel">Desde
+        <input type="date" class="fecha" [(ngModel)]="desde" (ngModelChange)="aplicarFiltros()" name="desde" />
+      </label>
+      <label class="sel">Hasta
+        <input type="date" class="fecha" [(ngModel)]="hasta" (ngModelChange)="aplicarFiltros()" name="hasta" />
+      </label>
+      <button type="button" class="btn-limpiar" (click)="limpiarFiltros()"><i class="fas fa-eraser"></i> Limpiar</button>
+    </section>
+
+    <section class="dir-table">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Comprobante</th>
+              <th>Cliente</th>
+              <th class="num">Total</th>
+              <th class="right sin-imprimir">Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let venta of ventasFiltradas | paginar:pagina:porPagina">
+              <td class="mono">{{ venta.fecha_venta | date:'dd/MM/yyyy' }}</td>
+              <td>
+                <strong>{{ venta.nro_comrprobante || '—' }}</strong>
+                <small>{{ venta.tipo_comprobante }}</small>
+              </td>
+              <td>{{ nombreCliente(venta) }}</td>
+              <td class="num"><strong>S/ {{ venta.total_venta | number:'1.2-2' }}</strong></td>
+              <td class="right sin-imprimir">
+                <button type="button" class="ico" (click)="verDetalle(venta)" title="Ver detalle" aria-label="Ver detalle"><i class="fas fa-eye"></i></button>
+                <button type="button" class="ico pdf" (click)="descargarPDF(venta)" title="Descargar PDF" aria-label="Descargar PDF"><i class="fas fa-file-pdf"></i></button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
-      <div *ngIf="isLoading">Cargando ventas...</div>
-
-      <table class="table table-striped" *ngIf="!isLoading && ventasFiltradas.length > 0">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Fecha</th>
-            <th>Tipo documento</th>
-            <th>Número</th>
-            <th>Cliente</th>
-            <th>Total</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let venta of ventasPaginadas; let i = index">
-            <td>{{ (paginaActual - 1) * ventasPorPagina + i + 1 }}</td>
-            <td>{{ venta.fecha_venta | date: 'dd/MM/yyyy' }}</td>
-            <td>{{ venta.tipo_comprobante }}</td>
-            <td>{{ venta.nro_comrprobante }}</td>
-            <td>{{ venta.cliente?.nombre }}</td>
-            <td>{{ venta.total_venta | currency: 'PEN':'symbol':'1.2-2' }}</td>
-            <td>
-              <button class="btn btn-sm btn-primary" (click)="verDetalle(venta)">
-                <i class="fas fa-eye"></i>
-              </button>
-              <button class="btn btn-sm btn-success" (click)="descargarPDF(venta)">
-                <i class="fas fa-file-pdf"></i>
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div *ngIf="!isLoading && ventasFiltradas.length === 0" class="text-center mt-4">
-        <i class="fas fa-folder-open fa-2x text-muted"></i>
-        <p class="text-muted">No hay ventas para mostrar.</p>
+      <div class="vacio" *ngIf="ventasFiltradas.length === 0">
+        <i class="fas fa-chart-column"></i>
+        <p *ngIf="isLoading">Cargando…</p>
+        <p *ngIf="!isLoading && ventas.length > 0">No hay ventas con esos filtros</p>
+        <p *ngIf="!isLoading && ventas.length === 0">Aún no hay ventas registradas</p>
       </div>
 
-      <div *ngIf="ventasFiltradas.length > ventasPorPagina" class="d-flex justify-content-center align-items-center gap-2 mt-3">
-        <button class="btn btn-outline-primary" (click)="paginaAnterior()" [disabled]="paginaActual === 1">Anterior</button>
-        <span>Página {{ paginaActual }}</span>
-        <button
-          class="btn btn-outline-primary"
-          (click)="paginaSiguiente()"
-          [disabled]="paginaActual * ventasPorPagina >= ventasFiltradas.length"
-        >
-          Siguiente
-        </button>
-      </div>
+      <app-paginacion [total]="ventasFiltradas.length" [(pagina)]="pagina" [(porPagina)]="porPagina"></app-paginacion>
+    </section>
 
-      <!-- Modal Detalle -->
-      <div class="modal fade show d-block" *ngIf="mostrarModal" style="background: rgba(0,0,0,0.5);">
-        <div class="modal-dialog">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title">Detalle de Venta</h5>
-              <button type="button" class="btn-close" (click)="cerrarModal()"></button>
-            </div>
-            <div class="modal-body">
-              <p><strong>Cliente:</strong> {{ ventaSeleccionada?.cliente?.nombre }}</p>
-              <p><strong>Fecha:</strong> {{ ventaSeleccionada?.fecha_venta | date: 'dd/MM/yyyy' }}</p>
-              <p><strong>Tipo documento:</strong> {{ ventaSeleccionada?.tipo_comprobante }}</p>
-              <p><strong>Número:</strong> {{ ventaSeleccionada?.nro_comrprobante }}</p>
-              <p><strong>Total:</strong> {{ ventaSeleccionada?.total_venta | currency: 'PEN' }}</p>
-              <p><strong>Estado:</strong> {{ ventaSeleccionada?.estado || 'N/A' }}</p>
-              <!-- Puedes agregar más detalles si quieres -->
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" (click)="cerrarModal()">Cerrar</button>
-            </div>
+    <div *ngIf="mostrarModal && ventaSeleccionada" class="modal" (click)="cerrarModal()">
+      <div class="modal-content emp-modal" role="dialog" aria-modal="true" aria-labelledby="rv-titulo" (click)="$event.stopPropagation()">
+        <header class="em-head">
+          <span class="em-icon"><i class="fas fa-receipt"></i></span>
+          <div>
+            <h2 id="rv-titulo">{{ ventaSeleccionada.tipo_comprobante }} {{ ventaSeleccionada.nro_comrprobante }}</h2>
+            <p>{{ ventaSeleccionada.fecha_venta | date:'dd/MM/yyyy' }}</p>
           </div>
+          <button type="button" class="em-close" (click)="cerrarModal()" aria-label="Cerrar"><i class="fas fa-times"></i></button>
+        </header>
+        <div class="em-body">
+          <dl class="ficha">
+            <dt>Cliente</dt><dd>{{ nombreCliente(ventaSeleccionada) }}</dd>
+            <dt>Comprobante</dt><dd>{{ ventaSeleccionada.tipo_comprobante }} {{ ventaSeleccionada.nro_comrprobante }}</dd>
+            <dt>Estado</dt><dd>{{ ventaSeleccionada.estado_venta || 'Registrada' }}</dd>
+            <dt>Total</dt><dd><strong>S/ {{ ventaSeleccionada.total_venta | number:'1.2-2' }}</strong></dd>
+          </dl>
         </div>
+        <footer class="em-foot">
+          <button type="button" class="btn-secondary" (click)="cerrarModal()">Cerrar</button>
+          <button type="button" class="btn-primary" (click)="descargarPDF(ventaSeleccionada)"><i class="fas fa-file-pdf"></i> Descargar PDF</button>
+        </footer>
       </div>
-      <!-- Fin Modal -->
     </div>
   </div>
 </div>

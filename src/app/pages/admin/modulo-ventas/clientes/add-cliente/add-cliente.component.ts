@@ -10,7 +10,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatSelectModule } from '@angular/material/select';
 import { MatOptionModule } from '@angular/material/core';
 import { ClientesService } from '../../../../../service/clientes.service';
-import { LoginService } from '../../../../../service/login.service'; // Importante: Asegúrate de importar
+import { LoginService } from '../../../../../service/login.service';
 
 @Component({
   selector: 'app-add-cliente',
@@ -38,7 +38,7 @@ export class AddClienteComponent implements OnInit {
     documento: '',
     direccion: '',
     sucursal: {
-      idSucursal: null // Aquí se guardará la sucursal
+      idSucursal: null
     }
   };
 
@@ -50,12 +50,11 @@ export class AddClienteComponent implements OnInit {
     private dialogRef: MatDialogRef<AddClienteComponent>,
     private clienteService: ClientesService,
     private router: Router,
-    private loginService: LoginService, // Inyecta LoginService
+    private loginService: LoginService,
     @Inject(MAT_DIALOG_DATA) public data: any
   ) {}
 
   ngOnInit() {
-    // Determinar el modo
     if (this.data) {
       if (this.data.modo === 'ver') {
         this.modo = 'ver';
@@ -70,7 +69,6 @@ export class AddClienteComponent implements OnInit {
       }
     }
 
-    // Si estás creando, asignar sucursal
     if (this.modo === 'crear') {
       const user = this.loginService.getUser();
       if (user?.sucursal?.idSucursal) {
@@ -81,7 +79,6 @@ export class AddClienteComponent implements OnInit {
       }
     }
 
-    // Cargar documentos existentes
     this.clienteService.listarClientes().subscribe({
       next: (clientes) => {
         this.documentosExistentes = clientes.map((c: any) => c.documento);
@@ -154,8 +151,9 @@ export class AddClienteComponent implements OnInit {
           Swal.fire('Éxito', 'Cliente actualizado correctamente', 'success');
           this.dialogRef.close('guardado');
         },
-        error: () => {
-          Swal.fire('Error', 'No se pudo actualizar el cliente', 'error');
+        error: (err) => {
+          if (err.status === 403) return; // lo informa el interceptor
+          Swal.fire('Error', err?.error?.message || 'No se pudo actualizar el cliente', 'error');
         }
       });
     } else {
@@ -164,8 +162,9 @@ export class AddClienteComponent implements OnInit {
           Swal.fire('Éxito', 'Cliente creado correctamente', 'success');
           this.dialogRef.close('guardado');
         },
-        error: () => {
-          Swal.fire('Error', 'No se pudo crear el cliente', 'error');
+        error: (err) => {
+          if (err.status === 403) return; // lo informa el interceptor
+          Swal.fire('Error', err?.error?.message || 'No se pudo crear el cliente', 'error');
         }
       });
     }

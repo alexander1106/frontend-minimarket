@@ -3,6 +3,16 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import baseUrl from '../components/link';
 
+export interface StockBajoItem {
+  idproducto: number;
+  nombre: string;
+  codigo: string | null;
+  unidad: string | null;
+  stockActual: number;
+  stockMinimo: number;
+  faltante: number;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -12,11 +22,13 @@ export class ProductosService {
 
   constructor(private http: HttpClient) {}
 
+  stockBajo(idSucursal: number): Observable<StockBajoItem[]> {
+    return this.http.get<StockBajoItem[]>(`${this.apiPath}/stock-bajo`, { params: { idSucursal } });
+  }
+
   listarProductos(): Observable<any> {
     return this.http.get(`${this.apiPath}`);
   }
-
-
 
   buscar(id: number): Observable<any> {
     return this.http.get(`${this.apiPath}/${id}`);

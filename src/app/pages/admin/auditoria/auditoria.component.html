@@ -1,0 +1,184 @@
+<div class="contenedor">
+  <div class="barra"><app-barra-lateral></app-barra-lateral></div>
+
+  <div class="encabezado">
+    <app-header></app-header>
+
+    <section class="dir-head">
+      <div>
+        <h1>Auditoría</h1>
+        <p>Quién hizo qué y cuándo: cambios de datos e inicios de sesión de todas las empresas</p>
+      </div>
+      <div class="dir-actions">
+        <button type="button" class="btn-outline" (click)="exportarCsv()" [disabled]="!items.length"><i class="fas fa-file-csv"></i> Exportar CSV</button>
+        <button type="button" class="btn-outline" (click)="actualizar()"><i class="fas fa-rotate"></i> Actualizar</button>
+      </div>
+    </section>
+
+    <section class="kpis">
+      <article class="kpi"><span>Total de acciones</span><strong>{{ resumen?.total || 0 }}</strong></article>
+      <article class="kpi"><span>Fallidas</span><strong class="rojo">{{ resumen?.fallidos || 0 }}</strong></article>
+      <article class="kpi"><span>Creaciones</span><strong class="verde">{{ contar('CREAR') }}</strong></article>
+      <article class="kpi"><span>Ediciones</span><strong class="azul">{{ contar('EDITAR') }}</strong></article>
+      <article class="kpi"><span>Eliminaciones</span><strong class="rojo">{{ contar('ELIMINAR') }}</strong></article>
+      <article class="kpi"><span>Sesiones fallidas</span><strong class="naranja">{{ contar('INICIO_SESION_FALLIDO') }}</strong></article>
+    </section>
+
+    <section class="resumen" *ngIf="resumen && (usuariosTop.length || modulosTop.length)">
+      <div class="panel" *ngIf="usuariosTop.length">
+        <h3>Usuarios más activos</h3>
+        <ul>
+          <li *ngFor="let u of usuariosTop"><span>{{ u.nombre }}</span><strong>{{ u.total }}</strong></li>
+        </ul>
+      </div>
+      <div class="panel" *ngIf="modulosTop.length">
+        <h3>Actividad por módulo</h3>
+        <ul class="barras">
+          <li *ngFor="let m of modulosTop">
+            <span>{{ m.nombre }}</span>
+            <i class="barra-fondo"><b [style.width.%]="m.ancho"></b></i>
+            <strong>{{ m.total }}</strong>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="filtros">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" [(ngModel)]="q" (keyup.enter)="filtrar()" name="q" placeholder="Buscar en la descripción o la ruta…" aria-label="Buscar" />
+      </div>
+      <label class="sel">Desde <input type="date" [(ngModel)]="desde" (ngModelChange)="filtrar()" name="desde" [max]="hasta" /></label>
+      <label class="sel">Hasta <input type="date" [(ngModel)]="hasta" (ngModelChange)="filtrar()" name="hasta" [min]="desde" /></label>
+      <label class="sel">Acción
+        <select [(ngModel)]="accion" (ngModelChange)="filtrar()" name="accion">
+          <option value="">Todas</option>
+          <option *ngFor="let a of filtrosDisponibles.acciones" [value]="a">{{ etiquetas[a] || a }}</option>
+        </select>
+      </label>
+      <label class="sel">Módulo
+        <select [(ngModel)]="modulo" (ngModelChange)="filtrar()" name="modulo">
+          <option value="">Todos</option>
+          <option *ngFor="let m of filtrosDisponibles.modulos" [value]="m">{{ m }}</option>
+        </select>
+      </label>
+      <label class="sel">Usuario
+        <select [(ngModel)]="username" (ngModelChange)="filtrar()" name="username">
+          <option value="">Todos</option>
+          <option *ngFor="let u of filtrosDisponibles.usuarios" [value]="u">{{ u }}</option>
+        </select>
+      </label>
+      <label class="sel">Empresa
+        <select [(ngModel)]="idEmpresa" (ngModelChange)="filtrar()" name="idEmpresa">
+          <option [ngValue]="null">Todas</option>
+          <option *ngFor="let e of empresas" [ngValue]="e.idempresa">{{ e.nombreComercial || e.razonsocial }}</option>
+        </select>
+      </label>
+      <label class="check-fallidas"><input type="checkbox" [(ngModel)]="soloFallidas" (ngModelChange)="filtrar()" name="soloFallidas" /> Solo fallidas</label>
+      <button type="button" class="btn-limpiar" (click)="limpiar()">Limpiar</button>
+    </section>
+
+    <section class="dir-table">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha y hora</th>
+              <th>Usuario</th>
+              <th>Empresa</th>
+              <th>Acción</th>
+              <th>Módulo</th>
+              <th>Descripción</th>
+              <th>Resultado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of items" (click)="ver(r)" tabindex="0" (keyup.enter)="ver(r)">
+              <td class="mono">{{ r.fecha | date:'dd/MM/yyyy HH:mm:ss' }}</td>
+              <td><strong>{{ r.username || '—' }}</strong><small>{{ r.rol }}</small></td>
+              <td>{{ r.empresa || '—' }}</td>
+              <td><span class="badge-accion" [ngClass]="claseAccion(r.accion)">{{ etiquetas[r.accion] || r.accion }}</span></td>
+              <td>{{ r.modulo || '—' }}</td>
+              <td class="desc">{{ r.descripcion }}</td>
+              <td>
+                <span class="res ok" *ngIf="r.exito">OK</span>
+                <span class="res mal" *ngIf="!r.exito">{{ r.estadoHttp || 'Error' }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="vacio" *ngIf="!items.length">
+        <i class="fas fa-clipboard-list"></i>
+        <p *ngIf="cargando">Cargando…</p>
+        <p *ngIf="!cargando">No hay actividad con esos filtros</p>
+      </div>
+
+      <app-paginacion [total]="total" [pagina]="pagina" [porPagina]="porPagina" (paginaChange)="cambiarPagina($event)" (porPaginaChange)="cambiarFilas($event)"></app-paginacion>
+    </section>
+  </div>
+</div>
+
+<div class="modal" *ngIf="detalle" (click)="cerrarDetalle()">
+  <div class="modal-content emp-modal ancho" role="dialog" aria-modal="true" aria-labelledby="aud-titulo" (click)="$event.stopPropagation()">
+    <header class="em-head">
+      <span class="em-icon"><i class="fas fa-clipboard-list"></i></span>
+      <div>
+        <h2 id="aud-titulo">{{ etiquetas[detalle.accion] || detalle.accion }} · {{ detalle.modulo }}</h2>
+        <p>{{ detalle.descripcion }}</p>
+      </div>
+      <button type="button" class="em-close" (click)="cerrarDetalle()" aria-label="Cerrar"><i class="fas fa-times"></i></button>
+    </header>
+
+    <div class="em-body">
+      <div class="det-grid">
+        <div class="det-card">
+          <span>Quién</span>
+          <strong>{{ detalle.username || '—' }}</strong>
+          <small>{{ detalle.rol }}<ng-container *ngIf="detalle.empresa"> · {{ detalle.empresa }}</ng-container></small>
+        </div>
+        <div class="det-card">
+          <span>Cuándo</span>
+          <strong>{{ detalle.fecha | date:'dd/MM/yyyy HH:mm:ss' }}</strong>
+          <small *ngIf="detalle.duracionMs != null">Duró {{ detalle.duracionMs }} ms</small>
+        </div>
+        <div class="det-card">
+          <span>Desde</span>
+          <strong>{{ detalle.ip || '—' }}</strong>
+          <small>{{ navegador(detalle.userAgent) }}</small>
+        </div>
+        <div class="det-card">
+          <span>Qué</span>
+          <strong>{{ etiquetas[detalle.accion] || detalle.accion }} {{ detalle.recurso }}</strong>
+          <small *ngIf="detalle.idRegistro != null">Registro #{{ detalle.idRegistro }}</small>
+        </div>
+      </div>
+
+      <p class="det-linea" *ngIf="detalle.metodo || detalle.ruta">
+        <span class="metodo">{{ detalle.metodo }}</span> <code>{{ detalle.ruta }}</code>
+        <span class="res ok" *ngIf="detalle.exito">OK</span>
+        <span class="res mal" *ngIf="!detalle.exito">{{ detalle.estadoHttp || 'Error' }}</span>
+      </p>
+
+      <p class="det-titulo" *ngIf="cargandoDetalle">Cargando detalle…</p>
+
+      <ng-container *ngIf="!cargandoDetalle && partesDetalle.cuerpo">
+        <p class="det-titulo">Datos enviados</p>
+        <dl class="campos" *ngIf="datosEnviados as campos; else crudo">
+          <ng-container *ngFor="let c of campos"><dt>{{ c.campo }}</dt><dd>{{ c.valor }}</dd></ng-container>
+        </dl>
+        <ng-template #crudo><pre>{{ cuerpoComoTexto }}</pre></ng-template>
+      </ng-container>
+
+      <ng-container *ngIf="!cargandoDetalle && partesDetalle.respuesta">
+        <p class="det-titulo">Respuesta del servidor</p>
+        <pre class="error">{{ partesDetalle.respuesta }}</pre>
+      </ng-container>
+    </div>
+
+    <footer class="em-foot">
+      <button type="button" class="btn-secondary" (click)="cerrarDetalle()">Cerrar</button>
+    </footer>
+  </div>
+</div>

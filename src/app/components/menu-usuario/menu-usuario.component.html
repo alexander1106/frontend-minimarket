@@ -1,0 +1,22 @@
+<button type="button" class="user-info" (click)="alternar()" [attr.aria-expanded]="abierto" aria-haspopup="menu" aria-label="Menú de usuario">
+  <span class="avatar" aria-hidden="true">{{ iniciales }}</span>
+  <span class="user-details">
+    <span class="user-name">{{ username }}</span>
+    <span class="user-role">{{ rol }}</span>
+  </span>
+  <i class="fas fa-chevron-down flecha" [class.arriba]="abierto"></i>
+</button>
+
+<div class="menu" *ngIf="abierto" role="menu">
+  <div class="menu-cab">
+    <span class="avatar grande" aria-hidden="true">{{ iniciales }}</span>
+    <div>
+      <strong>{{ nombreCompleto || username }}</strong>
+      <small>{{ correo || ('@' + username) }}</small>
+    </div>
+  </div>
+  <a role="menuitem" routerLink="/admin/perfil" (click)="abierto = false"><i class="far fa-user"></i> Mi perfil</a>
+  <a role="menuitem" routerLink="/admin/notificaciones" (click)="abierto = false"><i class="far fa-bell"></i> Notificaciones</a>
+  <hr />
+  <button type="button" role="menuitem" class="salir" (click)="cerrarSesion()"><i class="fas fa-arrow-right-from-bracket"></i> Cerrar sesión</button>
+</div>

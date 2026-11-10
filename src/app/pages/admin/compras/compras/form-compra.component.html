@@ -1,0 +1,193 @@
+<div class="contenedor">
+  <div class="barra"><app-barra-lateral></app-barra-lateral></div>
+
+  <div class="encabezado">
+    <app-header></app-header>
+
+    <section class="dir-head">
+      <div>
+        <h1>{{ editando ? 'Editar compra #' + idCompra : 'Nueva compra' }}</h1>
+        <p>{{ editando ? 'Cambia el proveedor, el método de pago, la descripción o las líneas.' : 'Registra la mercadería que compraste a un proveedor.' }}</p>
+      </div>
+      <a routerLink="/admin/compras" class="btn-volver"><i class="fas fa-arrow-left"></i> Volver a compras</a>
+    </section>
+
+    <aside class="ayuda-caja">
+      <i class="fas fa-circle-info"></i>
+      <p>Al guardar, la compra <strong>suma stock en unidad base</strong> a la sucursal elegida (2 sacos de 50 kg = +100 kg).
+        <span *ngIf="editando"> Se <strong>reemplazan todas las líneas</strong> y el stock se ajusta por diferencia. Si cambias la sucursal, el stock se mueve a la nueva.</span></p>
+    </aside>
+
+    <aside class="ayuda-caja peligro" *ngIf="!cargando && idSucursal && sucursalSinInventario">
+      <i class="fas fa-triangle-exclamation"></i>
+      <p><strong>Crea un almacén e inventario para registrar compras.</strong> La sucursal elegida no tiene dónde sumar el stock.
+        <a routerLink="/admin/almacenes">Ir a Almacenes</a></p>
+    </aside>
+
+    <p class="cargando" *ngIf="cargando">Cargando…</p>
+
+    <form *ngIf="!cargando" (ngSubmit)="guardar()" novalidate>
+      <section class="tarjeta">
+        <p class="em-section"><span>1</span> Datos de la compra</p>
+        <div class="grid3">
+          <div class="field">
+            <label for="proveedor">Proveedor *</label>
+            <select id="proveedor" name="proveedor" [(ngModel)]="idProveedor" [class.invalid]="erroresCabecera['proveedor']">
+              <option [ngValue]="null">Selecciona un proveedor</option>
+              <option *ngFor="let p of proveedores" [ngValue]="p.idProveedor">{{ p.nombre }}</option>
+            </select>
+            <small class="err" *ngIf="erroresCabecera['proveedor']">{{ erroresCabecera['proveedor'] }}</small>
+            <small class="ayuda" *ngIf="proveedores.length === 0">No hay proveedores activos. Registra uno en Compras → Proveedores.</small>
+          </div>
+          <div class="field">
+            <label for="sucursal">Sucursal *</label>
+            <select id="sucursal" name="sucursal" [(ngModel)]="idSucursal" (ngModelChange)="alCambiarSucursal()" [class.invalid]="erroresCabecera['sucursal']">
+              <option [ngValue]="null">Selecciona una sucursal</option>
+              <option *ngFor="let s of sucursales" [ngValue]="s.idSucursal">{{ s.nombreSucursal }}</option>
+            </select>
+            <small class="err" *ngIf="erroresCabecera['sucursal']">{{ erroresCabecera['sucursal'] }}</small>
+          </div>
+          <div class="field">
+            <label for="metodo">Método de pago *</label>
+            <select id="metodo" name="metodo" [(ngModel)]="idMetodoPago" [class.invalid]="erroresCabecera['metodo']">
+              <option [ngValue]="null">Selecciona un método</option>
+              <option *ngFor="let m of metodos" [ngValue]="m.idMetodoPago">{{ m.nombre || m.nombreMetodo }}</option>
+            </select>
+            <small class="err" *ngIf="erroresCabecera['metodo']">{{ erroresCabecera['metodo'] }}</small>
+          </div>
+          <div class="field todo">
+            <label for="descripcion">Descripción</label>
+            <input id="descripcion" name="descripcion" [(ngModel)]="descripcion" placeholder="Ej. Reposición de la semana" autocomplete="off" />
+          </div>
+        </div>
+      </section>
+
+      <section class="tarjeta">
+        <p class="em-section"><span>2</span> Productos comprados</p>
+
+        <div class="buscador" (click)="$event.stopPropagation()">
+          <i class="fas fa-search"></i>
+          <input type="search" name="busquedaProducto" [(ngModel)]="busqueda" (focus)="abrirLista = true" (ngModelChange)="abrirLista = true"
+                 placeholder="Busca un producto por nombre y haz clic para agregarlo…" autocomplete="off" aria-label="Buscar producto" />
+          <div class="resultados" *ngIf="abrirLista && resultados.length">
+            <button type="button" *ngFor="let p of resultados" (click)="agregarProducto(p)">
+              <span><strong>{{ p.nombre }}</strong><small *ngIf="p.categoria?.nombre || p.tipoProducto?.nombre">{{ p.categoria?.nombre || p.tipoProducto?.nombre }}</small></span>
+              <span class="mas"><ng-container *ngIf="enLineas(p.idproducto) as n">×{{ n }} · </ng-container><i class="fas fa-plus"></i></span>
+            </button>
+          </div>
+          <div class="resultados sin" *ngIf="abrirLista && busqueda.trim() && !resultados.length">No hay productos con ese nombre.</div>
+        </div>
+
+        <div class="sin-lineas" *ngIf="!lineas.length">
+          <i class="fas fa-basket-shopping"></i>
+          <p>Aún no agregaste productos. Búscalos arriba y agrégalos de uno en uno o varios seguidos.</p>
+        </div>
+
+        <article class="linea" *ngFor="let l of lineas; let i = index">
+          <header class="linea-cab">
+            <span class="num">{{ i + 1 }}</span>
+            <div class="linea-titulo">
+              <strong>{{ nombreProducto(l.idProducto) }}</strong>
+              <span class="chip" *ngIf="l.idProducto">
+                <i class="fas fa-ruler-combined"></i> {{ codigoUnidad(l) }} · {{ permiteDecimales(l) ? 'admite decimales' : 'solo enteros' }}
+              </span>
+            </div>
+            <button type="button" class="quitar" (click)="quitarLinea(i)" title="Quitar producto" aria-label="Quitar producto">
+              <i class="fas fa-trash-alt"></i>
+            </button>
+          </header>
+
+          <div class="linea-grid">
+            <div class="field pres">
+              <label>Presentación</label>
+              <select [name]="'pres' + i" [(ngModel)]="l.idPresentacion" (ngModelChange)="alElegirPresentacion(l)" [disabled]="!l.idProducto">
+                <option [ngValue]="null">Unidad base{{ l.idProducto ? ' (' + codigoUnidad(l) + ')' : '' }}</option>
+                <option *ngFor="let p of l.presentaciones" [ngValue]="p.idPresentacion">{{ p.nombre }}</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Cantidad *</label>
+              <div class="con-adorno">
+                <input type="number" [name]="'cant' + i" [(ngModel)]="l.cantidad" [step]="permiteDecimales(l) ? '0.001' : '1'" [attr.min]="permiteDecimales(l) ? 0.001 : 1" [class.invalid]="errLinea(i, 'cantidad')" />
+                <span class="adorno der">{{ presentacionDe(l) ? 'x ' + presentacionDe(l)!.nombre : codigoUnidad(l) }}</span>
+              </div>
+              <small class="err" *ngIf="errLinea(i, 'cantidad')">{{ errLinea(i, 'cantidad') }}</small>
+            </div>
+
+            <div class="field">
+              <label>P. compra *</label>
+              <div class="con-adorno">
+                <span class="adorno izq">S/</span>
+                <input type="number" [name]="'pc' + i" [(ngModel)]="l.precioCompra" step="0.01" min="0" placeholder="0.00" [class.invalid]="errLinea(i, 'precioCompra')" />
+              </div>
+              <small class="err" *ngIf="errLinea(i, 'precioCompra')">{{ errLinea(i, 'precioCompra') }}</small>
+            </div>
+
+            <div class="field">
+              <label>P. venta *</label>
+              <div class="con-adorno">
+                <span class="adorno izq">S/</span>
+                <input type="number" [name]="'pv' + i" [(ngModel)]="l.precioVenta" step="0.01" min="0" placeholder="0.00" [class.invalid]="errLinea(i, 'precioVenta')" />
+              </div>
+              <small class="err" *ngIf="errLinea(i, 'precioVenta')">{{ errLinea(i, 'precioVenta') }}</small>
+            </div>
+
+            <div class="resumen">
+              <small>Subtotal</small>
+              <strong>S/ {{ subtotal(l) | number:'1.2-2' }}</strong>
+              <span class="margen" *ngIf="margen(l) as m" [class.neg]="m < 0">
+                <i class="fas" [ngClass]="m < 0 ? 'fa-arrow-trend-down' : 'fa-arrow-trend-up'"></i> margen {{ m | number:'1.0-0' }} %
+              </span>
+            </div>
+          </div>
+
+          <div class="lote-fila" *ngIf="l.idProducto">
+            <button type="button" class="lote-toggle" (click)="l.conLote = !l.conLote" [class.activo]="l.conLote">
+              <i class="fas" [ngClass]="l.conLote ? 'fa-minus' : 'fa-plus'"></i>
+              {{ l.conLote ? 'Quitar lote y vencimiento' : 'Lote y vencimiento (perecibles)' }}
+            </button>
+            <div class="lote-campos" *ngIf="l.conLote">
+              <div class="field lote">
+                <label>Lote</label>
+                <input [name]="'lote' + i" [(ngModel)]="l.lote" maxlength="60" placeholder="Código del empaque" autocomplete="off" [class.invalid]="errLinea(i, 'lote')" />
+                <small class="err" *ngIf="errLinea(i, 'lote')">{{ errLinea(i, 'lote') }}</small>
+              </div>
+              <div class="field vence">
+                <label>Vence</label>
+                <input type="date" [name]="'venc' + i" [(ngModel)]="l.fechaVencimiento" [min]="hoy()" [class.invalid]="errLinea(i, 'fechaVencimiento')" />
+                <small class="err" *ngIf="errLinea(i, 'fechaVencimiento')">{{ errLinea(i, 'fechaVencimiento') }}</small>
+              </div>
+            </div>
+          </div>
+
+          <footer class="pie-linea" *ngIf="presentacionDe(l) || (l.historial && (l.historial.precioCompra != null || l.historial.precioVenta != null))">
+            <span class="chip verde" *ngIf="presentacionDe(l)"><i class="fas fa-equals"></i> {{ equivalencia(l) }}</span>
+            <button type="button" class="chip historial" *ngIf="l.historial && (l.historial.precioCompra != null || l.historial.precioVenta != null)"
+                    (click)="usarPreciosAnteriores(l)" title="Usar estos precios">
+              <i class="fas fa-clock-rotate-left"></i> Compra anterior:
+              <ng-container *ngIf="l.historial.precioCompra != null">S/ {{ l.historial.precioCompra | number:'1.2-2' }}</ng-container>
+              <ng-container *ngIf="l.historial.precioVenta != null"> · venta S/ {{ l.historial.precioVenta | number:'1.2-2' }}</ng-container>
+              <em>usar</em>
+            </button>
+          </footer>
+        </article>
+      </section>
+
+      <section class="tarjeta pie">
+        <div class="total">
+          <span>Total estimado</span>
+          <strong>S/ {{ total | number:'1.2-2' }}</strong>
+          <small>El total definitivo lo calcula el servidor al guardar.</small>
+        </div>
+        <div class="acciones">
+          <a routerLink="/admin/compras" class="btn-secondary">Cancelar</a>
+          <button type="submit" class="btn-primary" [disabled]="guardando || (!!idSucursal && sucursalSinInventario)">
+            <i class="fas fa-spinner fa-spin" *ngIf="guardando"></i>
+            {{ guardando ? 'Guardando…' : (editando ? 'Guardar cambios' : 'Registrar compra') }}
+          </button>
+        </div>
+      </section>
+    </form>
+  </div>
+</div>

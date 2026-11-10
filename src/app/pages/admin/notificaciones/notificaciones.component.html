@@ -1,0 +1,60 @@
+<div class="contenedor">
+  <div class="barra"><app-barra-lateral></app-barra-lateral></div>
+
+  <div class="encabezado">
+    <app-header></app-header>
+
+    <section class="dir-head">
+      <div>
+        <h1>Notificaciones</h1>
+        <p>Avisos de stock, vencimientos y suscripciones</p>
+      </div>
+      <div class="dir-actions">
+        <button type="button" class="btn-outline" (click)="marcarTodas()" [disabled]="noLeidas === 0"><i class="fas fa-check-double"></i> Marcar todas como leídas</button>
+        <button type="button" class="btn-outline" (click)="eliminarLeidas()"><i class="fas fa-trash-alt"></i> Eliminar leídas</button>
+      </div>
+    </section>
+
+    <section class="filtros">
+      <div class="tabs">
+        <button type="button" [class.on]="!soloNoLeidas" (click)="filtrar(false)">Todas</button>
+        <button type="button" [class.on]="soloNoLeidas" (click)="filtrar(true)">No leídas <span class="cuenta" *ngIf="noLeidas > 0">{{ noLeidas }}</span></button>
+      </div>
+      <label class="sel">Tipo
+        <select name="tipo" [(ngModel)]="tipo" (ngModelChange)="cambiarTipo()">
+          <option value="">Todos</option>
+          <option *ngFor="let t of tipos" [value]="t">{{ etiquetas[t] }}</option>
+        </select>
+      </label>
+    </section>
+
+    <section class="dir-table">
+      <div class="notif" *ngFor="let n of items" [class.nueva]="!n.leida" (click)="abrir(n)">
+        <span class="ico" [attr.data-sev]="n.severidad"><i class="fas {{ iconos[n.tipo] || 'fa-circle-info' }}"></i></span>
+        <div class="cuerpo">
+          <div class="linea">
+            <strong>{{ n.titulo }}</strong>
+            <span class="tag" [attr.data-sev]="n.severidad">{{ etiquetas[n.tipo] || n.tipo }}</span>
+            <i class="punto" *ngIf="!n.leida" [attr.data-sev]="n.severidad"></i>
+          </div>
+          <p>{{ n.mensaje }}</p>
+          <small>{{ tiempo(n.fecha) }}</small>
+        </div>
+        <div class="acciones">
+          <button type="button" class="ico-btn" (click)="alternarLeida(n, $event)" [title]="n.leida ? 'Marcar como no leída' : 'Marcar como leída'" [attr.aria-label]="n.leida ? 'Marcar como no leída' : 'Marcar como leída'">
+            <i class="fas" [ngClass]="n.leida ? 'fa-envelope' : 'fa-envelope-open'"></i>
+          </button>
+          <button type="button" class="ico-btn danger" (click)="eliminar(n, $event)" title="Eliminar" aria-label="Eliminar"><i class="fas fa-trash-alt"></i></button>
+        </div>
+      </div>
+
+      <div class="vacio" *ngIf="!items.length">
+        <i class="far fa-bell-slash"></i>
+        <p *ngIf="cargando">Cargando…</p>
+        <p *ngIf="!cargando">No tienes notificaciones</p>
+      </div>
+
+      <app-paginacion [total]="total" [pagina]="pagina" [porPagina]="porPagina" (paginaChange)="cambiarPagina($event)" (porPaginaChange)="cambiarFilas($event)"></app-paginacion>
+    </section>
+  </div>
+</div>

@@ -1,0 +1,170 @@
+<div class="contenedor">
+  <div class="barra"><app-barra-lateral></app-barra-lateral></div>
+
+  <div class="encabezado">
+    <app-header></app-header>
+
+    <section class="dir-head">
+      <div>
+        <h1>Proveedores</h1>
+        <p>Empresas y personas a las que le compras mercadería</p>
+      </div>
+      <button type="button" class="btn-agregar" *ngIf="puedeEscribir" (click)="abrirModal()">
+        <i class="fas fa-plus"></i> Nuevo proveedor
+      </button>
+    </section>
+
+    <section class="kpis">
+      <article class="kpi">
+        <span>Total proveedores</span>
+        <strong>{{ proveedores.length }} <em>registrados</em></strong>
+      </article>
+      <article class="kpi">
+        <span>Resultados de la búsqueda</span>
+        <strong class="verde">{{ filtrados.length }} <em>coinciden</em></strong>
+      </article>
+    </section>
+
+    <section class="filtros">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" [(ngModel)]="filtro" (ngModelChange)="aplicarFiltro()" name="filtro"
+               placeholder="Buscar por nombre o RUC…" aria-label="Buscar proveedor" />
+      </div>
+    </section>
+
+    <section class="dir-table">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>RUC</th>
+              <th>Régimen</th>
+              <th>Teléfono</th>
+              <th>Correo</th>
+              <th>Dirección</th>
+              <th>Registro</th>
+              <th class="right" *ngIf="puedeEscribir">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of visibles">
+              <td>
+                <div class="emp">
+                  <span class="av">{{ iniciales(p.nombre) }}</span>
+                  <strong>{{ p.nombre }}</strong>
+                </div>
+              </td>
+              <td class="mono">{{ p.ruc }}</td>
+              <td>{{ p.regimen || '—' }}</td>
+              <td class="mono">{{ p.telefono || '—' }}</td>
+              <td>{{ p.gmail || '—' }}</td>
+              <td><span class="trunc" [attr.title]="p.direccion">{{ p.direccion || '—' }}</span></td>
+              <td class="mono">{{ p.fecha_registro ? (p.fecha_registro | date:'dd/MM/yyyy') : '—' }}</td>
+              <td class="right" *ngIf="puedeEscribir">
+                <button type="button" class="ico" (click)="abrirModal(p)" title="Editar" aria-label="Editar"><i class="fas fa-pen"></i></button>
+                <button type="button" class="ico danger" (click)="eliminar(p)" title="Eliminar" aria-label="Eliminar"><i class="fas fa-trash-alt"></i></button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="vacio" *ngIf="visibles.length === 0">
+        <i class="fas" [ngClass]="sinPermiso ? 'fa-lock' : 'fa-truck-ramp-box'"></i>
+        <p *ngIf="cargando">Cargando…</p>
+        <p *ngIf="!cargando && sinPermiso">No tienes permisos para esta operación</p>
+        <p *ngIf="!cargando && !sinPermiso && proveedores.length > 0">No hay proveedores que coincidan con la búsqueda</p>
+        <ng-container *ngIf="!cargando && !sinPermiso && proveedores.length === 0">
+          <p>Aún no tienes proveedores</p>
+          <button type="button" class="btn-agregar" *ngIf="puedeEscribir" (click)="abrirModal()">
+            <i class="fas fa-plus"></i> Nuevo proveedor
+          </button>
+        </ng-container>
+      </div>
+
+      <app-paginacion [total]="filtrados.length" [pagina]="paginaActual" [porPagina]="porPagina" (paginaChange)="irAPagina($event)" (porPaginaChange)="cambiarFilas($event)"></app-paginacion>
+    </section>
+
+    <div *ngIf="mostrarModal" class="modal" (click)="cerrarModal()">
+      <div class="modal-content emp-modal" role="dialog" aria-modal="true" aria-labelledby="prov-titulo" (click)="$event.stopPropagation()">
+        <header class="em-head">
+          <span class="em-icon"><i class="fas fa-truck-ramp-box"></i></span>
+          <div>
+            <h2 id="prov-titulo">{{ form.idProveedor ? 'Editar proveedor' : 'Nuevo proveedor' }}</h2>
+            <p>{{ form.idProveedor ? 'Actualiza los datos del proveedor.' : 'Registra un proveedor para tus compras.' }}</p>
+          </div>
+          <button type="button" class="em-close" (click)="cerrarModal()" aria-label="Cerrar"><i class="fas fa-times"></i></button>
+        </header>
+
+        <form (ngSubmit)="guardar()" class="em-form" novalidate>
+          <div class="em-body">
+            <p class="aviso" *ngIf="avisoModal"><i class="fas fa-circle-exclamation"></i> {{ avisoModal }}</p>
+            <p class="aviso" *ngIf="errores['idEmpresa']"><i class="fas fa-circle-exclamation"></i> {{ errores['idEmpresa'] }}</p>
+
+            <div class="em-grid">
+              <div class="field span2">
+                <label for="ruc">RUC *</label>
+                <div class="ruc-row">
+                  <input id="ruc" name="ruc" [(ngModel)]="form.ruc" (ngModelChange)="soloNumerosRuc()" inputmode="numeric" maxlength="11"
+                         placeholder="11 dígitos" [class.invalid]="errores['ruc']" autocomplete="off" />
+                  <button type="button" class="btn-sunat" (click)="consultarSunat()"
+                          [disabled]="!rucValido || consultandoSunat || sunatNoDisponible"
+                          [attr.title]="sunatNoDisponible ? 'Consulta SUNAT no disponible' : 'Autocompletar con SUNAT'">
+                    <i class="fas" [ngClass]="consultandoSunat ? 'fa-spinner fa-spin' : 'fa-magnifying-glass'"></i>
+                    {{ sunatNoDisponible ? 'SUNAT no disponible' : 'Consultar SUNAT' }}
+                  </button>
+                </div>
+                <small class="err" *ngIf="errores['ruc']">{{ errores['ruc'] }}</small>
+                <small class="ayuda" *ngIf="avisoSunat">{{ avisoSunat }}</small>
+              </div>
+
+              <div class="field span2">
+                <label for="nombre">Nombre / razón social *</label>
+                <input id="nombre" name="nombre" [(ngModel)]="form.nombre" maxlength="150" [class.invalid]="errores['nombre']" />
+                <small class="err" *ngIf="errores['nombre']">{{ errores['nombre'] }}</small>
+              </div>
+              <div class="field span2">
+                <label for="regimen">Régimen</label>
+                <select id="regimen" name="regimen" [(ngModel)]="form.regimen">
+                  <option value="">Sin especificar</option>
+                  <option *ngFor="let r of regimenes" [value]="r">{{ r }}</option>
+                </select>
+              </div>
+              <div class="field span2" *ngIf="form.idProveedor">
+                <label>Empresa</label>
+                <div class="solo-lectura"><i class="fas fa-building"></i> {{ empresaNombreForm || '—' }}</div>
+              </div>
+            </div>
+
+            <div class="em-grid">
+              <div class="field">
+                <label for="telefono">Teléfono</label>
+                <input id="telefono" name="telefono" [(ngModel)]="form.telefono" placeholder="987 654 321" [class.invalid]="errores['telefono']" />
+                <small class="err" *ngIf="errores['telefono']">{{ errores['telefono'] }}</small>
+              </div>
+              <div class="field">
+                <label for="gmail">Correo electrónico</label>
+                <input id="gmail" name="gmail" type="email" [(ngModel)]="form.gmail" placeholder="ventas&#64;proveedor.pe" [class.invalid]="errores['gmail']" />
+                <small class="err" *ngIf="errores['gmail']">{{ errores['gmail'] }}</small>
+              </div>
+              <div class="field span2">
+                <label for="direccion">Dirección</label>
+                <input id="direccion" name="direccion" [(ngModel)]="form.direccion" />
+              </div>
+            </div>
+          </div>
+
+          <footer class="em-foot">
+            <button type="button" class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
+            <button type="submit" class="btn-primary" [disabled]="guardando">
+              <i class="fas fa-spinner fa-spin" *ngIf="guardando"></i>
+              {{ guardando ? 'Guardando…' : (form.idProveedor ? 'Guardar cambios' : 'Registrar proveedor') }}
+            </button>
+          </footer>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

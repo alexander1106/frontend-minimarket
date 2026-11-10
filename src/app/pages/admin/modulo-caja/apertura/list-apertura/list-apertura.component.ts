@@ -12,11 +12,12 @@ import Swal from 'sweetalert2';
 import { LoginService } from '../../../../../service/login.service';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { PaginacionComponent } from '../../../../../components/paginacion/paginacion.component';
 
 @Component({
   selector: 'app-list-apertura',
   standalone: true,
-  imports: [
+  imports: [PaginacionComponent, 
     FormsModule,
     CommonModule,
     BarraLateralComponent,
@@ -41,12 +42,13 @@ aperturasGlobales: any[] = [];
 
   paginaActual: number = 1;
   elementosPorPagina: number = 5;
+  totalFiltrado = 0;
   totalPaginas: number = 1;
-// Para el modal de detalles
 mostrarModalDetalle: boolean = false;
 detalleApertura: any = null;
 transaccionesApertura: any[] = [];
   mostrarModal: boolean = false;
+  private cajaPorDefectoAplicada = false;
 
   constructor(
     private router: Router,
@@ -58,7 +60,6 @@ transaccionesApertura: any[] = [];
   ) {}
 
  ngOnInit(): void {
-  // 🚀 1. Leer la caja activa al iniciar
   const cajaActivaRaw = localStorage.getItem('cajaActiva');
   if (cajaActivaRaw) {
     try {
@@ -67,11 +68,9 @@ transaccionesApertura: any[] = [];
         this.cajaSeleccionadaFiltro = Number(cajaActiva.idCaja);
       }
     } catch (e) {
-      console.error('Error parseando cajaActiva en localStorage:', e);
     }
   }
 
-  // 🚀 2. Listar sucursales y cajas
   this.listarSucursales();
   this.listarCajas();
 }
@@ -94,7 +93,6 @@ transaccionesApertura: any[] = [];
         });
       },
       error: (err) => {
-        console.error('Error al listar sucursales:', err);
       },
     });
   }
@@ -127,20 +125,16 @@ listarCajas() {
           (c) => Number(c.sucursales?.idSucursal) === Number(this.sucursalSeleccionada)
         );
 
-        // ✅ Solo aquí llamar listarAperturas
         this.listarAperturas();
       } else {
         this.cajasDeSucursalSeleccionada = this.cajas;
 
-        // Si es ADMIN y no hay sucursal seleccionada, puedes decidir qué hacer.
-        // Por ejemplo, listar todas o NO listar aperturas:
         this.listarAperturas();
       }
 
       this.actualizarFiltradoAperturas(true);
     },
     error: (err) => {
-      console.error('Error al listar cajas:', err);
     },
   });
 }
@@ -149,23 +143,15 @@ listarAperturas() {
     next: (data) => {
       this.aperturasGlobales = data || [];
 
-      // Solo mostramos las aperturas de la sucursal seleccionada en la tabla
-      this.aperturas = this.aperturasGlobales.filter(
-        (a) => Number(a.caja?.sucursales?.idSucursal) === Number(this.sucursalSeleccionada)
-      );
-
-      console.log('🌐 Todas las aperturas:', this.aperturasGlobales);
-      console.log('📋 Aperturas de la sucursal seleccionada:', this.aperturas);
-
+      this.aplicarSucursal();
+      this.seleccionarCajaAbierta();
       this.actualizarFiltradoAperturas(true);
     },
     error: (err) => {
-      console.error('Error al listar aperturas:', err);
     },
   });
 }
 exportarPDF(idAperturaCaja: number) {
-  // 1. Mostrar cargando
   Swal.fire({
     title: 'Generando PDF...',
     allowOutsideClick: false,
@@ -174,12 +160,10 @@ exportarPDF(idAperturaCaja: number) {
     }
   });
 
-  // 2. Llamar al backend para traer transacciones
   this.aperturaCajaService.obtenerTransaccionesPorApertura(idAperturaCaja).subscribe({
     next: (transacciones) => {
       Swal.close();
 
-      // 3. Buscar la información de la apertura
       const apertura = this.aperturasGlobales.find(
         (a) => Number(a.idAperturaCaja) === Number(idAperturaCaja)
       );
@@ -189,7 +173,6 @@ exportarPDF(idAperturaCaja: number) {
         return;
       }
 
-      // 4. Crear el PDF
       const doc = new jsPDF();
 
       doc.setFontSize(16);
@@ -204,7 +187,6 @@ exportarPDF(idAperturaCaja: number) {
       doc.text(`Fecha de Apertura: ${apertura.fechaApertura || ''}`, 14, 70);
       doc.text(`Generado: ${new Date().toLocaleString()}`, 14, 78);
 
-      // Si no hay transacciones, mostrar solo la información de apertura
       if (!transacciones || transacciones.length === 0) {
         doc.setFontSize(12);
         doc.text('Esta apertura no tiene transacciones registradas.', 14, 90);
@@ -212,7 +194,6 @@ exportarPDF(idAperturaCaja: number) {
         return;
       }
 
-      // 5. Preparar datos de la tabla
       const body = transacciones.map((t: any, index: number) => [
         index + 1,
         t.fecha || '',
@@ -222,24 +203,20 @@ exportarPDF(idAperturaCaja: number) {
         t.aperturaCaja?.usuarios?.username || ''
       ]);
 
-      // 6. Crear tabla de transacciones
       autoTable(doc, {
         head: [['#', 'Fecha', 'Tipo', 'Monto', 'Descripción', 'Usuario']],
         body: body,
         startY: 88
       });
 
-      // 7. Descargar PDF
       doc.save(`apertura_${idAperturaCaja}.pdf`);
     },
     error: (error) => {
       Swal.close();
-      console.error('Error al obtener transacciones:', error);
       Swal.fire('Error', 'No se pudieron obtener las transacciones.', 'error');
     }
   });
 }
-
 
 onSucursalChange() {
   this.cajaSeleccionadaFiltro = undefined;
@@ -252,15 +229,40 @@ onSucursalChange() {
     this.cajasDeSucursalSeleccionada = this.cajas;
   }
 
-  // Ahora solo filtramos aperturas ya cargadas, no recargamos desde el backend
-  this.aperturas = this.aperturasGlobales.filter(
-    (a) => Number(a.caja?.sucursales?.idSucursal) === Number(this.sucursalSeleccionada)
-  );
-
+  this.aplicarSucursal();
   this.actualizarFiltradoAperturas(true);
 }
 
+  private aplicarSucursal() {
+    this.aperturas = this.sucursalSeleccionada == null
+      ? [...this.aperturasGlobales]
+      : this.aperturasGlobales.filter(
+          (a) => Number(a.caja?.sucursales?.idSucursal) === Number(this.sucursalSeleccionada)
+        );
+  }
 
+  private seleccionarCajaAbierta() {
+    if (this.cajaPorDefectoAplicada) return;
+    this.cajaPorDefectoAplicada = true;
+
+    const abiertas = this.aperturas.filter((a) => this.esAbierta(a));
+    const idUsuario = Number(this.loginService.getUser()?.idUsuario);
+    const elegida =
+      abiertas.find((a) => Number(a.usuarios?.idUsuario) === idUsuario) ||
+      abiertas.find((a) => Number(a.caja?.idCaja) === Number(this.cajaSeleccionadaFiltro)) ||
+      abiertas[0];
+
+    if (!elegida?.caja?.idCaja) return;
+    this.cajaSeleccionadaFiltro = Number(elegida.caja.idCaja);
+    const idSucursal = elegida.caja.sucursales?.idSucursal;
+    if (this.sucursalSeleccionada == null && idSucursal != null) {
+      this.sucursalSeleccionada = Number(idSucursal);
+      this.cajasDeSucursalSeleccionada = this.cajas.filter(
+        (c) => Number(c.sucursales?.idSucursal) === Number(idSucursal)
+      );
+      this.aplicarSucursal();
+    }
+  }
 
   actualizarFiltradoAperturas(resetPagina: boolean = true) {
     if (resetPagina) {
@@ -278,18 +280,37 @@ onSucursalChange() {
     if (this.filtroBusqueda.trim() !== '') {
       const term = this.filtroBusqueda.toLowerCase();
       filtradas = filtradas.filter(
-        (a) => (a.caja?.nombreCaja || '').toLowerCase().includes(term)
+        (a) => (a.caja?.nombreCaja || '').toLowerCase().includes(term) || (a.usuarios?.username || '').toLowerCase().includes(term)
       );
     }
 
+    this.totalFiltrado = filtradas.length;
     this.totalPaginas = Math.max(
       1,
       Math.ceil(filtradas.length / this.elementosPorPagina)
     );
+    if (this.paginaActual > this.totalPaginas) this.paginaActual = this.totalPaginas;
 
     const inicio = (this.paginaActual - 1) * this.elementosPorPagina;
     const fin = inicio + this.elementosPorPagina;
     this.aperturasFiltradas = filtradas.slice(inicio, fin);
+  }
+
+  esAbierta(a: any): boolean {
+    return String(a?.estadoCaja || '').toLowerCase() === 'abierta';
+  }
+
+  get abiertas(): number {
+    return this.aperturas.filter(a => this.esAbierta(a)).length;
+  }
+
+  get saldoAbiertas(): number {
+    return this.aperturas.filter(a => this.esAbierta(a)).reduce((s, a) => s + Number(a.saldoInicial || 0), 0);
+  }
+
+  cambiarFilas(n: number) {
+    this.elementosPorPagina = n;
+    this.actualizarFiltradoAperturas(true);
   }
 
   cambiarPagina(pagina: number) {
@@ -298,42 +319,9 @@ onSucursalChange() {
     this.actualizarFiltradoAperturas(false);
   }
 
-  paginasArray(): number[] {
-    return Array.from({ length: this.totalPaginas }, (_, i) => i + 1);
-  }
-
   abrirModalApertura() {
-  if (this.cajaSeleccionadaFiltro == null) {
-Swal.fire(
-  'Atención',
-  'Por favor seleccione una caja antes de aperturar.',
-  'warning'
-);
-    return;
+    this.mostrarModal = true;
   }
-
-  if (this.hayCajaAbierta()) {
-    Swal.fire({
-      icon: 'warning',
-      title: 'Caja Abierta',
-      text: 'No se puede aperturar otra caja. La caja seleccionada ya tiene una apertura activa. Cierre la apertura actual antes de abrir una nueva.',
-      confirmButtonText: 'Entendido'
-    });
-    return;
-  }
-
-  if (this.tieneAperturaAbiertaPorUsuario()) {
-    Swal.fire({
-      icon: 'warning',
-      title: 'Apertura Activa',
-      text: 'Ya tienes una apertura activa en esta sucursal. Debes cerrar tu apertura actual antes de abrir una nueva.',
-      confirmButtonText: 'Entendido'
-    });
-    return;
-  }
-
-  this.mostrarModal = true;
-}
 
   cerrarModal() {
     this.mostrarModal = false;
@@ -345,7 +333,6 @@ Swal.fire(
   }
 
 verApertura(id: number) {
-  // Mostrar cargando
   Swal.fire({
     title: 'Cargando información...',
     allowOutsideClick: false,
@@ -354,7 +341,6 @@ verApertura(id: number) {
     }
   });
 
-  // Obtener apertura y transacciones
   this.aperturaCajaService.buscarAperturaId(id).subscribe({
     next: (apertura) => {
       this.aperturaCajaService.obtenerTransaccionesPorApertura(id).subscribe({
@@ -366,27 +352,16 @@ verApertura(id: number) {
         },
         error: (err) => {
           Swal.close();
-          console.error('Error al obtener transacciones:', err);
           Swal.fire('Error', 'No se pudieron cargar las transacciones.', 'error');
         }
       });
     },
     error: (err) => {
       Swal.close();
-      console.error('Error al obtener apertura:', err);
       Swal.fire('Error', 'No se pudo cargar la apertura.', 'error');
     }
   });
 }
-
-
-  editarApertura(id: number) {
-    console.log('Editar apertura:', id);
-  }
-
-  eliminarApertura(id: number) {
-    console.log('Eliminar apertura:', id);
-  }
 
   irATransacciones(idAperturaCaja: number) {
     this.router.navigate(['/admin/list-transacciones', idAperturaCaja]);
@@ -407,18 +382,15 @@ puedeVerTransacciones(apertura: any): boolean {
   const usuario = this.loginService.getUser();
   const rol = this.loginService.getUserRole();
 
-  // Si eres ADMIN, puedes entrar a cualquier apertura
   if (rol === 'ADMIN') {
     return true;
   }
 
-  // Si no eres ADMIN, solo puedes ver tus propias aperturas abiertas
   return (
     usuario &&
     Number(apertura.usuarios?.idUsuario) === Number(usuario.idUsuario) &&
     (apertura.estadoCaja || '').toLowerCase() === 'abierta'
   );
 }
-
 
 }

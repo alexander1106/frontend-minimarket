@@ -8,6 +8,8 @@ import { BarraLateralComponent } from "../../../../components/barra-lateral/barr
 import { HeaderComponent } from "../../../../components/header/header.component";
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { PaginacionComponent } from '../../../../components/paginacion/paginacion.component';
+import { PaginarPipe } from '../../../../components/paginacion/paginar.pipe';
 
 interface Almacen {
   idalmacen: number;
@@ -31,21 +33,21 @@ interface Sucursal {
   standalone: true,
   templateUrl: './reporte-almacenes.component.html',
   styleUrls: ['./reporte-almacenes.component.css'],
-  imports: [CommonModule, FormsModule, BarraLateralComponent, HeaderComponent]
+  imports: [PaginacionComponent, PaginarPipe, CommonModule, FormsModule, BarraLateralComponent, HeaderComponent]
 })
 export class ReporteAlmacenesComponent implements OnInit {
   almacenes: Almacen[] = [];
-  listaFiltradaTemporal: Almacen[] = []; // ✅ Lista filtrada temporal sin paginar
-  filtrados: Almacen[] = [];             // ✅ Lista que se muestra con paginación
+  listaFiltradaTemporal: Almacen[] = [];
+  filtrados: Almacen[] = [];
   sucursales: Sucursal[] = [];
   filtro = '';
   sucursalFiltro: number = 0;
   fechaInicio: string = '';
   fechaFin: string = '';
 
-  // ✅ Paginación
-  paginaActual = 1;
-  elementosPorPagina = 5;
+  pagina = 1;
+  porPagina = 5;
+  cargando = true;
 
   constructor(
     private svc: AlmacenesService,
@@ -81,9 +83,13 @@ export class ReporteAlmacenesComponent implements OnInit {
                 fechaRegistro: a.fechaRegistro ?? a.fechaCreacion ?? ''
               } as Almacen;
             });
+            this.cargando = false;
             this.aplicarFiltro();
           },
-          error: () => Swal.fire('Error', 'No se pudieron cargar almacenes', 'error')
+          error: () => {
+            this.cargando = false;
+            Swal.fire('Error', 'No se pudieron cargar almacenes', 'error');
+          }
         });
       },
       error: () => Swal.fire('Error', 'No se pudieron cargar sucursales', 'error')
@@ -120,23 +126,11 @@ export class ReporteAlmacenesComponent implements OnInit {
     }
 
     this.listaFiltradaTemporal = list;
-    this.cambiarPagina(1); // Reiniciar a la primera página después de aplicar filtro
+    this.pagina = 1;
   }
 
-  cambiarPagina(p: number): void {
-    if (p < 1 || p > this.totalPaginas) return;
-    this.paginaActual = p;
-    const start = (this.paginaActual - 1) * this.elementosPorPagina;
-    const end = start + this.elementosPorPagina;
-    this.filtrados = this.listaFiltradaTemporal.slice(start, end);
-  }
-
-  get totalPaginas(): number {
-    return Math.ceil(this.listaFiltradaTemporal.length / this.elementosPorPagina);
-  }
-
-  get paginasArray(): number[] {
-    return Array.from({ length: this.totalPaginas }, (_, i) => i + 1);
+  get activos(): number {
+    return this.almacenes.filter(a => a.estado === 1).length;
   }
 
   exportarPDF(): void {

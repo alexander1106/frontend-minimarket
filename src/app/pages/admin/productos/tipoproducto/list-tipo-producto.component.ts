@@ -7,11 +7,13 @@ import { CommonModule } from '@angular/common';
 import { BarraLateralComponent } from '../../../../components/barra-lateral/barra-lateral.component';
 import { HeaderComponent } from '../../../../components/header/header.component';
 import { TipoProductoService } from '../../../../service/tipo-producto.service';
+import { LoginService } from '../../../../service/login.service';
+import { PaginacionComponent } from '../../../../components/paginacion/paginacion.component';
 
 @Component({
   selector: 'app-list-tipo-producto',
   standalone: true,
-  imports: [
+  imports: [PaginacionComponent, 
     CommonModule,
     FormsModule,
     HttpClientModule,
@@ -29,10 +31,15 @@ export class ListTipoProductoComponent implements OnInit {
   tipo = { idtipoproducto: 0, nombre: '' };
   paginaActual = 1;
   elementosPorPagina = 5;
+  totalFiltrado = 0;
 
-  constructor(private service: TipoProductoService) {}
+  cargando = true;
+  puedeEscribir = false;
+
+  constructor(private service: TipoProductoService, private loginService: LoginService) {}
 
   ngOnInit(): void {
+    this.puedeEscribir = this.loginService.hasRole('SUPERADMIN');
     this.cargarTipos();
   }
 
@@ -40,9 +47,10 @@ export class ListTipoProductoComponent implements OnInit {
     this.service.listarTipos().subscribe({
       next: data => {
         this.tipos = data || [];
+        this.cargando = false;
         this.aplicarFiltro();
       },
-      error: () => Swal.fire('Error', 'No se pudieron cargar tipos', 'error')
+      error: () => { this.cargando = false; Swal.fire('Error', 'No se pudieron cargar tipos', 'error'); }
     });
   }
 
@@ -55,20 +63,24 @@ export class ListTipoProductoComponent implements OnInit {
         t.idtipoproducto.toString().includes(term)
       );
     }
+    this.totalFiltrado = list.length;
+    if (this.paginaActual > 1 && (this.paginaActual - 1) * this.elementosPorPagina >= list.length) this.paginaActual = 1;
     const start = (this.paginaActual - 1) * this.elementosPorPagina;
     this.tiposFiltrados = list.slice(start, start + this.elementosPorPagina);
   }
 
   get totalPaginas(): number {
-    return Math.ceil(
-      this.tipos.filter(t =>
-        !this.filtro || t.nombre.trim().toLowerCase().includes(this.filtro.trim().toLowerCase())
-      ).length / this.elementosPorPagina
-    );
+    return Math.max(1, Math.ceil(this.totalFiltrado / this.elementosPorPagina));
   }
 
   get paginasArray(): number[] {
     return Array.from({ length: this.totalPaginas }, (_, i) => i + 1);
+  }
+
+  cambiarFilas(n: number): void {
+    this.elementosPorPagina = n;
+    this.paginaActual = 1;
+    this.aplicarFiltro();
   }
 
   cambiarPagina(p: number): void {
@@ -79,6 +91,7 @@ export class ListTipoProductoComponent implements OnInit {
   }
 
   abrirModal(tipo?: any): void {
+    if (!this.puedeEscribir) return;
     this.tipo = tipo ? { idtipoproducto: tipo.idtipoproducto, nombre: tipo.nombre } : { idtipoproducto: 0, nombre: '' };
     this.mostrarModal = true;
   }
@@ -120,7 +133,6 @@ export class ListTipoProductoComponent implements OnInit {
       const body = err.error;
       const msg = typeof body === 'string' ? body : body?.message;
 
-      // 1) Edición de tipo en uso
       if (isEdit && msg?.toLowerCase().includes('usado')) {
         Swal.fire(
           'Atención',
@@ -148,8 +160,8 @@ export class ListTipoProductoComponent implements OnInit {
   });
 }
 
-
   eliminar(id: number): void {
+    if (!this.puedeEscribir) return;
     Swal.fire({
       title: '¿Eliminar?',
       text: 'No podrás revertir esto',

@@ -9,12 +9,14 @@ import { AddCajaComponent } from '../add-caja/add-caja.component';
 import { SucursalesService } from '../../../../../service/sucursales.service';
 import { CajasService } from '../../../../../service/cajas.service';
 import Swal from 'sweetalert2';
+import { AperturaCajaService, TurnoAbierto } from '../../../../../service/apertura-caja.service';
 import { LoginService } from '../../../../../service/login.service';
+import { PaginacionComponent } from '../../../../../components/paginacion/paginacion.component';
 
 @Component({
   selector: 'app-list-caja',
   standalone: true,
-  imports: [
+  imports: [PaginacionComponent, 
     FormsModule,
     HttpClientModule,
     CommonModule,
@@ -35,7 +37,9 @@ export class ListCajaComponent implements OnInit {
 
   paginaActual: number = 1;
   elementosPorPagina: number = 5;
+  totalFiltrado = 0;
   totalPaginas: number = 1;
+  cargando = true;
 
   modalAbierto = false;
   cajaSeleccionada: any = null;
@@ -47,7 +51,8 @@ export class ListCajaComponent implements OnInit {
     private route: ActivatedRoute,
     private sucursalesService: SucursalesService,
     private cajasService: CajasService,
-    private loginService: LoginService
+    private loginService: LoginService,
+    private aperturaService: AperturaCajaService
   ) {}
 
   ngOnInit(): void {
@@ -58,7 +63,6 @@ export class ListCajaComponent implements OnInit {
     if (this.rolUsuario !== 'ADMIN' && this.idSucursalUsuario) {
       this.sucursalSeleccionada = this.idSucursalUsuario;
     }
-
 
     this.listarSucursales();
     this.cargarCajas();
@@ -75,34 +79,51 @@ export class ListCajaComponent implements OnInit {
     });
   }
 
+  turnos: TurnoAbierto[] = [];
+
+  private cargarTurnos(): void {
+    const idSucursal = this.sucursalSeleccionada ?? this.loginService.getUser()?.sucursal?.idSucursal;
+    if (!idSucursal) { this.turnos = []; return; }
+    this.aperturaService.turnosAbiertosPorSucursal(idSucursal).subscribe({
+      next: t => (this.turnos = Array.isArray(t) ? t : []),
+      error: () => (this.turnos = [])
+    });
+  }
+
+  cajeroDe(c: any): string {
+    return this.turnos.find(t => Number(t.idCaja) === Number(c?.idCaja))?.cajero || '';
+  }
+
   cargarCajas() {
+    this.cargarTurnos();
+    this.cargando = true;
     if (this.sucursalSeleccionada != null) {
-      // Si hay una sucursal seleccionada, traer solo sus cajas
       this.sucursalesService.listarCajasPorSucursal(this.sucursalSeleccionada).subscribe({
         next: (data: any) => {
           this.cajas = data || [];
+          this.cargando = false;
           this.actualizarFiltradoYPagina();
         },
-        error: (err) => {
-          console.error('Error al listar cajas por sucursal:', err);
+        error: () => {
+          this.cargando = false;
         },
       });
     } else {
-      // Si no hay sucursal seleccionada, traer todas las cajas
       this.cajasService.listarCaja().subscribe({
         next: (data: any) => {
           this.cajas = data || [];
+          this.cargando = false;
           this.actualizarFiltradoYPagina();
         },
-        error: (err) => {
-          console.error('Error al listar todas las cajas:', err);
+        error: () => {
+          this.cargando = false;
         },
       });
     }
   }
 
-  actualizarFiltradoYPagina() {
-    this.paginaActual = 1;
+  actualizarFiltradoYPagina(resetPagina: boolean = true) {
+    if (resetPagina) this.paginaActual = 1;
 
     let listaFiltrada = this.cajas;
 
@@ -113,20 +134,27 @@ export class ListCajaComponent implements OnInit {
       );
     }
 
+    this.totalFiltrado = listaFiltrada.length;
     this.totalPaginas = Math.max(
       1,
       Math.ceil(listaFiltrada.length / this.elementosPorPagina)
     );
+    if (this.paginaActual > this.totalPaginas) this.paginaActual = this.totalPaginas;
 
     const inicio = (this.paginaActual - 1) * this.elementosPorPagina;
     const fin = inicio + this.elementosPorPagina;
     this.cajasFiltradas = listaFiltrada.slice(inicio, fin);
   }
 
+  cambiarFilas(n: number) {
+    this.elementosPorPagina = n;
+    this.actualizarFiltradoYPagina();
+  }
+
   cambiarPagina(pagina: number) {
     if (pagina < 1 || pagina > this.totalPaginas) return;
     this.paginaActual = pagina;
-    this.actualizarFiltradoYPagina();
+    this.actualizarFiltradoYPagina(false);
   }
 
   paginasArray(): number[] {
@@ -141,7 +169,7 @@ export class ListCajaComponent implements OnInit {
       nombreCaja: '',
       sucursal: sucursalPreseleccionada ?? null,
       saldoActual: 0,
-      estadoCaja: 'ACTIVA'
+      estadoCaja: 'LIBRE'
     };
     this.modalAbierto = true;
   }
@@ -160,11 +188,29 @@ export class ListCajaComponent implements OnInit {
 
   onCajaGuardada() {
     this.modalAbierto = false;
-    this.cargarCajas(); // Refresca las cajas al guardar
+    this.cargarCajas();
   }
 
-  verCaja(id: number) {
-    console.log('Ver caja:', id);
+  claseEstado(c: any): string {
+    switch (String(c?.estadoCaja || '').toUpperCase()) {
+      case 'LIBRE': return 'libre';
+      case 'OCUPADA': return 'ocupada';
+      case 'MALOGRADA': return 'malograda';
+      default: return 'otro';
+    }
+  }
+
+  etiquetaEstado(c: any): string {
+    const e = String(c?.estadoCaja || '');
+    return e ? e.charAt(0) + e.slice(1).toLowerCase() : '—';
+  }
+
+  get cajasLibres(): number {
+    return this.cajas.filter(c => String(c?.estadoCaja || '').toUpperCase() === 'LIBRE').length;
+  }
+
+  get saldoTotal(): number {
+    return this.cajas.reduce((s, c) => s + Number(c.saldoActual || 0), 0);
   }
 
   eliminarCaja(id: number) {
@@ -185,7 +231,7 @@ export class ListCajaComponent implements OnInit {
           },
           error: (err) => {
             if (err.status === 400 || err.status === 409) {
-              Swal.fire('No permitido', err.error, 'warning');
+              Swal.fire('No permitido', typeof err.error === 'string' ? err.error : err.error?.message, 'warning');
             } else {
               Swal.fire('Error', 'Ocurrió un error al eliminar la caja.', 'error');
             }

@@ -1,4 +1,3 @@
-// src/app/services/empresas.service.ts
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
@@ -22,14 +21,28 @@ export class EmpresasService {
     return this.http.post(`${baseUrl}/empresas`, empresa);
   }
 
-
   editar(empresa: any): Observable<any> {
     return this.http.put(`${baseUrl}/empresas`, empresa);
+  }
+
+  actualizar(id: number, body: any): Observable<any> {
+    return this.http.put(`${baseUrl}/empresas/${id}`, body);
+  }
+
+  listarPlanes(): Observable<any> {
+    return this.http.get(`${baseUrl}/planes`, { params: { soloActivos: true } });
+  }
+
+  suspender(id: number): Observable<any> {
+    return this.http.post(`${baseUrl}/empresas/${id}/suspender`, {});
+  }
+
+  reactivar(id: number): Observable<any> {
+    return this.http.post(`${baseUrl}/empresas/${id}/reactivar`, {});
   }
 
   eliminar(id: number): Observable<string> {
     return this.http.delete(`${baseUrl}/empresas/${id}`, { responseType: 'text' });
   }
-
 
 }

@@ -1,142 +1,208 @@
 <div class="contenedor">
   <div class="barra"><app-barra-lateral></app-barra-lateral></div>
+
   <div class="encabezado">
-<div class="modulo-admin">
-  Modulo administrable
-</div>    <hr class="border-secondary mb-4" />
-    <div class="container">
-      <div class="header d-flex justify-content-between align-items-center mb-3">
-        <div>
-          <h2>Usuarios</h2>
-          <span class="subtitle">{{ usuarios.length }} Registrados</span>
-        </div>
-        <div class="search-sort d-flex align-items-center">
-          <input
-            type="text"
-            placeholder="Buscar usuario"
-            class="search-input me-2"
-            [(ngModel)]="filtro"
-            (ngModelChange)="aplicarFiltro()"
-          />
-          <button (click)="abrirModal()" class="btn-agregar">
-            <i class="fas fa-plus"></i> Usuario
-          </button>
-        </div>
+    <app-header></app-header>
+
+    <section class="dir-head">
+      <div>
+        <h1>{{ esSuper ? 'Gestión centralizada de propietarios y usuarios' : 'Usuarios de la empresa' }}</h1>
+        <p>{{ esSuper ? 'Control de cuentas de acceso de los minimarkets clientes del sistema' : 'Cuentas de acceso del equipo de tu empresa' }}</p>
+      </div>
+      <button type="button" class="btn-agregar" (click)="abrirModal()">
+        <i class="fas fa-plus"></i> {{ esSuper ? 'Registrar nuevo usuario / propietario' : 'Registrar usuario' }}
+      </button>
+    </section>
+
+    <section class="kpis">
+      <article class="kpi">
+        <span>{{ esSuper ? 'Total propietarios (titulares)' : 'Total usuarios' }}</span>
+        <strong>{{ esSuper ? propietarios : usuarios.length }} <em>cuentas</em></strong>
+      </article>
+      <article class="kpi">
+        <span>Colaboradores &amp; cajeros</span>
+        <strong>{{ colaboradores }} <em>asignados</em></strong>
+      </article>
+      <article class="kpi">
+        <span>Tasa de cuentas activas</span>
+        <strong class="verde">{{ tasaActivos }}% <em>operativas</em></strong>
+      </article>
+    </section>
+
+    <section class="filtros">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" [(ngModel)]="filtro" (ngModelChange)="aplicarFiltro()" name="filtro"
+               placeholder="Buscar por nombre, email o empresa…" aria-label="Buscar usuario" />
+      </div>
+      <label class="sel">Rol
+        <select [(ngModel)]="filtroRol" (ngModelChange)="aplicarFiltro()" name="filtroRol">
+          <option value="">Todos los roles</option>
+          <option *ngFor="let r of roles" [value]="r.nombre">{{ etiquetaRol(r.nombre) }}</option>
+        </select>
+      </label>
+      <label class="sel" *ngIf="esSuper">Empresa
+        <select [(ngModel)]="filtroEmpresa" (ngModelChange)="aplicarFiltro()" name="filtroEmpresa">
+          <option value="">Todas las empresas</option>
+          <option *ngFor="let e of empresasFiltro" [value]="e.id">{{ e.nombre }}</option>
+        </select>
+      </label>
+    </section>
+
+    <section class="dir-table">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>Empresa</th>
+              <th>Contacto</th>
+              <th>Rol</th>
+              <th>Alta</th>
+              <th>Estado</th>
+              <th class="right">Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let u of filtrados | paginar:pagina:porPagina">
+              <td>
+                <div class="emp">
+                  <span class="av">{{ iniciales(u) }}</span>
+                  <div>
+                    <strong>{{ nombreCompleto(u) }}</strong>
+                    <small class="mono">&#64;{{ u.username }}</small>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <strong>{{ u.empresaNombre || (u.rol?.nombre === 'SUPERADMIN' ? 'Plataforma GASBACORB' : '—') }}</strong>
+                <small class="mono" *ngIf="u.sucursalNombre">{{ u.sucursalNombre }}</small>
+              </td>
+              <td>
+                <strong class="mono">{{ u.email || '—' }}</strong>
+                <small class="mono">DNI {{ u.dni || '—' }}</small>
+              </td>
+              <td><span class="rol" [attr.data-rol]="u.rol?.nombre">{{ etiquetaRol(u.rol?.nombre) }}</span></td>
+              <td class="mono">{{ u.fechaCreacion ? (u.fechaCreacion | date:'dd/MM/yyyy') : '—' }}</td>
+              <td><span class="estado" [class.off]="!estaActivo(u)"><i></i>{{ estaActivo(u) ? 'Activo' : 'Inactivo' }}</span></td>
+              <td class="right">
+                <button type="button" class="ico" (click)="abrirModal(u)" title="Editar" aria-label="Editar"><i class="fas fa-pen"></i></button>
+                <button type="button" class="btn-estado" [class.react]="!estaActivo(u)" (click)="alternarEstado(u)">
+                  {{ estaActivo(u) ? 'Desactivar' : 'Activar' }}
+                </button>
+                <button type="button" class="ico danger" (click)="eliminar(u)" title="Eliminar" aria-label="Eliminar"><i class="fas fa-trash-alt"></i></button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
-      <table class="customer-table w-100">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Nombre</th>
-            <th>Username</th>
-            <th>Rol</th>
-            <th>DNI</th>
-            <th>Email</th>
-            <th>Turno</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let u of filtrados; let i = index">
-            <td>{{ (paginaActual - 1) * elementosPorPagina + i + 1 }}</td>
-            <td>{{ u.nombre }} {{ u.apellidos }}</td>
-            <td>{{ u.username }}</td>
-            <td>{{ u.rol?.nombre }}</td>
-
-            <td>{{ u.dni || '—' }}</td>
-            <td>{{ u.email || '—' }}</td>
-            <td>{{ u.turno || '—' }}</td>
-            <td>
-              <button (click)="abrirModal(u)" class="btn-editar me-2">
-                <i class="fas fa-edit"></i>
-              </button>
-              <button (click)="eliminar(u.idUsuario)" class="btn-eliminar">
-                <i class="fas fa-trash-alt"></i>
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <nav *ngIf="totalPaginas > 1" aria-label="Paginación" class="mt-3">
-        <ul class="pagination justify-content-center mb-0">
-          <li class="page-item" [class.disabled]="paginaActual === 1" (click)="cambiarPagina(paginaActual - 1)">
-            <a class="page-link" href="javascript:void(0)">Anterior</a>
-          </li>
-          <li
-            class="page-item"
-            *ngFor="let pg of paginasArray"
-            [class.active]="pg === paginaActual"
-            (click)="cambiarPagina(pg)"
-          >
-            <a class="page-link" href="javascript:void(0)">{{ pg }}</a>
-          </li>
-          <li class="page-item" [class.disabled]="paginaActual === totalPaginas" (click)="cambiarPagina(paginaActual + 1)">
-            <a class="page-link" href="javascript:void(0)">Siguiente</a>
-          </li>
-        </ul>
-      </nav>
-
-      <!-- Modal -->
-      <div *ngIf="mostrarModal" class="modal">
-        <div class="modal-content p-4">
-          <h2 class="mb-3">{{ usuario.idUsuario ? 'Editar' : 'Nuevo' }} Usuario</h2>
-          <form #f="ngForm" (ngSubmit)="formSubmit()">
-
-
-            <div class="mb-3">
-              <label>Rol:</label>
-              <select
-                name="rolId"
-                [(ngModel)]="usuario.rolId"
-                class="form-select"
-                required
-              >
-                <option [ngValue]="null" disabled>-- Seleccione rol --</option>
-                <option *ngFor="let r of roles" [ngValue]="r.id">
-                  {{ r.nombre }}
-                </option>
-              </select>
-            </div>
-
-            <div class="mb-3">
-              <label>Nombre:</label>
-              <input name="nombre" [(ngModel)]="usuario.nombre" required class="form-control" />
-            </div>
-            <div class="mb-3">
-              <label>Apellidos:</label>
-              <input name="apellidos" [(ngModel)]="usuario.apellidos" class="form-control" />
-            </div>
-            <div class="mb-3">
-              <label>Username:</label>
-              <input name="username" [(ngModel)]="usuario.username" required class="form-control" />
-            </div>
-            <div *ngIf="!usuario.idUsuario" class="mb-3">
-              <label>Password:</label>
-              <input name="password" [(ngModel)]="usuario.password" type="password" required class="form-control" />
-            </div>
-            <div class="mb-3">
-              <label>Email:</label>
-              <input name="email" [(ngModel)]="usuario.email" type="email" class="form-control" />
-            </div>
-            <div class="mb-3">
-              <label>DNI:</label>
-              <input name="dni" [(ngModel)]="usuario.dni" class="form-control" />
-            </div>
-            <div class="mb-3">
-              <label>Turno:</label>
-              <input name="turno" [(ngModel)]="usuario.turno" class="form-control" />
-            </div>
-
-            <div class="text-end mt-3">
-              <button type="button" class="btn btn-secondary me-2" (click)="cerrarModal()">Cerrar</button>
-<button type="submit" class="btn btn-primary">Guardar</button>
-            </div>
-          </form>
-        </div>
+      <div class="vacio" *ngIf="filtrados.length === 0">
+        <i class="fas fa-user-slash"></i>
+        <p>{{ cargando ? 'Cargando…' : (usuarios.length ? 'No hay usuarios que coincidan con los filtros' : 'Aún no hay usuarios registrados') }}</p>
       </div>
+      <app-paginacion [total]="filtrados.length" [(pagina)]="pagina" [(porPagina)]="porPagina"></app-paginacion>
+    </section>
 
+    <div *ngIf="mostrarModal" class="modal" (click)="cerrarModal()">
+      <div class="modal-content emp-modal" role="dialog" aria-modal="true" aria-labelledby="usr-titulo" (click)="$event.stopPropagation()">
+        <header class="em-head">
+          <span class="em-icon"><i class="fas fa-user-plus"></i></span>
+          <div>
+            <h2 id="usr-titulo">{{ form.idUsuario ? 'Editar usuario' : 'Registrar usuario / propietario' }}</h2>
+            <p>{{ form.idUsuario ? 'Actualiza los datos de la cuenta.' : 'Crea una cuenta de acceso y asígnala a una empresa.' }}</p>
+          </div>
+          <button type="button" class="em-close" (click)="cerrarModal()" aria-label="Cerrar"><i class="fas fa-times"></i></button>
+        </header>
+
+        <form (ngSubmit)="guardar()" class="em-form" novalidate>
+          <div class="em-body">
+            <p class="em-section"><span>1</span> Rol y empresa</p>
+            <div class="em-grid">
+              <div class="field span2">
+                <label for="rolId">Rol *</label>
+                <select id="rolId" name="rolId" [(ngModel)]="form.rolId" [class.invalid]="errores['rolId']">
+                  <option [ngValue]="null">Selecciona un rol</option>
+                  <option *ngFor="let r of rolesAsignables" [ngValue]="r.id">{{ etiquetaRol(r.nombre) }}</option>
+                </select>
+                <small class="err" *ngIf="errores['rolId']">{{ errores['rolId'] }}</small>
+              </div>
+
+              <ng-container *ngIf="!rolSeleccionadoEsSuper">
+                <div class="field" *ngIf="esSuper">
+                  <label for="idEmpresa">Empresa *</label>
+                  <select id="idEmpresa" name="idEmpresa" [(ngModel)]="form.idEmpresa" (ngModelChange)="alCambiarEmpresa()">
+                    <option [ngValue]="null">Selecciona una empresa</option>
+                    <option *ngFor="let e of empresasForm" [ngValue]="e.id">{{ e.nombre }}</option>
+                  </select>
+                </div>
+                <div class="field" [class.span2]="!esSuper">
+                  <label for="idSucursal">Sucursal *</label>
+                  <select id="idSucursal" name="idSucursal" [(ngModel)]="form.idSucursal" [class.invalid]="errores['idSucursal']">
+                    <option [ngValue]="null">Selecciona una sucursal</option>
+                    <option *ngFor="let s of sucursalesDelForm" [ngValue]="s.idSucursal">{{ s.nombreSucursal }}</option>
+                  </select>
+                  <small class="err" *ngIf="errores['idSucursal']">{{ errores['idSucursal'] }}</small>
+                </div>
+              </ng-container>
+            </div>
+
+            <p class="em-section"><span>2</span> Datos personales</p>
+            <div class="em-grid">
+              <div class="field">
+                <label for="nombre">Nombres *</label>
+                <input id="nombre" name="nombre" [(ngModel)]="form.nombre" [class.invalid]="errores['nombre']" />
+                <small class="err" *ngIf="errores['nombre']">{{ errores['nombre'] }}</small>
+              </div>
+              <div class="field">
+                <label for="apellidos">Apellidos</label>
+                <input id="apellidos" name="apellidos" [(ngModel)]="form.apellidos" />
+              </div>
+              <div class="field">
+                <label for="email">Correo</label>
+                <input id="email" name="email" type="email" [(ngModel)]="form.email" placeholder="correo&#64;empresa.pe" [class.invalid]="errores['email']" />
+                <small class="err" *ngIf="errores['email']">{{ errores['email'] }}</small>
+              </div>
+              <div class="field">
+                <label for="dni">DNI</label>
+                <input id="dni" name="dni" [(ngModel)]="form.dni" maxlength="8" inputmode="numeric" />
+              </div>
+              <div class="field">
+                <label for="turno">Turno</label>
+                <select id="turno" name="turno" [(ngModel)]="form.turno">
+                  <option value="">Sin turno</option>
+                  <option value="MAÑANA">Mañana</option>
+                  <option value="TARDE">Tarde</option>
+                  <option value="NOCHE">Noche</option>
+                </select>
+              </div>
+            </div>
+
+            <p class="em-section"><span>3</span> Acceso</p>
+            <div class="em-grid">
+              <div class="field">
+                <label for="username">Usuario *</label>
+                <input id="username" name="username" [(ngModel)]="form.username" autocomplete="off" [class.invalid]="errores['username']" />
+                <small class="err" *ngIf="errores['username']">{{ errores['username'] }}</small>
+              </div>
+              <div class="field">
+                <label for="password">{{ form.idUsuario ? 'Nueva contraseña' : 'Contraseña *' }}</label>
+                <input id="password" name="password" type="password" [(ngModel)]="form.password" autocomplete="new-password"
+                       [placeholder]="form.idUsuario ? 'Déjala vacía para conservar la actual' : 'Mínimo 4 caracteres'" [class.invalid]="errores['password']" />
+                <small class="err" *ngIf="errores['password']">{{ errores['password'] }}</small>
+              </div>
+            </div>
+          </div>
+
+          <footer class="em-foot">
+            <button type="button" class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
+            <button type="submit" class="btn-primary" [disabled]="guardando">
+              <i class="fas fa-spinner fa-spin" *ngIf="guardando"></i>
+              {{ guardando ? 'Guardando…' : (form.idUsuario ? 'Guardar cambios' : 'Registrar usuario') }}
+            </button>
+          </footer>
+        </form>
+      </div>
     </div>
   </div>
 </div>

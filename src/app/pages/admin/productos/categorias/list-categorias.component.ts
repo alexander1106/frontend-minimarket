@@ -1,4 +1,3 @@
-// src/app/pages/admin/modulo-inventario/categorias/list-categorias.component.ts
 import { Component, OnInit } from '@angular/core';
 import Swal from 'sweetalert2';
 import { FormsModule } from '@angular/forms';
@@ -7,12 +6,14 @@ import { CommonModule } from '@angular/common';
 import { BarraLateralComponent } from '../../../../components/barra-lateral/barra-lateral.component';
 import { HeaderComponent } from '../../../../components/header/header.component';
 import { CategoriasService } from '../../../../service/categorias.service';
+import { LoginService } from '../../../../service/login.service';
 import { Observable } from 'rxjs';
+import { PaginacionComponent } from '../../../../components/paginacion/paginacion.component';
 
 @Component({
   selector: 'app-list-categorias',
   standalone: true,
-  imports: [FormsModule, HttpClientModule, CommonModule, BarraLateralComponent, HeaderComponent],
+  imports: [PaginacionComponent, FormsModule, HttpClientModule, CommonModule, BarraLateralComponent, HeaderComponent],
   templateUrl: './list-categorias.component.html',
   styleUrls: ['./list-categorias.component.css']
 })
@@ -24,17 +25,22 @@ export class ListCategoriasComponent implements OnInit {
   cat = { idcategoria: 0, nombre: '', imagen: '' };
   paginaActual = 1;
   elementosPorPagina = 5;
+  totalFiltrado = 0;
 
-  constructor(private svc: CategoriasService) {}
+  cargando = true;
+  puedeEscribir = false;
+
+  constructor(private svc: CategoriasService, private loginService: LoginService) {}
 
   ngOnInit(): void {
+    this.puedeEscribir = this.loginService.hasRole('SUPERADMIN');
     this.cargar();
   }
 
   cargar(): void {
     this.svc.listarCategorias().subscribe({
-      next: data => { this.categorias = data; this.aplicarFiltro(); },
-      error: () => Swal.fire('Error', 'No se pudieron cargar categorías', 'error')
+      next: data => { this.categorias = data || []; this.cargando = false; this.aplicarFiltro(); },
+      error: () => { this.cargando = false; Swal.fire('Error', 'No se pudieron cargar categorías', 'error'); }
     });
   }
 
@@ -47,21 +53,23 @@ export class ListCategoriasComponent implements OnInit {
         c.idcategoria.toString().includes(t)
       );
     }
+    this.totalFiltrado = list.length;
+    if (this.paginaActual > 1 && (this.paginaActual - 1) * this.elementosPorPagina >= list.length) this.paginaActual = 1;
     const start = (this.paginaActual - 1) * this.elementosPorPagina;
     this.filtradas = list.slice(start, start + this.elementosPorPagina);
   }
 
   get totalPaginas(): number {
-    const count = this.filtro
-      ? this.categorias.filter(c =>
-          c.nombre.toLowerCase().includes(this.filtro.trim().toLowerCase())
-        ).length
-      : this.categorias.length;
-    return Math.ceil(count / this.elementosPorPagina);
-    
+    return Math.max(1, Math.ceil(this.totalFiltrado / this.elementosPorPagina));
   }get paginasArray(): number[] {
   return Array.from({ length: this.totalPaginas }, (_, i) => i + 1);
 }
+
+  cambiarFilas(n: number): void {
+    this.elementosPorPagina = n;
+    this.paginaActual = 1;
+    this.aplicarFiltro();
+  }
 
   cambiarPagina(p: number): void {
     if (p >= 1 && p <= this.totalPaginas) {
@@ -71,6 +79,7 @@ export class ListCategoriasComponent implements OnInit {
   }
 
   abrirModal(cat?: any): void {
+    if (!this.puedeEscribir) return;
     this.cat = cat ? { ...cat } : { idcategoria: 0, nombre: '', imagen: '' };
     this.mostrarModal = true;
   }
@@ -140,8 +149,8 @@ export class ListCategoriasComponent implements OnInit {
   });
 }
 
-
 eliminar(id: number): void {
+  if (!this.puedeEscribir) return;
   Swal.fire({
     title: '¿Eliminar?',
     text: 'No podrás deshacer esto',

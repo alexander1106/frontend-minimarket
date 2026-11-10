@@ -8,10 +8,8 @@ import baseUrl from '../components/link';
 })
 export class PagosService {
 
-
   constructor(private http: HttpClient) { }
 
-  // Obtener todos los permisos
   public listarPagos(): Observable<any> {
     return this.http.get(`${baseUrl}/pagos`);
   }
@@ -24,11 +22,9 @@ export class PagosService {
     return this.http.post(`${baseUrl}/pagos`, pagos );
   }
 
- // Eliminar un permiso por ID
   public eliminarPagos(id: number): Observable<any> {
     return this.http.delete(`${baseUrl}/pagos/${id}`,{ responseType: 'text' });
   }
-  // Editar un permiso existente
   public editarPagos(pagos: any){
     return this.http.put(`${baseUrl}/pagos`, pagos);
   }

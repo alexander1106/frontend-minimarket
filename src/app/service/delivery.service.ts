@@ -9,7 +9,6 @@ import baseUrl from '../components/link';
 export class DeliveryService {
   constructor(private http: HttpClient) { }
 
-  // Obtener todos los permisos
   public listarDelivery(): Observable<any> {
     return this.http.get(`${baseUrl}/delivery`);
   }
@@ -19,6 +18,5 @@ export class DeliveryService {
   public actualizarDelivery(id: number, delivery: any): Observable<any> {
   return this.http.put(`${baseUrl}/delivery/${id}`, delivery);
 }
-
 
 }

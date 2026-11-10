@@ -1,132 +1,133 @@
 <div class="contenedor">
-  <div class="barra">
-    <app-barra-lateral></app-barra-lateral>
-  </div>
+  <div class="barra"><app-barra-lateral></app-barra-lateral></div>
 
   <div class="encabezado">
     <app-header></app-header>
-    <hr class="border-secondary mb-4" />
 
-    <div class="container">
-      <div class="header">
-        <div>
-          <h2>Cotizaciones</h2>
-          <span class="subtitle">{{ cotizaciones.length }} cotizaciones registradas</span>
-        </div>
-        <div class="search-sort">
-          <input
-            type="text"
-            placeholder="Buscar cotizaciones"
-            class="search-input"
-            [(ngModel)]="filtroBusqueda"
-            (ngModelChange)="buscarCotizacion()"
-          />
-          <button class="btn-agregar" [routerLink]="['/admin/add-venta']"  routerLinkActive="router-link-active" >
-            <i class="fas fa-plus"></i> Nueva Cotización
-          </button>
-        </div>
+    <section class="dir-head">
+      <div>
+        <h1>Cotizaciones</h1>
+        <p>Presupuestos que enviaste a tus clientes, con su vigencia y estado</p>
+      </div>
+      <button type="button" class="btn-agregar" [routerLink]="['/admin/add-venta']">
+        <i class="fas fa-plus"></i> Nueva cotización
+      </button>
+    </section>
+
+    <section class="kpis">
+      <article class="kpi">
+        <span>Cotizaciones</span>
+        <strong>{{ cotizaciones.length }} <em>registradas</em></strong>
+      </article>
+      <article class="kpi">
+        <span>Pendientes</span>
+        <strong>{{ pendientes }} <em>por cobrar</em></strong>
+      </article>
+      <article class="kpi">
+        <span>Monto pendiente</span>
+        <strong class="verde">S/ {{ montoPendiente | number:'1.2-2' }}</strong>
+      </article>
+    </section>
+
+    <section class="filtros">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" [(ngModel)]="filtroBusqueda" (ngModelChange)="buscarCotizacion()" name="filtro"
+               placeholder="Buscar por código, cliente o estado…" aria-label="Buscar cotización" />
+      </div>
+      <label class="sel">Estado
+        <select [(ngModel)]="estadoFiltro" (ngModelChange)="buscarCotizacion()" name="estadoFiltro">
+          <option value="">Todos</option>
+          <option *ngFor="let e of estados" [value]="e">{{ e }}</option>
+        </select>
+      </label>
+    </section>
+
+    <section class="dir-table">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Cotización</th>
+              <th>Cliente</th>
+              <th>Fecha</th>
+              <th>Vence</th>
+              <th class="num">Total</th>
+              <th>Estado</th>
+              <th class="right">Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let c of filtradas | paginar:pagina:porPagina">
+              <td><strong class="mono">{{ c.numeroCotizacion || '—' }}</strong></td>
+              <td>{{ nombreCliente(c) }}</td>
+              <td class="mono">{{ c.fechaCotizacion | date:'dd/MM/yyyy' }}</td>
+              <td class="mono">{{ c.fechaVencimiento | date:'dd/MM/yyyy' }}</td>
+              <td class="num"><strong>S/ {{ c.totalCotizacion | number:'1.2-2' }}</strong></td>
+              <td><span class="estado-cot" [ngClass]="claseEstado(c)">{{ estadoDe(c) || '—' }}</span></td>
+              <td class="right">
+                <button type="button" class="ico" (click)="verDetallesCotizacion(c)" title="Ver detalle" aria-label="Ver detalle"><i class="fas fa-eye"></i></button>
+                <button type="button" class="ico danger" (click)="eliminarCotizacion(c.idCotizaciones)" [disabled]="estadoDe(c) === 'PAGADA'"
+                        [attr.title]="estadoDe(c) === 'PAGADA' ? 'Una cotización pagada no se elimina' : 'Eliminar'" aria-label="Eliminar"><i class="fas fa-trash-alt"></i></button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
-      <table class="customer-table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Codigo</th>
-            <th>Cliente</th>
-            <th>Fecha cotizacion</th>
-            <th>Fecha vencimiento</th>
-            <th>Total</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let cotizacion of cotizacionesFiltradas; let i = index">
-            <td>{{ (paginaActual - 1) * elementosPorPagina + i + 1 }}</td>
-            <td>{{ cotizacion.numeroCotizacion }}</td>
-            <td>{{ cotizacion.cliente?.nombre }}</td>
-            <td>{{ cotizacion.fechaCotizacion | date: 'shortDate' }}</td>
-            <td>{{ cotizacion.fechaVencimiento | date: 'shortDate' }}</td>
+      <div class="vacio" *ngIf="filtradas.length === 0">
+        <i class="fas fa-file-invoice-dollar"></i>
+        <p *ngIf="cargando">Cargando…</p>
+        <p *ngIf="!cargando && cotizaciones.length > 0">No hay cotizaciones que coincidan con los filtros</p>
+        <ng-container *ngIf="!cargando && cotizaciones.length === 0">
+          <p>Aún no hiciste cotizaciones</p>
+          <button type="button" class="btn-agregar" [routerLink]="['/admin/add-venta']"><i class="fas fa-plus"></i> Nueva cotización</button>
+        </ng-container>
+      </div>
 
-            <td>S/. {{ cotizacion.totalCotizacion | number: '1.2-2' }}</td>
-            <td>{{ cotizacion.estadoCotizacion }}</td>
-          <td>
+      <app-paginacion [total]="filtradas.length" [(pagina)]="pagina" [(porPagina)]="porPagina"></app-paginacion>
+    </section>
 
-<button
-  class="btn-ver"
-  title="Ver cotización"
-  (click)="verDetallesCotizacion(cotizacion)">
-  <i class="fas fa-eye"></i>
-</button>
+    <div *ngIf="mostrarModalDetalle" class="modal" (click)="cerrarDetalle()">
+      <div class="modal-content emp-modal ancho" role="dialog" aria-modal="true" aria-labelledby="cot-titulo" (click)="$event.stopPropagation()">
+        <header class="em-head">
+          <span class="em-icon"><i class="fas fa-file-invoice-dollar"></i></span>
+          <div>
+            <h2 id="cot-titulo">Cotización {{ cotizacionSeleccionada?.numeroCotizacion }}</h2>
+            <p>{{ nombreCliente(cotizacionSeleccionada) }} · {{ cotizacionSeleccionada?.fechaCotizacion | date:'dd/MM/yyyy' }}</p>
+          </div>
+          <button type="button" class="em-close" (click)="cerrarDetalle()" aria-label="Cerrar"><i class="fas fa-times"></i></button>
+        </header>
 
+        <div class="em-body">
+          <div class="table-wrap mini">
+            <table>
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th class="num">Cantidad</th>
+                  <th class="num">P. unitario</th>
+                  <th class="num">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let d of detallesCotizacion">
+                  <td><strong>{{ d.productos?.nombre }}</strong></td>
+                  <td class="num">{{ d.cantidad | number:'1.0-3' }}<ng-container *ngIf="d.presentacion?.nombre"> × {{ d.presentacion.nombre }}</ng-container></td>
+                  <td class="num">S/ {{ d.precioUnitario | number:'1.2-2' }}</td>
+                  <td class="num"><strong>S/ {{ d.subTotal | number:'1.2-2' }}</strong></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="total-linea">Total <strong>S/ {{ cotizacionSeleccionada?.totalCotizacion | number:'1.2-2' }}</strong></p>
+          <p class="nota-igv">Válida hasta el {{ cotizacionSeleccionada?.fechaVencimiento | date:'dd/MM/yyyy' }}. Los precios ya incluyen IGV.</p>
+        </div>
 
-  <button
-    (click)="eliminarCotizacion(cotizacion.idCotizaciones)"
-    class="btn-eliminar"
-    title="Eliminar cotización">
-    <i class="fas fa-trash-alt"></i>
-  </button>
-
-</td>
-
-          </tr>
-        </tbody>
-      </table>
-
-      <nav aria-label="Paginación" class="mt-3">
-        <ul class="pagination justify-content-center">
-          <li
-            class="page-item"
-            [class.disabled]="paginaActual === 1"
-            (click)="cambiarPagina(paginaActual - 1)">
-            <a class="page-link" href="javascript:void(0)">Anterior</a>
-          </li>
-
-          <li
-            class="page-item"
-            *ngFor="let pagina of paginasArray()"
-            [class.active]="pagina === paginaActual"
-            (click)="cambiarPagina(pagina)">
-            <a class="page-link" href="javascript:void(0)">{{ pagina }}</a>
-          </li>
-
-          <li
-            class="page-item"
-            [class.disabled]="paginaActual === totalPaginas"
-            (click)="cambiarPagina(paginaActual + 1)">
-            <a class="page-link" href="javascript:void(0)">Siguiente</a>
-          </li>
-        </ul>
-      </nav>
+        <footer class="em-foot">
+          <button type="button" class="btn-secondary" (click)="cerrarDetalle()">Cerrar</button>
+        </footer>
+      </div>
     </div>
-  </div>
-</div>
-<div class="modal-overlay" *ngIf="mostrarModalDetalle">
-  <div class="modal-content">
-    <h3>Detalles de la Cotización #{{ cotizacionSeleccionada?.numeroCotizacion }}</h3>
-    <p><strong>Cliente:</strong> {{ cotizacionSeleccionada?.cliente?.nombre }}</p>
-    <p><strong>Fecha:</strong> {{ cotizacionSeleccionada?.fechaCotizacion | date:'shortDate' }}</p>
-    <p><strong>Total:</strong> S/. {{ cotizacionSeleccionada?.totalCotizacion | number:'1.2-2' }}</p>
-
-    <table class="detalle-table">
-      <thead>
-        <tr>
-          <th>Producto</th>
-          <th>Cantidad</th>
-          <th>Precio Unitario</th>
-          <th>Subtotal</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let detalle of detallesCotizacion">
-          <td>{{ detalle.productos?.nombre }}</td>
-          <td>{{ detalle.cantidad }}</td>
-          <td>S/. {{ detalle.precioUnitario | number:'1.2-2' }}</td>
-          <td>S/. {{ detalle.subTotal | number:'1.2-2' }}</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <button class="btn-cerrar" (click)="mostrarModalDetalle = false">Cerrar</button>
   </div>
 </div>

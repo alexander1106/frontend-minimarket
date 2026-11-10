@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { AperturaCajaService } from '../../../../../service/apertura-caja.service';
+import { VendedorTurno, AperturaCajaService } from '../../../../../service/apertura-caja.service';
 import { MetodoPagoService } from '../../../../../service/metodo-pago.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -15,11 +15,12 @@ import { TranseferenciaEntreCajasService } from '../../../../../service/transefe
 import { SaldoMetodoPagoServiceService } from '../../../../../service/saldo-metodo-pago-service.service';
 import { LoginService } from '../../../../../service/login.service';
 import { ArqueoCajaServiceService } from '../../../../../service/arqueo-caja-service.service';
+import { PaginacionComponent } from '../../../../../components/paginacion/paginacion.component';
 
 @Component({
   selector: 'app-list-transacciones',
   standalone: true,
-  imports: [CommonModule, FormsModule, BarraLateralComponent, HeaderComponent],
+  imports: [PaginacionComponent, CommonModule, FormsModule, BarraLateralComponent, HeaderComponent],
   templateUrl: './list-transacciones.component.html',
   styleUrls: ['./list-transacciones.component.css']
 })
@@ -28,7 +29,6 @@ export class ListTransaccionesComponent implements OnInit {
   mostrarFormularioTransaccion = false;
   mostrarFormularioTransferencia = false;
 
-  // Formulario transacción normal
   fecha: string = '';
   monto: number = 0;
   observaciones: string = '';
@@ -36,14 +36,12 @@ export class ListTransaccionesComponent implements OnInit {
   idMetodoPago: number | undefined;
   idAperturaCaja: number | undefined;
 
-  // Formulario transferencia entre cajas
   idCajaOrigen: number | undefined;
   idCajaDestino: number | undefined;
   montoTransferencia: number = 0;
   conceptoTransferencia: string = '';
   cajas: any[] = [];
 
-  // Listas
   transacciones: any[] = [];
   transaccionesPaginadas: any[] = [];
   metodosPago: any[] = [];
@@ -51,11 +49,10 @@ export class ListTransaccionesComponent implements OnInit {
 saldosMetodoPago: any[] = [];
 mostrarFormularioArqueo = false;
 
-// Campos del formulario de arqueo
 montoContado: number = 0;
 observacionesArqueo: string = '';
+vendedoresTurno: VendedorTurno[] = [];
 
-  // Paginación
   paginaActual: number = 1;
   itemsPorPagina: number = 5;
 
@@ -72,7 +69,7 @@ observacionesArqueo: string = '';
   private router: Router,
   private loginService:LoginService,
   private registrarArqueo:ArqueoCajaServiceService,
-    private saldoMetodoPagoService: SaldoMetodoPagoServiceService, // 🚩 Nuevo servicio
+    private saldoMetodoPagoService: SaldoMetodoPagoServiceService,
 
   ) {}
 ngOnInit() {
@@ -82,7 +79,6 @@ ngOnInit() {
     this.idAperturaCaja = Number(idParam);
     console.log('ID recibido:', this.idAperturaCaja);
 
-    // 🚩 PASO 1: Obtener apertura
     this.aperturaService.buscarAperturaId(this.idAperturaCaja).subscribe(
       (data) => {
         this.detalleCaja = data;
@@ -90,7 +86,7 @@ ngOnInit() {
         const idCaja = this.detalleCaja?.idCaja || this.detalleCaja?.caja?.idCaja;
         if (idCaja) {
 
-          this.idCajaOrigen = idCaja; // preseleccionar caja origen
+          this.idCajaOrigen = idCaja;
 
          this.CajasService.obtenerCajasAbiertasMismaSucursal(idCaja).subscribe(
           (cajasAbiertas: any[]) => {
@@ -112,7 +108,6 @@ ngOnInit() {
       }
     );
 
-    // 🚩 NUEVO: Transacciones de esta apertura
     this.transaccionService.listarTransaccionesPorApertura(this.idAperturaCaja).subscribe(
       (data) => {
         this.transacciones = data;
@@ -123,7 +118,6 @@ ngOnInit() {
         console.error('Error al obtener transacciones:', error);
       }
     );
-    // 🚩 NUEVO: Saldos de métodos de pago de esta apertura
     this.saldoMetodoPagoService.listarPorApertura(this.idAperturaCaja).subscribe(
       (data) => {
         this.saldosMetodoPago = data;
@@ -138,11 +132,9 @@ ngOnInit() {
     console.warn('No se encontró idAperturaCaja en la URL');
   }
 
-
   this.listarMetodosDeSucursal()
 }
 
-  // ✅ NUEVO MÉTODO PARA LISTAR POR SUCURSAL
   listarMetodosDeSucursal() {
     const user = this.loginService.getUser();
     if (!user || !user.sucursal || !user.sucursal.idSucursal) {
@@ -196,13 +188,11 @@ guardarTransaccion() {
     return;
   }
 
-  // 🚩 Buscamos el saldo del método de pago seleccionado
   const saldoSeleccionado = this.saldosMetodoPago.find(
     (s) => s.metodoPago?.idMetodoPago === this.idMetodoPago
   );
 
   const saldoDisponible = saldoSeleccionado?.saldo ?? 0;
-
 
   const nuevaTransaccion = {
     fecha: this.fecha,
@@ -228,13 +218,10 @@ this.transaccionService.registrarTransaccion(nuevaTransaccion).subscribe(
   (error) => {
     console.error('Error al registrar transacción:', error);
 
-    // 🔵 Validamos si hay mensaje del backend
-    const mensaje = error?.error;
-
     Swal.fire({
       icon: 'error',
       title: 'Error',
-      text: mensaje ? mensaje : 'Ocurrió un error al guardar la transacción.'
+      text: this.mensajeError(error, 'Ocurrió un error al guardar la transacción.')
     });
   }
 );
@@ -277,7 +264,7 @@ this.transaccionService.registrarTransaccion(nuevaTransaccion).subscribe(
           Swal.fire({
             icon: 'error',
             title: 'Error',
-            text: 'Ocurrió un error al guardar la transferencia.'
+            text: this.mensajeError(error, 'Ocurrió un error al guardar la transferencia.')
           });
         }
       );
@@ -304,6 +291,17 @@ resetearFormularioTransferencia() {
     this.transaccionesPaginadas = this.transacciones.slice(inicio, fin);
   }
 
+  irAPagina(p: number) {
+    this.paginaActual = p;
+    this.actualizarPaginacion();
+  }
+
+  cambiarFilas(n: number) {
+    this.itemsPorPagina = n;
+    this.paginaActual = 1;
+    this.actualizarPaginacion();
+  }
+
   irPaginaAnterior() {
     if (this.paginaActual > 1) {
       this.paginaActual--;
@@ -312,16 +310,11 @@ resetearFormularioTransferencia() {
   }
 onTipoMovimientoChange() {
   if (this.tipoMovimiento === 'EGRESO') {
-    // Buscar método efectivo
     const metodoEfectivo = this.metodos.find(m => m.nombre?.toLowerCase() === 'efectivo');
     if (metodoEfectivo) {
       this.idMetodoPago = metodoEfectivo.idMetodoPago;
     }
   }
-  // Opcional: limpiar si vuelve a ingreso
-  // else {
-  //   this.idMetodoPago = undefined;
-  // }
 }
   irPaginaSiguiente() {
     if (this.paginaActual < this.totalPaginas) {
@@ -329,6 +322,16 @@ onTipoMovimientoChange() {
       this.actualizarPaginacion();
     }
   }
+
+get saldoEfectivoSistema(): number {
+  return Number(this.saldosMetodoPago.find(
+    s => s.metodoPago?.nombre?.toLowerCase() === 'efectivo'
+  )?.saldo ?? 0);
+}
+
+get diferenciaArqueo(): number {
+  return Math.round((Number(this.montoContado || 0) - this.saldoEfectivoSistema) * 100) / 100;
+}
 
 confirmarArqueo() {
   if (!this.detalleCaja?.idAperturaCaja) {
@@ -340,12 +343,10 @@ confirmarArqueo() {
     return;
   }
 
-  // 🚩 OBTENER saldo efectivo
   const saldoEfectivo = this.saldosMetodoPago.find(
     s => s.metodoPago?.nombre?.toLowerCase() === 'efectivo'
   )?.saldo ?? 0;
 
-  // 🚩 COMPARAR monto contado con saldo efectivo
   if (this.montoContado !== saldoEfectivo) {
     const diferencia = this.montoContado - saldoEfectivo;
     Swal.fire({
@@ -357,21 +358,19 @@ confirmarArqueo() {
       `,
       confirmButtonText: 'Ok'
     });
-    return; // 🚨 Detener el proceso
+    return;
   }
 
-  // 🚩 Si todo bien, enviar el arqueo
   const arqueo = {
     id_apertura_caja: this.detalleCaja.idAperturaCaja,
     fechaArqueo: new Date().toISOString(),
     saldoSistema: saldoEfectivo,
+    montoContado: this.montoContado,
     observaciones: this.observacionesArqueo
   };
 
-  // Aquí llamas al servicio de arqueo para registrar el arqueo
   this.registrarArqueo.registrarArqueo(arqueo).subscribe(
     () => {
-      // Después del arqueo, cerrar la caja
       this.aperturaService.cerrarCaja(this.detalleCaja.idAperturaCaja).subscribe(
         () => {
           localStorage.removeItem('cajaActiva');
@@ -388,7 +387,7 @@ confirmarArqueo() {
           Swal.fire({
             icon: 'error',
             title: 'Error',
-            text: 'Ocurrió un error al cerrar la caja.'
+            text: this.mensajeError(error, 'Ocurrió un error al cerrar la caja.')
           });
         }
       );
@@ -398,12 +397,29 @@ confirmarArqueo() {
       Swal.fire({
         icon: 'error',
         title: 'Error',
-        text: 'Ocurrió un error al registrar el arqueo.'
+        text: this.mensajeError(error, 'Ocurrió un error al registrar el arqueo.')
       });
     }
   );
 
   this.mostrarFormularioArqueo = false;
+}
+
+// El backend responde texto plano o JSON ({error}, {message}, {Detalle})
+private mensajeError(error: any, porDefecto: string): string {
+  const e = error?.error;
+  if (typeof e === 'string' && e.trim()) return e;
+  return e?.Detalle || e?.message || e?.error || porDefecto;
+}
+
+cargarVendedoresTurno() {
+  this.vendedoresTurno = [];
+  const id = this.detalleCaja?.idAperturaCaja ?? this.idAperturaCaja;
+  if (!id) return;
+  this.aperturaService.vendedoresDelTurno(Number(id)).subscribe({
+    next: v => (this.vendedoresTurno = Array.isArray(v) ? v : []),
+    error: () => (this.vendedoresTurno = [])
+  });
 }
 
 cancelarArqueo() {
@@ -422,8 +438,8 @@ cerrarCaja() {
     cancelButtonText: 'Cancelar'
   }).then((result) => {
     if (result.isConfirmed) {
-      // Solo muestra el formulario de arqueo
       this.mostrarFormularioArqueo = true;
+      this.cargarVendedoresTurno();
       this.mostrarFormularioTransaccion = false;
       this.mostrarFormularioTransferencia = false;
     }

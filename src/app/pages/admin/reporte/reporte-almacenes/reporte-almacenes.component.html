@@ -1,105 +1,91 @@
 <div class="contenedor">
-  <div class="barra">
-    <app-barra-lateral></app-barra-lateral>
-  </div>
+  <div class="barra"><app-barra-lateral></app-barra-lateral></div>
 
   <div class="encabezado">
     <app-header></app-header>
-    <hr class="border-secondary mb-4" />
 
-    <div class="container">
-      <div class="header d-flex justify-content-between align-items-center mb-3">
-        <div>
-          <h2>Reporte de Almacenes</h2>
-          <span class="subtitle">{{ filtrados.length }} Registrados</span>
-        </div>
+    <section class="dir-head">
+      <div>
+        <h1>Reporte de almacenes</h1>
+        <p>Almacenes por sucursal, con su encargado y estado</p>
+      </div>
+      <div class="acciones-reporte">
+        <button type="button" class="btn-volver" (click)="imprimir()"><i class="fas fa-print"></i> Imprimir</button>
+        <button type="button" class="btn-volver" (click)="exportarPDF()" [disabled]="!listaFiltradaTemporal.length"><i class="fas fa-file-pdf"></i> Exportar PDF</button>
+      </div>
+    </section>
 
-        <div class="search-sort d-flex align-items-center flex-wrap gap-2">
-          <select
-            class="form-select me-2"
-            [(ngModel)]="sucursalFiltro"
-            (change)="aplicarFiltro()"
-            style="max-width: 200px;"
-          >
-            <option [ngValue]="0">Todas las sucursales</option>
-            <option *ngFor="let s of sucursales" [ngValue]="s.idsucursal">
-              {{ s.nombre }}
-            </option>
-          </select>
+    <section class="kpis">
+      <article class="kpi">
+        <span>Almacenes</span>
+        <strong>{{ almacenes.length }} <em>registrados</em></strong>
+      </article>
+      <article class="kpi">
+        <span>Activos</span>
+        <strong class="verde">{{ activos }} <em>almacenes</em></strong>
+      </article>
+      <article class="kpi">
+        <span>Resultados del filtro</span>
+        <strong>{{ listaFiltradaTemporal.length }} <em>coinciden</em></strong>
+      </article>
+    </section>
 
-          <input type="date" [(ngModel)]="fechaInicio" (change)="aplicarFiltro()" class="form-control" />
-          <input type="date" [(ngModel)]="fechaFin" (change)="aplicarFiltro()" class="form-control" />
+    <section class="filtros">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" [(ngModel)]="filtro" (ngModelChange)="aplicarFiltro()" name="filtro"
+               placeholder="Buscar por nombre, dirección, encargado o sucursal…" aria-label="Buscar almacén" />
+      </div>
+      <label class="sel">Sucursal
+        <select [(ngModel)]="sucursalFiltro" (ngModelChange)="aplicarFiltro()" name="sucursalFiltro">
+          <option [ngValue]="0">Todas</option>
+          <option *ngFor="let s of sucursales" [ngValue]="s.idsucursal">{{ s.nombre }}</option>
+        </select>
+      </label>
+      <label class="sel">Desde
+        <input type="date" class="fecha" [(ngModel)]="fechaInicio" (ngModelChange)="aplicarFiltro()" name="fechaInicio" />
+      </label>
+      <label class="sel">Hasta
+        <input type="date" class="fecha" [(ngModel)]="fechaFin" (ngModelChange)="aplicarFiltro()" name="fechaFin" />
+      </label>
+    </section>
 
-          <input
-            type="text"
-            placeholder="Buscar almacén"
-            class="search-input me-2"
-            [(ngModel)]="filtro"
-            (ngModelChange)="aplicarFiltro()"
-          />
-
-          <button (click)="exportarPDF()" class="btn-export me-2">Exportar PDF</button>
-          <button (click)="imprimir()" class="btn-imprimir">Imprimir</button>
-        </div>
+    <section class="dir-table">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Almacén</th>
+              <th>Sucursal</th>
+              <th>Dirección</th>
+              <th>Encargado</th>
+              <th>Estado</th>
+              <th>Registro</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let a of listaFiltradaTemporal | paginar:pagina:porPagina">
+              <td>
+                <strong>{{ a.nombre }}</strong>
+                <small *ngIf="a.descripcion">{{ a.descripcion }}</small>
+              </td>
+              <td>{{ a.sucursalNombre }}</td>
+              <td>{{ a.direccion || '—' }}</td>
+              <td>{{ a.encargado || '—' }}</td>
+              <td><span class="estado" [class.off]="a.estado !== 1"><i></i>{{ a.estado === 1 ? 'Activo' : 'Inactivo' }}</span></td>
+              <td class="mono">{{ a.fechaRegistro ? (a.fechaRegistro | date:'dd/MM/yyyy') : '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
-      <table class="customer-table w-100">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Nombre</th>
-            <th>Descripción</th>
-            <th>Dirección</th>
-            <th>Encargado</th>
-            <th>Estado</th>
-            <th>Sucursal</th>
-            <th>Fecha Registro</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let a of filtrados; let i = index">
-            <td>{{ (paginaActual - 1) * elementosPorPagina + i + 1 }}</td>
-            <td>{{ a.nombre }}</td>
-            <td>{{ a.descripcion }}</td>
-            <td>{{ a.direccion }}</td>
-            <td>{{ a.encargado }}</td>
-            <td>{{ a.estado === 1 ? 'Activo' : 'Inactivo' }}</td>
-            <td>{{ a.sucursalNombre }}</td>
-            <td>{{ a.fechaRegistro ? (a.fechaRegistro | date: 'dd/MM/yyyy') : '—' }}</td>
-          </tr>
-          <tr *ngIf="filtrados.length === 0">
-            <td colspan="8" class="text-center">No hay registros</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="vacio" *ngIf="listaFiltradaTemporal.length === 0">
+        <i class="fas fa-warehouse"></i>
+        <p *ngIf="cargando">Cargando…</p>
+        <p *ngIf="!cargando">No hay almacenes con esos filtros</p>
+      </div>
 
-      <!-- Paginación -->
-      <nav *ngIf="totalPaginas > 1" aria-label="Paginación" class="mt-3">
-        <ul class="pagination justify-content-center mb-0">
-          <li
-            class="page-item"
-            [class.disabled]="paginaActual === 1"
-            (click)="cambiarPagina(paginaActual - 1)"
-          >
-            <a class="page-link" href="javascript:void(0)">Anterior</a>
-          </li>
-          <li
-            class="page-item"
-            *ngFor="let pg of paginasArray"
-            [class.active]="pg === paginaActual"
-            (click)="cambiarPagina(pg)"
-          >
-            <a class="page-link" href="javascript:void(0)">{{ pg }}</a>
-          </li>
-          <li
-            class="page-item"
-            [class.disabled]="paginaActual === totalPaginas"
-            (click)="cambiarPagina(paginaActual + 1)"
-          >
-            <a class="page-link" href="javascript:void(0)">Siguiente</a>
-          </li>
-        </ul>
-      </nav>
-    </div>
+      <app-paginacion [total]="listaFiltradaTemporal.length" [(pagina)]="pagina" [(porPagina)]="porPagina"></app-paginacion>
+    </section>
   </div>
 </div>

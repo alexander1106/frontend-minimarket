@@ -1,165 +1,136 @@
 <div class="contenedor">
-  <div class="barra">
-    <app-barra-lateral></app-barra-lateral>
-  </div>
+  <div class="barra"><app-barra-lateral></app-barra-lateral></div>
 
   <div class="encabezado">
     <app-header></app-header>
-    <hr class="border-secondary mb-4" />
 
-    <div class="container">
-      <!-- Cabecera con buscador y botón -->
-      <div class="header d-flex justify-content-between align-items-center mb-3">
-        <div>
-          <h2>Inventario</h2>
-          <span class="subtitle">{{ inventarios.length }} Registrados</span>
-        </div>
-        <div class="search-sort d-flex align-items-center">
-          <!-- 🔽 FILTRO DE ALMACÉN AGREGADO -->
-          <select
-            class="form-select me-2"
-            [(ngModel)]="almacenFiltro"
-            (ngModelChange)="aplicarFiltro()"
-          >
-            <option [ngValue]="0">Todos los almacenes</option>
-            <option *ngFor="let a of almacenes" [ngValue]="a.idalmacen">
-              {{ a.nombre }}
-            </option>
-          </select>
-          <!-- 🔼 -->
+    <section class="dir-head">
+      <div>
+        <h1>Inventario</h1>
+        <p>Un inventario por almacén: ahí se guarda el stock de tus productos</p>
+      </div>
+      <button type="button" class="btn-agregar" (click)="abrirModal()">
+        <i class="fas fa-plus"></i> Registrar inventario
+      </button>
+    </section>
 
-          <input
-            type="text"
-            placeholder="Buscar inventario"
-            class="search-input me-2"
-            [(ngModel)]="filtro"
-            (ngModelChange)="aplicarFiltro()"
-          />
-          <button (click)="abrirModal()" class="btn-agregar">
-            <i class="fas fa-plus"></i> Inventario
-          </button>
-        </div>
+    <section class="kpis">
+      <article class="kpi">
+        <span>Inventarios</span>
+        <strong>{{ inventarios.length }} <em>registrados</em></strong>
+      </article>
+      <article class="kpi">
+        <span>Almacenes sin inventario</span>
+        <strong [class.rojo]="almacenesSinInventario > 0">{{ almacenesSinInventario }} <em>almacenes</em></strong>
+      </article>
+      <article class="kpi">
+        <span>Resultados de la búsqueda</span>
+        <strong class="verde">{{ totalFiltrado }} <em>coinciden</em></strong>
+      </article>
+    </section>
+
+    <section class="filtros">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" [(ngModel)]="filtro" (ngModelChange)="aplicarFiltro()" name="filtro"
+               placeholder="Buscar por nombre, descripción o almacén…" aria-label="Buscar inventario" />
+      </div>
+      <label class="sel">Almacén
+        <select [(ngModel)]="almacenFiltro" (ngModelChange)="aplicarFiltro()" name="almacenFiltro">
+          <option [ngValue]="0">Todos los almacenes</option>
+          <option *ngFor="let a of almacenes" [ngValue]="a.idalmacen">{{ a.nombre }}</option>
+        </select>
+      </label>
+    </section>
+
+    <section class="dir-table">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Inventario</th>
+              <th>Almacén</th>
+              <th class="right">Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let inv of filtrados">
+              <td>
+                <div class="emp">
+                  <span class="av">{{ inv.nombre.slice(0, 2).toUpperCase() }}</span>
+                  <div>
+                    <strong>{{ inv.nombre }}</strong>
+                    <small *ngIf="inv.descripcion">{{ inv.descripcion }}</small>
+                  </div>
+                </div>
+              </td>
+              <td>{{ inv.almacen?.nombre || '—' }}</td>
+              <td class="right">
+                <button type="button" class="ico" (click)="abrirModal(inv)" title="Editar" aria-label="Editar"><i class="fas fa-pen"></i></button>
+                <button type="button" class="ico danger" (click)="eliminar(inv.idinventario)" title="Eliminar" aria-label="Eliminar"><i class="fas fa-trash-alt"></i></button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
-      <!-- Tabla -->
-      <table class="customer-table w-100">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Nombre</th>
-            <th>Descripción</th>
-            <th>Almacén</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let inv of filtrados; let i = index">
-            <td>{{ (paginaActual - 1) * elementosPorPagina + i + 1 }}</td>
-            <td>{{ inv.nombre }}</td>
-            <td>{{ inv.descripcion }}</td>
-            <td>{{ inv.almacen?.nombre }}</td>
-            <td>
-              <button (click)="abrirModal(inv)" class="btn-editar me-2">
-                <i class="fas fa-edit"></i>
-              </button>
-              <button (click)="eliminar(inv.idinventario)" class="btn-eliminar">
-                <i class="fas fa-trash-alt"></i>
-              </button>
-            </td>
-          </tr>
-          <tr *ngIf="filtrados.length === 0">
-            <td colspan="5" class="text-center">No hay registros</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="vacio" *ngIf="filtrados.length === 0">
+        <i class="fas fa-boxes-stacked"></i>
+        <p *ngIf="cargando">Cargando…</p>
+        <p *ngIf="!cargando && inventarios.length > 0">No hay inventarios que coincidan con la búsqueda</p>
+        <ng-container *ngIf="!cargando && inventarios.length === 0">
+          <p>Aún no hay inventarios registrados</p>
+          <button type="button" class="btn-agregar" (click)="abrirModal()"><i class="fas fa-plus"></i> Registrar inventario</button>
+        </ng-container>
+      </div>
 
-      <!-- Paginación -->
-      <nav *ngIf="totalPaginas > 1" aria-label="Paginación" class="mt-4">
-        <ul class="pagination justify-content-center mb-0">
-          <li
-            class="page-item"
-            [class.disabled]="paginaActual === 1"
-            (click)="cambiarPagina(paginaActual - 1)"
-          >
-            <a class="page-link" href="javascript:void(0)">Anterior</a>
-          </li>
-          <li
-            class="page-item"
-            *ngFor="let pg of paginasArray"
-            [class.active]="pg === paginaActual"
-            (click)="cambiarPagina(pg)"
-          >
-            <a class="page-link" href="javascript:void(0)">{{ pg }}</a>
-          </li>
-          <li
-            class="page-item"
-            [class.disabled]="paginaActual === totalPaginas"
-            (click)="cambiarPagina(paginaActual + 1)"
-          >
-            <a class="page-link" href="javascript:void(0)">Siguiente</a>
-          </li>
-        </ul>
-      </nav>
+      <app-paginacion [total]="totalFiltrado" [pagina]="paginaActual" [porPagina]="elementosPorPagina" (paginaChange)="cambiarPagina($event)" (porPaginaChange)="cambiarFilas($event)"></app-paginacion>
+    </section>
 
-      <!-- Modal flotante -->
-      <div *ngIf="mostrarModal" class="modal">
-        <div class="modal-content p-4">
-          <h2 class="mb-3">
-            {{ inventario.idinventario ? 'Editar' : 'Nuevo' }} Inventario
-          </h2>
-          <form (ngSubmit)="formSubmit()" #f="ngForm">
-            <div class="mb-2">
-              <label class="form-label">Nombre</label>
-              <input
-                name="nombre"
-                [(ngModel)]="inventario.nombre"
-                required
-                class="form-control"
-              />
+    <div *ngIf="mostrarModal" class="modal" (click)="cerrarModal()">
+      <div class="modal-content emp-modal" role="dialog" aria-modal="true" aria-labelledby="inv-titulo" (click)="$event.stopPropagation()">
+        <header class="em-head">
+          <span class="em-icon"><i class="fas fa-boxes-stacked"></i></span>
+          <div>
+            <h2 id="inv-titulo">{{ inventario.idinventario ? 'Editar inventario' : 'Registrar inventario' }}</h2>
+            <p>{{ inventario.idinventario ? 'Actualiza los datos del inventario.' : 'Crea el inventario de un almacén.' }}</p>
+          </div>
+          <button type="button" class="em-close" (click)="cerrarModal()" aria-label="Cerrar"><i class="fas fa-times"></i></button>
+        </header>
+
+        <form (ngSubmit)="formSubmit()" class="em-form" novalidate>
+          <div class="em-body">
+            <p class="aviso" *ngIf="aviso"><i class="fas fa-circle-exclamation"></i> {{ aviso }}</p>
+            <div class="em-grid">
+              <div class="field span2">
+                <label for="almacen">Almacén *</label>
+                <select id="almacen" name="idalmacen" [(ngModel)]="inventario.idalmacen" [class.invalid]="errores['idalmacen']">
+                  <option [ngValue]="0">Selecciona un almacén</option>
+                  <option *ngFor="let a of almacenes" [ngValue]="a.idalmacen">{{ a.nombre }}</option>
+                </select>
+                <small class="err" *ngIf="errores['idalmacen']">{{ errores['idalmacen'] }}</small>
+                <small class="ayuda" *ngIf="!errores['idalmacen']">Cada almacén tiene un solo inventario.</small>
+              </div>
+              <div class="field span2">
+                <label for="nombre">Nombre *</label>
+                <input id="nombre" name="nombre" [(ngModel)]="inventario.nombre" placeholder="Ej. Inventario general" autocomplete="off" [class.invalid]="errores['nombre']" />
+                <small class="err" *ngIf="errores['nombre']">{{ errores['nombre'] }}</small>
+              </div>
+              <div class="field span2">
+                <label for="descripcion">Descripción</label>
+                <input id="descripcion" name="descripcion" [(ngModel)]="inventario.descripcion" autocomplete="off" />
+              </div>
             </div>
-            <div class="mb-2">
-              <label class="form-label">Descripción</label>
-              <input
-                name="descripcion"
-                [(ngModel)]="inventario.descripcion"
-                class="form-control"
-              />
-            </div>
-            <div class="mb-2">
-              <label class="form-label">Almacén</label>
-              <select
-                name="idalmacen"
-                [(ngModel)]="inventario.idalmacen"
-                class="form-select"
-                required
-              >
-                <option [ngValue]="0" disabled>Seleccione almacén</option>
-                <option
-                  *ngFor="let a of almacenes"
-                  [ngValue]="a.idalmacen"
-                >
-                  {{ a.nombre }}
-                </option>
-              </select>
-            </div>
-            <div class="d-flex justify-content-end mt-3">
-              <button
-                type="button"
-                class="btn btn-secondary me-2"
-                (click)="cerrarModal()"
-              >
-                Cerrar
-              </button>
-              <button
-                type="submit"
-                class="btn btn-primary"
-                [disabled]="f.invalid"
-              >
-                Guardar
-              </button>
-            </div>
-          </form>
-        </div>
+          </div>
+
+          <footer class="em-foot">
+            <button type="button" class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
+            <button type="submit" class="btn-primary" [disabled]="guardando">
+              <i class="fas fa-spinner fa-spin" *ngIf="guardando"></i>
+              {{ guardando ? 'Guardando…' : (inventario.idinventario ? 'Guardar cambios' : 'Registrar inventario') }}
+            </button>
+          </footer>
+        </form>
       </div>
     </div>
   </div>

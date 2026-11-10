@@ -10,6 +10,8 @@ import { AjusteInventarioService } from '../../../../service/ajuste-inventario.s
 import { InventarioProductoService } from '../../../../service/inventarioproducto.services';
 import { ProductosService } from '../../../../service/productos.service';
 import { InventarioService } from '../../../../service/inventario.service';
+import { PaginacionComponent } from '../../../../components/paginacion/paginacion.component';
+import { UnidadProductoService, UnidadInfo } from '../../../../service/unidad-producto.service';
 
 interface AjusteInventarioDTO {
   idajusteinventario: number;
@@ -33,6 +35,7 @@ interface InventarioProductoDTO {
   idinventarioproducto: number;
   idproducto: number;
   idinventario: number;
+  stockactual?: number;
 }
 
 interface InventarioProductoView extends InventarioProductoDTO {
@@ -42,12 +45,14 @@ interface InventarioProductoView extends InventarioProductoDTO {
 
 interface AjusteInventarioView extends AjusteInventarioDTO {
   productoInventario: string;
+  productoNombre: string;
+  inventarioNombre: string;
 }
 
 @Component({
   selector: 'app-list-ajuste-inventario',
   standalone: true,
-  imports: [
+  imports: [PaginacionComponent, 
     CommonModule,
     FormsModule,
     HttpClientModule,
@@ -61,23 +66,46 @@ export class ListAjusteInventarioComponent implements OnInit {
   ajustes: AjusteInventarioView[] = [];
   filtrados: AjusteInventarioView[] = [];
   invProds: InventarioProductoView[] = [];
-  inventarios: Inventario[] = []; // <- para llenar el combo
+  inventarios: Inventario[] = [];
   inventarioFiltro: number = 0;
   filtro = '';
   mostrarModal = false;
-  isEditMode = false;
+  cargando = true;
+  guardando = false;
+  aviso = '';
+  errores: Record<string, string> = {};
   modelo: AjusteInventarioDTO = this.resetModelo();
 
   paginaActual = 1;
   elementosPorPagina = 5;
+  totalFiltrado = 0;
 
   constructor(
     private ajusteSvc: AjusteInventarioService,
     private ipSvc: InventarioProductoService,
     private prodSvc: ProductosService,
-    private invSvc: InventarioService
+    private invSvc: InventarioService,
+    private unidadesSvc: UnidadProductoService
   ) {}
+
+  unidades = new Map<number, UnidadInfo>();
+
+  private unidadDeIp(idip: number): UnidadInfo | undefined {
+    const ip = this.invProds.find(v => v.idinventarioproducto === idip);
+    return ip ? this.unidades.get(ip.idproducto) : undefined;
+  }
+
+  codigoIp(idip: number): string {
+    return this.unidadDeIp(idip)?.codigo || '';
+  }
+
+  pasoIp(idip: number): string {
+    return this.unidadDeIp(idip)?.permiteDecimales ? '0.001' : '1';
+  }
+
 ngOnInit(): void {
+  this.cargando = true;
+  this.unidadesSvc.mapa().subscribe(m => (this.unidades = m));
   forkJoin({
     ajustes: this.ajusteSvc.listarAjustes(),
     ipList: this.ipSvc.listarInventarioproducto(),
@@ -104,17 +132,22 @@ ngOnInit(): void {
       }));
 
       this.ajustes = ajustes.map((adj: AjusteInventarioDTO) => {
-        const ipv = this.invProds.find((ip: InventarioProductoView) => ip.idinventarioproducto === adj.idinventarioproducto)!;
+        const ipv = this.invProds.find((ip: InventarioProductoView) => ip.idinventarioproducto === adj.idinventarioproducto);
+        const productoNombre = ipv?.productoNombre || '';
+        const inventarioNombre = ipv?.inventarioNombre || '';
         return {
           ...adj,
-          productoInventario: `${ipv.productoNombre} - ${ipv.inventarioNombre}`
+          productoNombre,
+          inventarioNombre,
+          productoInventario: `${productoNombre} - ${inventarioNombre}`
         };
-      });
+      }).sort((a: AjusteInventarioView, b: AjusteInventarioView) => String(b.fechaAjuste).localeCompare(String(a.fechaAjuste)));
 
+      this.cargando = false;
       this.aplicarFiltro();
     },
     error: (err: any) => {
-      console.error(err);
+      this.cargando = false;
       Swal.fire('Error', 'No se pudieron cargar los datos', 'error');
     }
   });
@@ -148,16 +181,24 @@ ngOnInit(): void {
       });
     }
 
+    this.totalFiltrado = arr.length;
+    if (this.paginaActual > 1 && (this.paginaActual - 1) * this.elementosPorPagina >= arr.length) this.paginaActual = 1;
     const start = (this.paginaActual - 1) * this.elementosPorPagina;
     this.filtrados = arr.slice(start, start + this.elementosPorPagina);
   }
 
   get totalPaginas(): number {
-    return Math.ceil(this.ajustes.length / this.elementosPorPagina);
+    return Math.max(1, Math.ceil(this.totalFiltrado / this.elementosPorPagina));
   }
 
   get paginasArray(): number[] {
     return Array.from({ length: this.totalPaginas }, (_, i) => i + 1);
+  }
+
+  cambiarFilas(n: number): void {
+    this.elementosPorPagina = n;
+    this.paginaActual = 1;
+    this.aplicarFiltro();
   }
 
   cambiarPagina(p: number): void {
@@ -166,20 +207,26 @@ ngOnInit(): void {
     this.aplicarFiltro();
   }
 
-  abrirModal(adj?: AjusteInventarioView): void {
-    if (adj) {
-      this.isEditMode = true;
-      this.modelo = {
-        idajusteinventario: adj.idajusteinventario,
-        idinventarioproducto: adj.idinventarioproducto,
-        cantidad: adj.cantidad,
-        descripcion: adj.descripcion,
-        fechaAjuste: adj.fechaAjuste
-      };
-    } else {
-      this.isEditMode = false;
-      this.modelo = this.resetModelo();
-    }
+  get totalEntradas(): number {
+    return this.ajustes.filter(a => a.cantidad > 0).length;
+  }
+
+  get totalSalidas(): number {
+    return this.ajustes.filter(a => a.cantidad < 0).length;
+  }
+
+  get ipElegido(): InventarioProductoView | undefined {
+    return this.invProds.find(ip => ip.idinventarioproducto === this.modelo.idinventarioproducto);
+  }
+
+  cant(n: any): string {
+    return String(Number(Number(n || 0).toFixed(3)));
+  }
+
+  abrirModal(): void {
+    this.modelo = this.resetModelo();
+    this.errores = {};
+    this.aviso = '';
     this.mostrarModal = true;
   }
 
@@ -188,35 +235,33 @@ ngOnInit(): void {
   }
 
   formSubmit(): void {
-    if (this.isEditMode) {
-      Swal.fire('Atención', 'No se puede editar un ajuste una vez creado', 'warning');
-      return;
+    this.errores = {};
+    this.aviso = '';
+    if (!this.modelo.idinventarioproducto) this.errores['idinventarioproducto'] = 'Selecciona un producto.';
+    const cantidad = Number(this.modelo.cantidad);
+    if (!cantidad) this.errores['cantidad'] = 'La cantidad no puede ser 0.';
+    else if (this.modelo.idinventarioproducto && this.pasoIp(this.modelo.idinventarioproducto) === '1' && !Number.isInteger(cantidad)) {
+      this.errores['cantidad'] = 'Esta unidad solo admite cantidades enteras.';
     }
+    if (Object.keys(this.errores).length) return;
 
-    if (!this.modelo.idinventarioproducto) {
-      Swal.fire('Atención', 'Seleccione Inventario×Producto', 'warning');
-      return;
-    }
-
-    this.ajusteSvc.registrar(this.modelo).subscribe({
+    this.guardando = true;
+    this.ajusteSvc.registrar({ ...this.modelo, cantidad }).subscribe({
       next: () => {
-        Swal.fire('Éxito', 'Ajuste creado', 'success');
+        this.guardando = false;
+        Swal.fire('Éxito', 'Ajuste registrado', 'success');
         this.cerrarModal();
         this.ngOnInit();
       },
       error: (err: any) => {
-        const msg = err.error?.message ?? 'Error inesperado';
-        const icon = err.status === 400 ? 'warning' : 'error';
-        Swal.fire(icon === 'warning' ? 'Atención' : 'Error', msg, icon);
+        this.guardando = false;
+        if (err.status === 401 || err.status === 403) return;
+        const cuerpo = err.error;
+        const msg: string = (typeof cuerpo === 'string' ? cuerpo : cuerpo?.message || cuerpo?.Detalle) || 'No se pudo registrar el ajuste';
+        const campos = cuerpo?.errors;
+        if (err.status === 400 && campos && typeof campos === 'object') this.errores = { ...campos };
+        else this.aviso = msg;
       }
-    });
-  }
-
-  eliminar(id: number): void {
-    Swal.fire({
-      icon: 'warning',
-      title: 'Atención',
-      text: 'No se puede eliminar un ajuste una vez creado'
     });
   }
 }

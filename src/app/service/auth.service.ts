@@ -1,4 +1,3 @@
-// src/app/services/auth.service.ts
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { switchMap, map, Observable } from 'rxjs';
