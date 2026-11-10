@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { LoginService } from '../../service/login.service';
+import { MenuLateralService } from '../../service/menu-lateral.service';
 import { CampanaComponent } from '../campana/campana.component';
 import { MenuUsuarioComponent } from '../menu-usuario/menu-usuario.component';
 
@@ -29,7 +30,7 @@ export class HeaderComponent implements OnInit {
   hoy = new Date();
   busqueda = '';
 
-  constructor(private loginService: LoginService, private router: Router) {}
+  constructor(private loginService: LoginService, private router: Router, public menu: MenuLateralService) {}
 
   private titulos: Record<string, string> = {
     '/admin': 'Dashboard Principal',

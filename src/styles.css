@@ -314,15 +314,29 @@ body .modal-dialog { max-width: 800px; }
 .swal2-styled.swal2-cancel { border-radius: var(--radius-sm) !important; }
 
 @media (max-width: 992px) {
-  :root { --sidebar-w: 220px; }
-  .encabezado { padding: 12px; }
+  .contenedor { display: block; }
+  .barra {
+    position: fixed; top: 0; left: 0; z-index: 1100;
+    width: min(290px, 86vw); height: 100vh; height: 100dvh;
+    transform: translateX(-102%);
+    transition: transform .25s ease;
+    box-shadow: none;
+  }
+  body.menu-abierto .barra { transform: translateX(0); box-shadow: 0 0 40px rgba(0, 0, 0, .4); }
+  body.menu-abierto { overflow: hidden; }
+  body.menu-abierto::after { content: ''; position: fixed; inset: 0; z-index: 1090; background: rgba(15, 23, 42, .5); }
+  .encabezado { padding: 12px 12px 96px; }
   .container { padding: 16px !important; overflow-x: auto; }
   .search-input { min-width: 0; flex: 1; }
-}
-@media (max-width: 768px) {
-  .contenedor { flex-direction: column; }
-  .barra { position: static; width: 100%; flex-basis: auto; height: auto; }
+  app-paginacion { left: 0 !important; }
   .customer-table { display: block; overflow-x: auto; white-space: nowrap; }
+}
+@media (max-width: 600px) {
+  .encabezado { padding: 8px 8px 110px; }
+  .dir-head h1 { font-size: 22px; }
+  .dir-head .btn-agregar, .dir-actions { width: 100%; }
+  .dir-head .btn-agregar { justify-content: center; }
+  .modal-content, .emp-modal { max-width: calc(100vw - 16px) !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -429,3 +443,19 @@ body { background: radial-gradient(1200px 400px at 80% -10%, #d1fae5 0%, transpa
 /* Bootstrap deja .modal-dialog sin eventos de puntero (espera un .modal-content dentro).
    Los modales del proyecto usan .modal-dialog directamente, así que se restauran los clics. */
 body .modal-dialog { pointer-events: auto; }
+
+/* Responsive: elementos comunes de las pantallas */
+.table-wrap { -webkit-overflow-scrolling: touch; }
+@media (max-width: 768px) {
+  .filtros { gap: 10px !important; }
+  .filtros .search-box { min-width: 0 !important; max-width: none !important; flex: 1 1 100%; }
+  .filtros .sel { flex: 1 1 150px; }
+  .filtros .sel select, .filtros .sel input { flex: 1; min-width: 0; width: 100%; }
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .dir-table th, .dir-table td { padding-left: 14px !important; padding-right: 14px !important; }
+  .dir-table th:first-child, .dir-table td:first-child { padding-left: 16px !important; }
+  .dir-table th:last-child, .dir-table td:last-child { padding-right: 16px !important; }
+}
+@media (max-width: 480px) {
+  .kpis { grid-template-columns: 1fr !important; }
+}

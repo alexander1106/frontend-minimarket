@@ -62,7 +62,11 @@
           <a routerLink="/enviar-correo">¿Olvidaste tu clave?</a>
         </div>
 
-        <button type="submit" class="btn-login">Iniciar sesión <i class="fa-solid fa-arrow-right"></i></button>
+        <button type="submit" class="btn-login" [disabled]="cargando">
+          <ng-container *ngIf="!cargando">Iniciar sesión <i class="fa-solid fa-arrow-right"></i></ng-container>
+          <ng-container *ngIf="cargando"><i class="fa-solid fa-spinner fa-spin"></i> Ingresando…</ng-container>
+        </button>
+        <p class="lento" *ngIf="servidorLento">El servidor está despertando, puede tardar hasta un minuto la primera vez.</p>
       </form>
 
       <p class="register">¿Aún no tienes cuenta? <a href="javascript:void(0)" (click)="registroNoDisponible()">Registra tu minimarket gratis</a></p>

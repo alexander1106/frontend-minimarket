@@ -104,7 +104,7 @@
           <div class="em-body">
             <p class="aviso" *ngIf="avisoModal"><i class="fas fa-circle-exclamation"></i> {{ avisoModal }}</p>
 
-            <p class="em-section"><span>1</span> Nombre</p>
+            <p class="em-section">Nombre</p>
             <div class="field">
               <label for="nombre">Nombre del rol *</label>
               <input id="nombre" name="nombre" [(ngModel)]="rol.nombre" placeholder="Ej. Jefe de tienda" maxlength="30"
@@ -114,7 +114,7 @@
             </div>
 
             <ng-container *ngIf="!rol.id">
-              <p class="em-section"><span>2</span> Módulos con acceso</p>
+              <p class="em-section">Módulos con acceso</p>
               <div class="mod-grid">
                 <label class="mod" *ngFor="let m of modulos" [class.on]="modalModulos.has(m.idModulo)">
                   <input type="checkbox" [checked]="modalModulos.has(m.idModulo)" (change)="alternarModal(m)" />

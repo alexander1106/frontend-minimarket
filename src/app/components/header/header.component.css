@@ -88,3 +88,25 @@
 .fecha i { color: #059669; }
 .topbar { padding: 14px 22px; }
 @media (max-width: 1100px) { .fecha { display: none; } }
+
+.btn-menu { display: none; flex: none; width: 40px; height: 40px; border: 1px solid #e5e7eb; border-radius: 10px; background: #fff; color: #374151; font-size: 16px; cursor: pointer; }
+.btn-menu:hover { background: #f3f4f6; }
+
+@media (max-width: 992px) {
+  .btn-menu { display: inline-flex; align-items: center; justify-content: center; }
+  .topbar { flex-wrap: wrap; padding: 10px 12px; gap: 10px; }
+  .topbar.super { gap: 10px; }
+  .fecha, .moneda { display: none !important; }
+  .super-search { order: 3; flex: 1 1 100%; max-width: none; }
+  .crumbs { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .company { flex: 1; min-width: 0; }
+  .right-section { gap: 10px; }
+}
+@media (max-width: 600px) {
+  .company-line, .company-icon { display: none; }
+  .btn-registrar { padding: 0 12px; font-size: 0; }
+  .btn-registrar i { font-size: 14px; margin: 0; }
+  .caja-pill { padding: 6px 10px; font-size: 12px; }
+  .page-crumbs a { display: none; }
+  .page-crumbs span { display: none; }
+}

@@ -183,7 +183,7 @@
 
     <div class="pago-body">
       <section class="pago-seccion">
-        <p class="pago-titulo-seccion"><span>1</span> Cliente</p>
+        <p class="pago-titulo-seccion">Cliente</p>
         <div class="segmento">
           <button type="button" [class.on]="modoCliente === 'simple'" (click)="elegirModoCliente('simple')">
             <i class="fas fa-user-slash"></i> Boleta simple
@@ -242,7 +242,7 @@
       </section>
 
       <section class="pago-seccion">
-        <p class="pago-titulo-seccion"><span>2</span> Comprobante</p>
+        <p class="pago-titulo-seccion">Comprobante</p>
         <div class="opciones">
           <button type="button" *ngFor="let c of comprobantes" [class.on]="comprobantePago === c.valor" (click)="elegirComprobante(c.valor)">
             <i class="fas {{ c.icono }}"></i> {{ c.etiqueta }}
@@ -251,7 +251,7 @@
       </section>
 
       <section class="pago-seccion">
-        <p class="pago-titulo-seccion"><span>3</span> Método de pago</p>
+        <p class="pago-titulo-seccion">Método de pago</p>
         <div class="opciones metodos" *ngIf="metodosDePago.length">
           <button type="button" *ngFor="let metodo of metodosDePago" [class.on]="metodoPago === ('' + metodo.idMetodoPago)" (click)="elegirMetodo(metodo)">
             <strong>{{ metodo.nombre }}</strong>
@@ -262,7 +262,7 @@
       </section>
 
       <section class="pago-seccion">
-        <p class="pago-titulo-seccion"><span>4</span> Monto</p>
+        <p class="pago-titulo-seccion">Monto</p>
         <div class="monto-fila">
           <div class="campo-pago">
             <label for="monto">Monto a pagar (S/)</label>

@@ -197,3 +197,21 @@
 .turno-sel select { flex: 1; min-width: 0; height: 32px; padding: 0 8px; border: 1px solid var(--line); border-radius: 8px; background: #fff; font-weight: 600; }
 .turno-fijo i { margin-right: 6px; color: var(--brand-600); }
 .turno button { height: 32px; padding: 0 14px; border: 0; border-radius: 8px; background: #92400e; color: #fff; font-weight: 600; cursor: pointer; }
+
+@media (max-width: 1100px) {
+  .pos { grid-template-columns: minmax(0, 1fr); }
+  .ticket { position: static; max-height: none; }
+  .product-grid { max-height: none; overflow: visible; }
+}
+@media (max-width: 768px) {
+  .product-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .catalogo { padding: 12px; }
+  .category-tabs { flex-wrap: nowrap; overflow-x: auto; }
+  .category-tabs .categorias-btn { flex: none; }
+}
+@media (max-width: 420px) {
+  .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .product-card { padding: 10px; }
+}
+.modal-dialog.pago { max-width: min(540px, calc(100vw - 16px)) !important; }
+@media (max-width: 560px) { .modal-dialog.pago .pago-body { padding: 0 14px 6px; } .pago-pie { padding: 12px 14px; } .segmento button { font-size: 12px; } }

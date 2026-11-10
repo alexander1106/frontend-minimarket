@@ -166,3 +166,6 @@ form > label {
   .hero-side { display: none; }
   .form-side { flex: 1 1 100%; }
 }
+
+.btn-login:disabled { opacity: .8; cursor: wait; }
+.lento { margin: 10px 0 0; text-align: center; font-size: 13px; color: #92400e; }

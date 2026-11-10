@@ -1,4 +1,5 @@
 <header class="topbar super" *ngIf="esSuper; else normal">
+  <button type="button" class="btn-menu" (click)="menu.alternar()" aria-label="Abrir menú"><i class="fas fa-bars"></i></button>
   <nav class="crumbs" aria-label="Ruta">
     <a routerLink="/admin">GASBACORB</a><span>/</span><strong>{{ tituloPagina }}</strong>
   </nav>
@@ -19,6 +20,7 @@
 <ng-template #normal>
 <header class="topbar">
   <div class="company">
+    <button type="button" class="btn-menu" (click)="menu.alternar()" aria-label="Abrir menú"><i class="fas fa-bars"></i></button>
     <span class="company-icon"><i class="fas fa-store"></i></span>
     <div>
       <nav class="page-crumbs" aria-label="Ruta">

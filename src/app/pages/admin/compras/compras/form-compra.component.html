@@ -28,7 +28,7 @@
 
     <form *ngIf="!cargando" (ngSubmit)="guardar()" novalidate>
       <section class="tarjeta">
-        <p class="em-section"><span>1</span> Datos de la compra</p>
+        <p class="em-section">Datos de la compra</p>
         <div class="grid3">
           <div class="field">
             <label for="proveedor">Proveedor *</label>
@@ -63,7 +63,7 @@
       </section>
 
       <section class="tarjeta">
-        <p class="em-section"><span>2</span> Productos comprados</p>
+        <p class="em-section">Productos comprados</p>
 
         <div class="buscador" (click)="$event.stopPropagation()">
           <i class="fas fa-search"></i>
@@ -85,7 +85,6 @@
 
         <article class="linea" *ngFor="let l of lineas; let i = index">
           <header class="linea-cab">
-            <span class="num">{{ i + 1 }}</span>
             <div class="linea-titulo">
               <strong>{{ nombreProducto(l.idProducto) }}</strong>
               <span class="chip" *ngIf="l.idProducto">

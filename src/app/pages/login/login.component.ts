@@ -38,6 +38,9 @@ throw new Error('Method not implemented.');
   mensajeError: string = '';
 
   remember = true;
+  cargando = false;
+  servidorLento = false;
+  private temporizadorLento: any;
 
   currentInfoSlide: number = 0;
   slides = [
@@ -124,6 +127,7 @@ formSubmit() {
     return;
   }
 
+  this.iniciarCarga();
   this.loginService.generarToken(this.loginData).subscribe(
     (data: any) => {
       this.loginService.recordarSesion(this.remember, this.loginData.username.trim());
@@ -141,20 +145,26 @@ formSubmit() {
 
       this.sucursalesService.obtenerEmpresPorSucursal(idSucursal).subscribe(
         (empresa) => {
-          console.log("Empresa cargada:", empresa);
-
           localStorage.setItem('empresa', JSON.stringify(empresa));
 
           this.router.navigate(['admin']);
         },
         (error) => {
-          console.error("Error al cargar empresa:", error);
+          this.detenerCarga();
           Swal.fire({ icon: 'error', title: 'Error', text: 'Error cargando datos de empresa', confirmButtonText: 'Aceptar' });
         }
       );
     },
     (error) => {
-      if (error.error.error === 'USUARIO DESHABILITADO') {
+      this.detenerCarga();
+      if (!error.status) {
+        Swal.fire({
+          icon: 'error',
+          title: 'No se pudo conectar',
+          text: 'No hay respuesta del servidor. Si estaba inactivo puede tardar hasta un minuto en despertar; inténtalo de nuevo en unos segundos.',
+          confirmButtonText: 'Aceptar',
+        });
+      } else if (error.error?.error === 'USUARIO DESHABILITADO') {
         Swal.fire({
           icon: 'error',
           title: 'Usuario deshabilitado',
@@ -173,4 +183,16 @@ formSubmit() {
   );
 }
 
+  private iniciarCarga() {
+    this.cargando = true;
+    this.servidorLento = false;
+    clearTimeout(this.temporizadorLento);
+    this.temporizadorLento = setTimeout(() => (this.servidorLento = true), 4000);
+  }
+
+  private detenerCarga() {
+    this.cargando = false;
+    this.servidorLento = false;
+    clearTimeout(this.temporizadorLento);
+  }
 }
